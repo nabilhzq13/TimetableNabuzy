@@ -75,73 +75,114 @@
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
   .hide{display:none!important}
 
-  header{margin-bottom:14px}
+  /* Spacing rhythm — every gap and pad comes from these six steps. */
+  :root{--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;
+        --press:rgba(27,31,36,.07);--t-display:1.85rem}
+
+  /* The tap highlight is switched off above, so the feedback has to be ours:
+     every tappable thing answers within 120ms, without moving its neighbours. */
+  .item,.btn,.daysel button,.dayrow button,nav button,.stars button,.x,.row,.seclink{
+    transition:background-color .12s ease,opacity .12s ease,transform .12s ease;
+  }
+  .item:active,.daysel button:active,.dayrow button:active,
+  .stars button:active,.x:active,.row:active{background:var(--press)}
+  .btn:active{transform:scale(.98);filter:brightness(.95)}
+  nav button:active{opacity:.55}
+  @media (prefers-reduced-motion:reduce){
+    .item,.btn,.daysel button,.dayrow button,nav button,.stars button,.x,.row{transition:none}
+    .btn:active{transform:none}
+  }
+
+  header{margin-bottom:var(--s4)}
+  .daystamp{font-size:var(--t-footnote);color:var(--muted);font-weight:500;margin:0 0 2px}
 
   .bar{height:7px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line-soft);overflow:hidden}
   .bar>i{display:block;height:100%;background:var(--accent);transition:width .25s}
   @media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
 
-  .summary{padding:13px 15px;margin-bottom:14px;display:grid;gap:9px}
+  .summary{padding:13px 15px;margin-bottom:var(--s4);display:grid;gap:9px}
   .summary .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
   .summary .big{font-size:var(--t-subhead);font-weight:700}
   .summary .sm{font-size:var(--t-caption);color:var(--muted)}
-  .summary .streak-line{font-size:var(--t-caption);color:var(--accent);font-weight:700}
+  .streak-line{color:var(--accent);font-weight:700}
 
-  /* The day as a route: a spine down the left edge, the ticks sitting on it
-     like holds, and a live line at the current time. */
-  #t-list{position:relative}
-  #t-list::before{
-    content:"";position:absolute;left:calc(13px + 1.35em);top:14px;bottom:14px;
-    width:2px;background:var(--line-soft);border-radius:2px;
+  /* Day meter: one quiet line above the content, not a card of its own. */
+  .daymeter{display:grid;gap:var(--s2);margin-bottom:var(--s4)}
+  .daymeter-row{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);
+    font-size:var(--t-footnote);color:var(--muted)}
+
+  /* The one question the screen exists to answer. */
+  .nowcard{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    border-left:5px solid hsl(var(--h,138) 55% 62%);
+    padding:var(--s4);margin-bottom:var(--s5);
   }
+  .nowcard-label{
+    margin:0 0 var(--s1);font-size:var(--t-caption2);font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--accent);
+  }
+  .nowcard.idle{border-left-color:var(--line)}
+  .nowcard.idle .nowcard-label{color:var(--muted)}
+  .nowcard-title{margin:0;font-size:var(--t-display);font-weight:700;line-height:1.12;letter-spacing:-.02em}
+  .nowcard-when{margin:var(--s1) 0 0;font-size:var(--t-subhead);color:var(--muted);font-variant-numeric:tabular-nums}
+  .nowcard-detail{margin:var(--s2) 0 0;font-size:var(--t-subhead);color:var(--muted);line-height:1.45}
+  .nowcard .btn{margin-top:var(--s3)}
+  .nowcard-next{
+    margin:var(--s3) 0 0;padding-top:var(--s3);border-top:1px solid var(--line-soft);
+    font-size:var(--t-footnote);color:var(--muted);
+  }
+  .nowcard-next b{color:var(--ink);font-weight:600}
+
+  /* Grouped list: section heading on the ground, rows inside one card. */
+  .sechead{margin:0 0 var(--s2);padding-left:var(--s1);font-size:var(--t-footnote);font-weight:700;color:var(--muted)}
+  .seccard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;margin-bottom:var(--s5)}
+
+  /* A row leads with its time, carries the category as a colour edge plus a
+     word in the meta line, and ends with its tick. The details line is gone
+     from the list — it belongs on the card for the block you are actually in. */
   .item{
-    display:grid;grid-template-columns:2.7em minmax(3.6em,auto) 1fr;gap:10px;align-items:start;
-    padding:11px 13px;border-bottom:1px solid var(--line-soft);width:100%;
-    background:transparent;border-left:0;border-right:0;border-top:0;
+    display:grid;grid-template-columns:3px 3.3em 1fr auto;gap:var(--s3);align-items:center;
+    padding:var(--s3) var(--s3) var(--s3) 0;border-bottom:1px solid var(--line-soft);width:100%;
+    min-height:56px;background:transparent;border-left:0;border-right:0;border-top:0;
     font:inherit;color:var(--ink);text-align:left;cursor:pointer;position:relative;
   }
   .item:last-child{border-bottom:0}
+  .cat{align-self:stretch;width:3px;border-radius:0 99px 99px 0;background:hsl(var(--h) 55% 62%)}
   .item.now{background:var(--accent-soft)}
-  .item.past:not(.done) .when{opacity:.55}
+  .item.past:not(.done) .when,.item.past:not(.done) .body{opacity:.55}
   .tick{
-    width:1.7em;height:1.7em;min-width:28px;min-height:28px;
-    border-radius:.6em;border:2px solid hsl(var(--h) var(--edge-s) var(--edge-l));
-    background:var(--surface);display:grid;place-items:center;margin-top:1px;
-    font-size:var(--t-subhead);line-height:1;color:transparent;
+    width:22px;height:22px;border-radius:99px;border:1.5px solid var(--line);
+    background:transparent;display:grid;place-items:center;margin-right:var(--s1);
+    font-size:13px;line-height:1;color:transparent;flex:0 0 auto;
   }
-  .item.now .tick{background:var(--accent-soft)}
   .item.done .tick{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-  .item.done .ttl{text-decoration:line-through;color:var(--muted)}
-  .when{font-family:var(--mono);font-size:var(--t-caption);color:var(--muted);padding-top:.35em}
-  .ttl{display:block;font-size:var(--t-subhead);font-weight:600;line-height:1.25}
-  .meta{display:block;font-size:var(--t-caption);color:var(--muted);margin-top:2px}
+  .item.done .ttl{color:var(--muted)}
+  .item.done .cat{opacity:.3}
+  .when{font-size:var(--t-footnote);color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+  .ttl{display:block;font-size:var(--t-callout);font-weight:600;line-height:1.3}
+  .meta{display:block;font-size:var(--t-footnote);color:var(--muted);margin-top:1px}
   .chip{
     display:inline-block;font-size:var(--t-caption2);font-weight:700;
     padding:1px 8px;border-radius:99px;margin-right:6px;
     background:hsl(var(--h) var(--pill-s) var(--pill-l));color:hsl(var(--h) var(--ink-s) var(--ink-l));
   }
-  .nowpill{background:var(--accent);color:var(--accent-ink);font-size:var(--t-caption2);padding:1px 6px;
-    border-radius:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-left:6px;
-    white-space:nowrap}
-  .nowline{display:flex;align-items:center;gap:8px;padding:2px 13px;position:relative}
-  .nowline b{
-    width:9px;height:9px;border-radius:50%;background:var(--accent);
-    margin-left:calc(1.35em - 3.5px);flex:0 0 auto;
-  }
-  .nowline i{height:2px;flex:1;background:var(--accent);border-radius:2px;opacity:.5}
-  .nowline span{font-family:var(--mono);font-size:var(--t-caption2);font-weight:700;color:var(--accent)}
+  .nowline{display:flex;align-items:center;gap:var(--s2);padding:var(--s1) var(--s3) var(--s1) 0}
+  .nowline b{width:3px;align-self:stretch;min-height:10px;background:var(--accent);flex:0 0 auto}
+  .nowline i{height:1.5px;flex:1;background:var(--accent);border-radius:2px;opacity:.45}
+  .nowline span{font-size:var(--t-caption2);font-weight:700;color:var(--accent);
+    font-variant-numeric:tabular-nums}
 
   /* At large Dynamic Type sizes the row stacks so the time never squeezes the
      activity name. A media query can't detect this — `rem` inside one always
      resolves against the browser's initial 16px, never the live root size —
      so the script measures the root and sets .big-type. */
-  body.big-type .item{grid-template-columns:2.7em 1fr}
+  body.big-type .item{grid-template-columns:3px 1fr auto;row-gap:var(--s1)}
+  body.big-type .when{grid-column:2;text-align:left}
+  body.big-type .item .body{grid-column:2}
   body.big-type .item .tick{grid-row:1 / span 2}
-  body.big-type .when{grid-column:2;padding-top:0;margin-bottom:2px}
-  body.big-type .item>span:last-child{grid-column:2}
   body.big-type .logrow{grid-template-columns:1fr auto}
   body.big-type .two{grid-template-columns:1fr}
-  body.big-type #t-list::before,body.big-type .nowline b{display:none}
 
   .daysel{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
   .daysel::-webkit-scrollbar{display:none}
@@ -256,29 +297,35 @@
 <body>
 <div class="app">
   <header>
-    <div class="eyebrow" id="today-label">Today</div>
+    <p class="daystamp" id="today-label">Today</p>
     <h1 id="view-title">Today</h1>
   </header>
 
-  <div class="install hide" id="install">
-    <span>Add this to your home screen: tap <b>Share</b>, then <b>Add to Home Screen</b>. It then works with no signal.</span>
-    <button type="button" id="install-x" aria-label="Dismiss">&times;</button>
-  </div>
-
   <!-- TODAY -->
   <section id="v-today">
-    <div class="card summary">
-      <div class="row">
-        <span class="big" id="t-count">0 of 0 done</span>
-        <span class="sm" id="t-left">—</span>
-      </div>
+    <div class="daymeter">
       <div class="bar"><i id="t-bar" style="width:0%"></i></div>
-      <div class="row">
-        <span class="sm" id="t-next">—</span>
+      <div class="daymeter-row">
+        <span id="t-count">0 of 0 done</span>
         <span class="streak-line hide" id="streak"></span>
       </div>
     </div>
-    <div class="card" id="t-list"></div>
+
+    <section class="nowcard idle" id="nowcard" aria-label="Right now">
+      <p class="nowcard-label" id="now-label">Now</p>
+      <h2 class="nowcard-title" id="now-title">Nothing scheduled</h2>
+      <p class="nowcard-when" id="now-when"></p>
+      <p class="nowcard-detail hide" id="now-detail"></p>
+      <button type="button" class="btn hide" id="now-done">Mark done</button>
+      <p class="nowcard-next hide" id="now-next"></p>
+    </section>
+
+    <div id="t-list"></div>
+
+    <div class="install hide" id="install">
+      <span>Add this to your home screen: tap <b>Share</b>, then <b>Add to Home Screen</b>. It then works with no signal.</span>
+      <button type="button" id="install-x" aria-label="Dismiss">&times;</button>
+    </div>
   </section>
 
   <!-- WEEK -->
@@ -323,7 +370,7 @@
         <div><label for="e-type">Type</label><select id="e-type"></select></div>
         <div class="two">
           <div><label for="e-start">Start</label><input type="time" id="e-start" value="09:00" step="300" required></div>
-          <div><label for="e-mins">Minutes</label><input type="number" id="e-mins" value="60" min="5" max="720" step="5" required></div>
+          <div><label for="e-mins">Minutes</label><input type="number" id="e-mins" inputmode="numeric" value="60" min="5" max="720" step="5" required></div>
         </div>
         <div>
           <label id="e-days-label">Days</label>
@@ -482,23 +529,31 @@ function streak(){
 }
 
 // ---------- today ----------
+var MONTHS=["January","February","March","April","May","June",
+            "July","August","September","October","November","December"];
+// The day reads in three stretches rather than as one long column.
+var PARTS=[{name:"Morning",until:12*60},{name:"Afternoon",until:17*60},{name:"Evening",until:1441}];
+
+function dur(m){
+  if(m<60)return m+" min";
+  var h=Math.round(m/60*10)/10;
+  return h+(h===1?" hour":"h");
+}
+
 function renderToday(){
   var now=new Date(),k=key(now),i=dayIdx(now);
   var mins=now.getHours()*60+now.getMinutes();
   var list=forDay(i);
-  el("today-label").textContent=LONG[i]+", "+now.getDate()+" "+
-    ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][now.getMonth()];
+  el("today-label").textContent=LONG[i]+" "+now.getDate()+" "+MONTHS[now.getMonth()];
+
   var st=streak(),stEl=el("streak");
   stEl.textContent=st>0?(st+"-day streak"):"";
   stEl.classList.toggle("hide",st<1);
 
   var hits=0;
   list.forEach(function(b){if(isDone(k,b.id))hits++;});
-  el("t-count").textContent=hits+" of "+list.length+" done";
+  el("t-count").textContent=list.length?(hits+" of "+list.length+" done"):"Nothing scheduled";
   el("t-bar").style.width=(list.length?Math.round(hits/list.length*100):0)+"%";
-
-  var remaining=list.filter(function(b){return !isDone(k,b.id);});
-  el("t-left").textContent=remaining.length?remaining.length+" left":(list.length?"all clear":"");
 
   var current=null,next=null;
   list.forEach(function(b){
@@ -506,17 +561,67 @@ function renderToday(){
     if(mins>=s&&mins<s+b.mins)current=b;
     if(!next&&s>mins)next=b;
   });
-  el("t-next").textContent=current?("Now: "+current.activity):
-    (next?("Next: "+next.activity+" at "+fmt(toMin(next.start))):"Nothing else scheduled today.");
+  renderNowCard(list,k,current,next);
 
   var box=el("t-list");box.innerHTML="";
-  if(!list.length){box.innerHTML='<p class="empty">Nothing scheduled for '+LONG[i]+'.</p>';return;}
-  var placed=false;
-  list.forEach(function(b){
-    if(!placed&&toMin(b.start)>mins){box.appendChild(nowLine(mins));placed=true;}
-    box.appendChild(itemNode(b,k,b===current,mins));
+  if(!list.length){
+    box.innerHTML='<p class="empty"></p>';
+    box.firstChild.textContent="Nothing scheduled for "+LONG[i]+".";
+    return;
+  }
+  PARTS.forEach(function(part,pi){
+    var from=pi?PARTS[pi-1].until:0;
+    var rows=list.filter(function(b){var s=toMin(b.start);return s>=from&&s<part.until;});
+    if(!rows.length)return;
+    var head=document.createElement("p");
+    head.className="sechead";
+    head.textContent=part.name;
+    box.appendChild(head);
+    var card=document.createElement("div");
+    card.className="seccard";
+    var nowHere=mins>=from&&mins<part.until,marked=false;
+    rows.forEach(function(b){
+      if(nowHere&&!marked&&toMin(b.start)>mins){card.appendChild(nowLine(mins));marked=true;}
+      card.appendChild(itemNode(b,k,b===current,mins));
+    });
+    if(nowHere&&!marked)card.appendChild(nowLine(mins));
+    box.appendChild(card);
   });
-  if(!placed&&mins>=toMin(list[0].start))box.appendChild(nowLine(mins));
+}
+
+function renderNowCard(list,k,current,next){
+  var card=el("nowcard"),btn=el("now-done"),detail=el("now-detail"),nx=el("now-next");
+  var show=current||next;
+  if(show){
+    var t=typeOf(show.type),s=toMin(show.start);
+    card.style.setProperty("--h",t.hue);
+    card.classList.toggle("idle",!current);
+    el("now-label").textContent=current?"Now":"Next up";
+    el("now-title").textContent=show.activity;
+    el("now-when").textContent=current
+      ? fmt(s)+" – "+fmt(s+show.mins)
+      : "at "+fmt(s)+" · "+dur(show.mins);
+    detail.textContent=show.details||"";
+    detail.classList.toggle("hide",!show.details);
+    var isDoneNow=isDone(k,show.id);
+    btn.classList.toggle("hide",!current||isDoneNow);
+    btn.onclick=function(){toggle(k,show.id);renderToday();};
+  }else{
+    card.style.removeProperty("--h");
+    card.classList.add("idle");
+    el("now-label").textContent=list.length?"That's the day":"Nothing scheduled";
+    el("now-title").textContent=list.length?"Nothing left to do":"An open day";
+    el("now-when").textContent="";
+    detail.textContent="";
+    detail.classList.add("hide");
+    btn.classList.add("hide");
+  }
+  if(current&&next){
+    nx.textContent="Next: "+next.activity+" at "+fmt(toMin(next.start));
+    nx.classList.remove("hide");
+  }else{
+    nx.classList.add("hide");
+  }
 }
 
 function nowLine(mins){
@@ -536,11 +641,15 @@ function itemNode(b,k,isNow,mins){
     (mins!=null&&s+b.mins<=mins?" past":"");
   row.setAttribute("aria-pressed",isDoneNow?"true":"false");
   row.style.setProperty("--h",t.hue);
-  row.innerHTML='<span class="tick" aria-hidden="true">&#10003;</span>'+
-    '<span class="when">'+fmt(s)+'</span>'+
-    '<span><span class="ttl">'+esc(b.activity)+(isNow?'<span class="nowpill">now</span>':'')+'</span>'+
-    '<span class="meta"><span class="chip">'+esc(t.name)+'</span>'+
-    esc(b.details||(Math.round(b.mins/60*10)/10)+"h")+'</span></span>';
+  row.innerHTML='<span class="cat"></span><span class="when"></span>'+
+    '<span class="body"><span class="ttl"></span><span class="meta"></span></span>'+
+    '<span class="tick" aria-hidden="true">&#10003;</span>';
+  row.querySelector(".when").textContent=fmt(s);
+  row.querySelector(".ttl").textContent=b.activity;
+  // The category stays a word as well as a colour, and "now" is written out
+  // rather than left to the highlight alone.
+  row.querySelector(".meta").textContent=t.name+" · "+dur(b.mins)+(isNow?" · now":"");
+  row.title=b.activity+(b.details?" — "+b.details:"");
   row.addEventListener("click",function(){
     toggle(k,b.id);
     renderToday();
