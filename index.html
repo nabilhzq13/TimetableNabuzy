@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Break</title>
 <meta name="description" content="Offline daily schedule and climbing log. All data stays on this device.">
-<meta name="theme-color" content="#f6f4f0" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#15161a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6f4f0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -45,17 +44,9 @@
     --fade-rgb:246 244 240;
     color-scheme:light;
   }
-  @media (prefers-color-scheme:dark){:root{
-    --bg:#15161a; --surface:#1d1f25; --surface-2:#24262d; --ink:#ece9e5; --muted:#a0a6ae;
-    --faint:#8f959d; --line:#2f323a; --line-soft:#26282f;
-    --accent:#6cc794; --accent-ink:#0e1a13; --accent-soft:#1e3328; --flag:#e08457;
-    --tint-s:34%; --tint-l:23%; --edge-s:40%; --edge-l:42%;
-    --pill-s:40%; --pill-l:30%; --ink-s:55%; --ink-l:88%;
-    --glass-fill:rgba(29,31,37,.72);
-    --glass-opaque:#1a1c21;
-    --fade-rgb:21 22 26;
-    color-scheme:dark;
-  }}
+  /* The app commits to one light look, so there is no dark palette.
+     `color-scheme:light` on :root keeps native controls, the date and time
+     pickers and the scrollbars light even when iOS is set to dark. */
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   /* WebKit resolves -apple-system-body to the person's current Dynamic Type
