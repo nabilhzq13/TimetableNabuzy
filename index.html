@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Break</title>
+<meta name="description" content="Offline daily schedule and climbing log. All data stays on this device.">
+<meta name="theme-color" content="#1d3a2b" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10141a" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Break">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#eef0f2; --surface:#fff; --surface-2:#f5f7f8; --ink:#15191d; --muted:#5d6771;
+    --faint:#646d76; --line:#d7dde1; --line-soft:#e6eaed;
+    --accent:#2f6b4f; --accent-ink:#fff; --accent-soft:#dceade; --flag:#c2611f;
+    --tint-s:48%; --tint-l:93%; --edge-s:42%; --edge-l:74%; --ink-s:44%; --ink-l:28%;
+    --h-study:232; --h-work:188; --h-move:136; --h-rest:276; --h-social:36; --h-chores:212; --h-travel:12;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    /* Type scale: Apple's Large (default) Dynamic Type table, as rem against a
+       17 pt body. The root font-size follows the system setting, so every one
+       of these grows with it. */
+    --t-title1:1.65rem;    /* 28 */
+    --t-title3:1.18rem;    /* 20 */
+    --t-body:1rem;         /* 17 */
+    --t-callout:.94rem;    /* 16 */
+    --t-subhead:.88rem;    /* 15 */
+    --t-footnote:.76rem;   /* 13 */
+    --t-caption:.71rem;    /* 12 */
+    --t-caption2:.65rem;   /* 11 — the platform minimum */
+    /* Tab labels: Apple says tab titles need not grow with body text, but they
+       still may never fall under 11 pt. */
+    --t-tab:clamp(11px,.65rem,15px);
+    --glass-fill:rgba(255,255,255,.72);
+    --glass-opaque:#f7f9fa;
+    --fade-rgb:238 240 242;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0e1116; --surface:#171d24; --surface-2:#1d242c; --ink:#e8ecef; --muted:#9aa5b1;
+    --faint:#8a95a1; --line:#2a323c; --line-soft:#212832;
+    --accent:#6cbf93; --accent-ink:#0d1612; --accent-soft:#1c3128; --flag:#e49357;
+    --tint-s:30%; --tint-l:21%; --edge-s:34%; --edge-l:40%; --ink-s:52%; --ink-l:80%;
+    --glass-fill:rgba(23,29,36,.72);
+    --glass-opaque:#141a21;
+    --fade-rgb:14 17 22;
+    color-scheme:dark;
+  }}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  /* WebKit resolves -apple-system-body to the person's current Dynamic Type
+     body size, so the root rem — and with it every size below — tracks
+     Settings > Display & Text Size. Browsers that don't know the keyword
+     ignore the shorthand and keep their own 16px root. */
+  html{font:-apple-system-body;font-family:var(--sans)}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:var(--t-body);line-height:1.45;-webkit-text-size-adjust:100%;
+    overscroll-behavior-y:none;
+  }
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+  .app{
+    min-height:100%;
+    padding-top:calc(env(safe-area-inset-top,0px) + 10px);
+    padding-left:max(14px,env(safe-area-inset-left,0px));
+    padding-right:max(14px,env(safe-area-inset-right,0px));
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 86px);
+    max-width:620px;margin:0 auto;
+  }
+  h1{font-size:var(--t-title1);font-weight:800;letter-spacing:-.02em;margin:0;line-height:1.1}
+  h2{font-size:var(--t-subhead);font-weight:700;margin:0 0 8px}
+  .eyebrow{font-size:var(--t-caption2);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+  .hide{display:none!important}
+
+  header{margin-bottom:14px}
+
+  .bar{height:7px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line-soft);overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--accent);transition:width .25s}
+  @media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
+
+  .summary{padding:13px 15px;margin-bottom:14px;display:grid;gap:9px}
+  .summary .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .summary .big{font-size:var(--t-subhead);font-weight:700}
+  .summary .sm{font-size:var(--t-caption);color:var(--muted)}
+  .summary .streak-line{font-size:var(--t-caption);color:var(--accent);font-weight:700}
+
+  /* The day as a route: a spine down the left edge, the ticks sitting on it
+     like holds, and a live line at the current time. */
+  #t-list{position:relative}
+  #t-list::before{
+    content:"";position:absolute;left:calc(13px + 1.35em);top:14px;bottom:14px;
+    width:2px;background:var(--line-soft);border-radius:2px;
+  }
+  .item{
+    display:grid;grid-template-columns:2.7em minmax(3.6em,auto) 1fr;gap:10px;align-items:start;
+    padding:11px 13px;border-bottom:1px solid var(--line-soft);width:100%;
+    background:transparent;border-left:0;border-right:0;border-top:0;
+    font:inherit;color:var(--ink);text-align:left;cursor:pointer;position:relative;
+  }
+  .item:last-child{border-bottom:0}
+  .item.now{background:var(--accent-soft)}
+  .item.past:not(.done) .when{opacity:.55}
+  .tick{
+    width:1.7em;height:1.7em;min-width:28px;min-height:28px;
+    border-radius:.6em;border:2px solid hsl(var(--h) var(--edge-s) var(--edge-l));
+    background:var(--surface);display:grid;place-items:center;margin-top:1px;
+    font-size:var(--t-subhead);line-height:1;color:transparent;
+  }
+  .item.now .tick{background:var(--accent-soft)}
+  .item.done .tick{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .item.done .ttl{text-decoration:line-through;color:var(--muted)}
+  .when{font-family:var(--mono);font-size:var(--t-caption);color:var(--muted);padding-top:.35em}
+  .ttl{display:block;font-size:var(--t-subhead);font-weight:600;line-height:1.25}
+  .meta{display:block;font-size:var(--t-caption);color:var(--muted);margin-top:2px}
+  .chip{
+    display:inline-block;font-size:var(--t-caption2);font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    padding:1px 6px;border-radius:5px;margin-right:6px;
+    background:hsl(var(--h) var(--tint-s) var(--tint-l));color:hsl(var(--h) var(--ink-s) var(--ink-l));
+  }
+  .nowpill{background:var(--accent);color:var(--accent-ink);font-size:var(--t-caption2);padding:1px 6px;
+    border-radius:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-left:6px;
+    white-space:nowrap}
+  .nowline{display:flex;align-items:center;gap:8px;padding:2px 13px;position:relative}
+  .nowline b{
+    width:9px;height:9px;border-radius:50%;background:var(--accent);
+    margin-left:calc(1.35em - 3.5px);flex:0 0 auto;
+  }
+  .nowline i{height:2px;flex:1;background:var(--accent);border-radius:2px;opacity:.5}
+  .nowline span{font-family:var(--mono);font-size:var(--t-caption2);font-weight:700;color:var(--accent)}
+
+  /* At large Dynamic Type sizes the row stacks so the time never squeezes the
+     activity name. A media query can't detect this — `rem` inside one always
+     resolves against the browser's initial 16px, never the live root size —
+     so the script measures the root and sets .big-type. */
+  body.big-type .item{grid-template-columns:2.7em 1fr}
+  body.big-type .item .tick{grid-row:1 / span 2}
+  body.big-type .when{grid-column:2;padding-top:0;margin-bottom:2px}
+  body.big-type .item>span:last-child{grid-column:2}
+  body.big-type .logrow{grid-template-columns:1fr auto}
+  body.big-type .two{grid-template-columns:1fr}
+  body.big-type #t-list::before,body.big-type .nowline b{display:none}
+
+  .daysel{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+  .daysel::-webkit-scrollbar{display:none}
+  .daysel button{
+    flex:0 0 auto;font:inherit;font-size:var(--t-footnote);font-weight:600;padding:0 15px;
+    min-height:44px;border-radius:99px;
+    border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;
+  }
+  .daysel button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+  .empty{padding:30px 18px;text-align:center;color:var(--muted);font-size:var(--t-subhead)}
+
+  form{display:grid;gap:10px}
+  label{font-size:var(--t-caption);font-weight:600;color:var(--muted);display:block;margin-bottom:3px}
+  input,select,textarea{
+    font:inherit;font-size:max(16px,var(--t-callout));width:100%;background:var(--surface-2);color:var(--ink);
+    border:1px solid var(--line);border-radius:10px;padding:10px 11px;
+  }
+  textarea{min-height:60px;resize:vertical}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .dayrow{display:flex;flex-wrap:wrap;gap:5px}
+  .dayrow button{
+    font-family:var(--mono);font-size:var(--t-caption);font-weight:600;padding:0 9px;border-radius:10px;
+    border:1px solid var(--line);background:var(--surface-2);color:var(--muted);cursor:pointer;
+    min-width:44px;min-height:44px;
+  }
+  .dayrow button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .btn{
+    font:inherit;font-size:var(--t-subhead);font-weight:700;border-radius:11px;padding:12px 16px;
+    min-height:44px;cursor:pointer;
+    border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);
+  }
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  .btn.danger{background:transparent;color:var(--flag);border-color:var(--flag)}
+  .btns{display:flex;flex-wrap:wrap;gap:8px}
+  .sec{padding:14px;margin-bottom:14px}
+  .note{font-size:var(--t-caption);color:var(--faint);margin:0}
+  .err{font-size:var(--t-caption);color:var(--flag);font-weight:600;margin:4px 0 0}
+  .confirm{
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;padding:11px 12px;
+    border:1px solid var(--flag);border-radius:11px;
+  }
+  .confirm p{margin:0;flex:1 1 11em;font-size:var(--t-footnote)}
+
+  .stars{display:flex;gap:4px}
+  .stars button{
+    font:inherit;font-size:var(--t-title3);line-height:1;background:transparent;border:0;cursor:pointer;
+    color:var(--line);width:44px;height:44px;border-radius:12px;
+  }
+  .stars button[aria-pressed="true"]{color:var(--accent)}
+
+  .logrow{display:grid;grid-template-columns:minmax(3.6em,auto) 1fr auto;gap:10px;align-items:center;
+    padding:10px 13px;border-bottom:1px solid var(--line-soft);font-size:var(--t-subhead)}
+  .logrow:last-child{border-bottom:0}
+  .logrow .dt{font-family:var(--mono);font-size:var(--t-caption);color:var(--muted);align-self:start;padding-top:.2em}
+  .logrow .gr{font-weight:700}
+  .logrow .nt{font-size:var(--t-caption);color:var(--muted);display:block;font-weight:400}
+  .x{
+    background:transparent;border:0;color:var(--faint);font-size:var(--t-body);cursor:pointer;
+    width:32px;height:32px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;
+  }
+
+  /* The tab bar is the only glass in the app: a translucent fill over a real
+     blur, never a near-solid colour standing in for the material. */
+  nav{
+    position:fixed;left:0;right:0;bottom:0;z-index:20;
+    background:var(--glass-fill);
+    backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);
+    border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    padding-left:max(0px,env(safe-area-inset-left,0px));
+    padding-right:max(0px,env(safe-area-inset-right,0px));
+  }
+  /* Scroll edge effect: content fades out where it meets the bar. */
+  nav::before{
+    content:"";position:absolute;left:0;right:0;bottom:100%;height:22px;pointer-events:none;
+    background:linear-gradient(to top,rgb(var(--fade-rgb)/.92),rgb(var(--fade-rgb)/0));
+  }
+  @media (prefers-reduced-transparency:reduce){
+    nav{background:var(--glass-opaque);backdrop-filter:none;-webkit-backdrop-filter:none}
+  }
+  @media (prefers-contrast:more){
+    nav{background:var(--glass-opaque);backdrop-filter:none;-webkit-backdrop-filter:none;
+      border-top-color:var(--ink)}
+  }
+  nav ul{list-style:none;margin:0 auto;padding:0;display:grid;grid-template-columns:repeat(4,1fr);max-width:620px}
+  nav button{
+    width:100%;background:transparent;border:0;cursor:pointer;padding:7px 2px 9px;min-height:49px;
+    display:grid;gap:2px;justify-items:center;color:var(--faint);font:inherit;
+    font-size:var(--t-tab);font-weight:600;letter-spacing:.02em;
+  }
+  nav button svg{
+    width:clamp(22px,1.45rem,30px);height:clamp(22px,1.45rem,30px);display:block;fill:currentColor;
+  }
+  nav button[aria-pressed="true"]{color:var(--accent)}
+
+  .install{padding:11px 13px;margin-bottom:14px;font-size:var(--t-footnote);background:var(--accent-soft);
+    border:1px solid var(--line);border-radius:12px;display:flex;gap:8px;align-items:flex-start}
+  .install button{
+    margin-left:auto;background:transparent;border:0;color:var(--muted);font-size:var(--t-body);
+    cursor:pointer;width:32px;height:32px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="eyebrow" id="today-label">Today</div>
+    <h1 id="view-title">Today</h1>
+  </header>
+
+  <div class="install hide" id="install">
+    <span>Add this to your home screen: tap <b>Share</b>, then <b>Add to Home Screen</b>. It then works with no signal.</span>
+    <button type="button" id="install-x" aria-label="Dismiss">&times;</button>
+  </div>
+
+  <!-- TODAY -->
+  <section id="v-today">
+    <div class="card summary">
+      <div class="row">
+        <span class="big" id="t-count">0 of 0 done</span>
+        <span class="sm" id="t-left">—</span>
+      </div>
+      <div class="bar"><i id="t-bar" style="width:0%"></i></div>
+      <div class="row">
+        <span class="sm" id="t-next">—</span>
+        <span class="streak-line hide" id="streak"></span>
+      </div>
+    </div>
+    <div class="card" id="t-list"></div>
+  </section>
+
+  <!-- WEEK -->
+  <section id="v-week" class="hide">
+    <div class="daysel" id="w-days"></div>
+    <div class="card summary">
+      <div class="row"><span class="big" id="w-title">—</span><span class="sm" id="w-hours">—</span></div>
+    </div>
+    <div class="card" id="w-list"></div>
+  </section>
+
+  <!-- CLIMB -->
+  <section id="v-climb" class="hide">
+    <div class="card summary">
+      <div class="row"><span class="big" id="c-month">0 sessions this month</span><span class="sm" id="c-week">—</span></div>
+      <div class="row"><span class="sm" id="c-last">—</span></div>
+    </div>
+    <div class="card sec">
+      <h2>Log a session</h2>
+      <form id="c-form">
+        <div class="two">
+          <div><label for="c-date">Date</label><input type="date" id="c-date"></div>
+          <div><label for="c-grade">Best send</label><input type="text" id="c-grade" placeholder="V3 / 6a" maxlength="24"></div>
+        </div>
+        <div>
+          <label id="c-feel-label">How it felt</label>
+          <div class="stars" id="c-feel" role="group" aria-labelledby="c-feel-label"></div>
+        </div>
+        <div><label for="c-notes">Notes</label><textarea id="c-notes" maxlength="300" placeholder="Overhang, heel hooks. Left hand still cutting loose."></textarea></div>
+        <div class="btns"><button type="submit" class="btn">Save session</button></div>
+      </form>
+    </div>
+    <div class="card" id="c-list"></div>
+  </section>
+
+  <!-- EDIT -->
+  <section id="v-edit" class="hide">
+    <div class="card sec">
+      <h2 id="e-title">Add a block</h2>
+      <form id="e-form">
+        <div><label for="e-activity">Activity</label><input type="text" id="e-activity" required maxlength="70"></div>
+        <div><label for="e-type">Type</label><select id="e-type"></select></div>
+        <div class="two">
+          <div><label for="e-start">Start</label><input type="time" id="e-start" value="09:00" step="300" required></div>
+          <div><label for="e-mins">Minutes</label><input type="number" id="e-mins" value="60" min="5" max="720" step="5" required></div>
+        </div>
+        <div>
+          <label id="e-days-label">Days</label>
+          <div class="dayrow" id="e-days" role="group" aria-labelledby="e-days-label"></div>
+          <p class="err hide" id="e-err" role="alert"></p>
+        </div>
+        <div><label for="e-details">Details</label><textarea id="e-details" maxlength="240"></textarea></div>
+        <div class="btns">
+          <button type="submit" class="btn" id="e-save">Add block</button>
+          <button type="button" class="btn ghost hide" id="e-cancel">Cancel</button>
+          <button type="button" class="btn danger hide" id="e-delete">Delete</button>
+        </div>
+        <div class="confirm hide" id="e-confirm">
+          <p>Delete this block? It won't come back.</p>
+          <button type="button" class="btn ghost" id="e-confirm-no">Keep it</button>
+          <button type="button" class="btn danger" id="e-confirm-yes">Delete</button>
+        </div>
+      </form>
+    </div>
+    <div class="card" id="e-list"></div>
+    <div class="card sec" style="margin-top:14px">
+      <h2>Your data</h2>
+      <p class="note" style="margin-bottom:10px">Everything lives on this phone only. Nothing is uploaded, and nobody else can see it. Clearing Safari's website data would erase it, so copy a backup now and then.</p>
+      <div class="btns">
+        <button type="button" class="btn ghost" id="x-show">Show backup</button>
+        <button type="button" class="btn ghost" id="x-import">Restore from backup</button>
+        <button type="button" class="btn danger" id="x-reset">Reset schedule</button>
+      </div>
+      <div class="confirm hide" id="x-confirm">
+        <p>Put the schedule back to the original plan? Your ticks and climbing log stay.</p>
+        <button type="button" class="btn ghost" id="x-confirm-no">Cancel</button>
+        <button type="button" class="btn danger" id="x-confirm-yes">Reset</button>
+      </div>
+      <div id="x-box" class="hide" style="margin-top:10px">
+        <textarea id="x-text" style="min-height:120px;font-family:var(--mono);font-size:12px"></textarea>
+        <div class="btns" style="margin-top:8px">
+          <button type="button" class="btn ghost" id="x-copy">Copy</button>
+          <button type="button" class="btn ghost hide" id="x-apply">Load this</button>
+        </div>
+        <p class="note" id="x-note" style="margin-top:8px"></p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav>
+  <ul>
+    <li><button type="button" data-view="today" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a3 3 0 0 1 3 3v1H2V7a3 3 0 0 1 3-3Zm2-3a1 1 0 0 1 1 1v2H6V2a1 1 0 0 1 1-1Zm10 0a1 1 0 0 1 1 1v2h-2V2a1 1 0 0 1 1-1Z"/><path d="M2 10h20v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-9Z"/></svg>Today</button></li>
+    <li><button type="button" data-view="week" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="4.5" height="16" rx="1.6"/><rect x="9.75" y="4" width="4.5" height="16" rx="1.6"/><rect x="16.5" y="4" width="4.5" height="16" rx="1.6"/></svg>Week</button></li>
+    <li><button type="button" data-view="climb" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.9 4.6a1.1 1.1 0 0 0-1.8 0l-8.2 13A1.1 1.1 0 0 0 3.8 19h16.4a1.1 1.1 0 0 0 .9-1.7Z"/></svg>Climb</button></li>
+    <li><button type="button" data-view="edit" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.6" width="18" height="2.8" rx="1.4"/><circle cx="9" cy="7" r="3.1"/><rect x="3" y="15.6" width="18" height="2.8" rx="1.4"/><circle cx="15" cy="17" r="3.1"/></svg>Schedule</button></li>
+  </ul>
+</nav>
+
+<script>
+(function(){
+"use strict";
+
+var DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+var LONG=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+var TYPES=[
+  {id:"study",name:"Focus",hue:"var(--h-study)"},
+  {id:"move",name:"Train",hue:"var(--h-move)"},
+  {id:"rest",name:"Rest",hue:"var(--h-rest)"},
+  {id:"social",name:"Family",hue:"var(--h-social)"},
+  {id:"chores",name:"Errands",hue:"var(--h-chores)"},
+  {id:"travel",name:"Travel",hue:"var(--h-travel)"},
+  {id:"work",name:"Work",hue:"var(--h-work)"}
+];
+
+var DEFAULTS=[
+ {id:"s01",activity:"Wake, bed, water",type:"rest",start:"08:00",mins:25,days:[0,1,2,3,4,5,6],details:"Phone stays out of reach for the first half hour."},
+ {id:"s02",activity:"Breakfast, plan the day",type:"rest",start:"08:30",mins:30,days:[0,1,2,3,4,5,6],details:"Write the three things that have to happen today."},
+ {id:"s03",activity:"Deep work: build block",type:"study",start:"09:00",mins:150,days:[0,1,2,3,4,5],details:"The project or skill. One thing only, no tabs, phone in another room."},
+ {id:"s04",activity:"Light block: course or reading",type:"study",start:"11:45",mins:60,days:[0,1,2,3,4,5],details:"Lectures, docs, reading. Lower effort than the morning block."},
+ {id:"s05",activity:"Zohor and lunch",type:"rest",start:"13:15",mins:45,days:[0,1,2,3,4,5,6],details:"Adjust to your local waktu solat."},
+ {id:"s06",activity:"Rest before climbing",type:"rest",start:"14:00",mins:80,days:[1,2,4,5],details:"Lie down, read, nap. Do not start anything you will not want to stop."},
+ {id:"s07",activity:"Travel to the gym",type:"travel",start:"15:30",mins:25,days:[1,2,4,5],details:"Bag packed the night before: shoes, chalk, tape, water."},
+ {id:"s08",activity:"Climbing session",type:"move",start:"16:00",mins:165,days:[1,2,4,5],details:"20 min warm-up, then the week's focus. Asar at the surau around 5, then back on the wall."},
+ {id:"s09",activity:"Maghrib, home",type:"rest",start:"19:00",mins:40,days:[1,2,4,5],details:""},
+ {id:"s10",activity:"Dinner with family",type:"social",start:"19:40",mins:60,days:[1,2,4,5],details:"Eat properly after climbing: protein and carbs, not just a snack."},
+ {id:"s11",activity:"Errands and family runs",type:"chores",start:"14:00",mins:120,days:[0],details:"Gym is closed Monday. Put the week's errands here so they stop leaking into climbing days."},
+ {id:"s12",activity:"Antagonist and core",type:"move",start:"16:30",mins:45,days:[0],details:"Push-ups, shoulder press, reverse wrist curls, planks. This is what keeps your elbows healthy."},
+ {id:"s13",activity:"Easy run, zone 2",type:"move",start:"16:00",mins:50,days:[3],details:"Conversational pace. If you cannot talk through it, slow down."},
+ {id:"s14",activity:"Antagonist and core",type:"move",start:"17:00",mins:35,days:[3],details:"Same as Monday. Rest day for fingers, not for the rest of you."},
+ {id:"s15",activity:"Maghrib and dinner",type:"social",start:"19:15",mins:75,days:[0,3,6],details:""},
+ {id:"s16",activity:"Week review and plan",type:"study",start:"09:30",mins:60,days:[6],details:"What got done, what slipped, what the climbing focus is for the coming week."},
+ {id:"s17",activity:"Meal prep",type:"chores",start:"11:00",mins:90,days:[6],details:"Cook for the first half of the week so climbing days need no decisions."},
+ {id:"s18",activity:"Family day",type:"social",start:"15:00",mins:180,days:[6],details:"Fully off. No project, no training."},
+ {id:"s19",activity:"Mobility and stretch",type:"move",start:"21:30",mins:25,days:[0,1,2,3,4,5,6],details:"Shoulders, hips, wrists, forearms. Non-negotiable on climbing days."},
+ {id:"s20",activity:"Screens down, read",type:"rest",start:"22:30",mins:30,days:[0,1,2,3,4,5,6],details:"Phone charges outside the room. This is the block that makes 8am possible."}
+];
+
+// ---------- storage ----------
+var K={blocks:"sb.blocks",done:"sb.done",climbs:"sb.climbs"};
+function load(key,fallback){
+  try{var v=localStorage.getItem(key);return v?JSON.parse(v):fallback;}
+  catch(e){return fallback;}
+}
+function save(key,value){
+  try{localStorage.setItem(key,JSON.stringify(value));return true;}
+  catch(e){return false;}
+}
+
+var blocks=load(K.blocks,null);
+if(!Array.isArray(blocks)||!blocks.length){blocks=DEFAULTS.slice();save(K.blocks,blocks);}
+var done=load(K.done,{})||{};
+var climbs=load(K.climbs,[])||[];
+
+// ---------- helpers ----------
+function el(id){return document.getElementById(id);}
+function typeOf(id){for(var i=0;i<TYPES.length;i++){if(TYPES[i].id===id)return TYPES[i];}return TYPES[0];}
+function toMin(s){var p=String(s||"09:00").split(":");var h=+p[0],m=+p[1];
+  if(isNaN(h))h=9;if(isNaN(m))m=0;return Math.max(0,Math.min(1439,h*60+m));}
+function fmt(m){var h=Math.floor(m/60)%24,mm=m%60,ap=h<12?"am":"pm",h12=h%12||12;
+  return h12+(mm?":"+(mm<10?"0"+mm:mm):"")+ap;}
+function dayIdx(d){return (d.getDay()+6)%7;}
+function key(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function forDay(i){
+  return blocks.filter(function(b){return b.days.indexOf(i)!==-1;})
+    .sort(function(a,b){return toMin(a.start)-toMin(b.start);});
+}
+function doneFor(k){return done[k]||[];}
+function isDone(k,id){return doneFor(k).indexOf(id)!==-1;}
+function toggle(k,id){
+  var list=doneFor(k).slice(),at=list.indexOf(id);
+  if(at===-1)list.push(id);else list.splice(at,1);
+  if(list.length)done[k]=list;else delete done[k];
+  save(K.done,done);
+}
+function newId(){return "b"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+// The root font-size follows Dynamic Type; past roughly the second
+// accessibility step the rows need to stack rather than share a line.
+function syncTypeScale(){
+  var px=16;
+  try{px=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;}catch(e){}
+  document.body.classList.toggle("big-type",px>=22);
+}
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+
+function streak(){
+  var n=0,d=new Date();d.setHours(0,0,0,0);
+  for(var guard=0;guard<400;guard++){
+    var k=key(d),list=forDay(dayIdx(d));
+    if(!list.length){d.setDate(d.getDate()-1);continue;}
+    var hits=doneFor(k).length,need=Math.ceil(list.length*0.6);
+    if(hits>=need){n++;}
+    else if(guard===0){/* today still open — do not break the streak yet */}
+    else break;
+    d.setDate(d.getDate()-1);
+  }
+  return n;
+}
+
+// ---------- today ----------
+function renderToday(){
+  var now=new Date(),k=key(now),i=dayIdx(now);
+  var mins=now.getHours()*60+now.getMinutes();
+  var list=forDay(i);
+  el("today-label").textContent=LONG[i]+", "+now.getDate()+" "+
+    ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][now.getMonth()];
+  var st=streak(),stEl=el("streak");
+  stEl.textContent=st>0?(st+"-day streak"):"";
+  stEl.classList.toggle("hide",st<1);
+
+  var hits=0;
+  list.forEach(function(b){if(isDone(k,b.id))hits++;});
+  el("t-count").textContent=hits+" of "+list.length+" done";
+  el("t-bar").style.width=(list.length?Math.round(hits/list.length*100):0)+"%";
+
+  var remaining=list.filter(function(b){return !isDone(k,b.id);});
+  el("t-left").textContent=remaining.length?remaining.length+" left":(list.length?"all clear":"");
+
+  var current=null,next=null;
+  list.forEach(function(b){
+    var s=toMin(b.start);
+    if(mins>=s&&mins<s+b.mins)current=b;
+    if(!next&&s>mins)next=b;
+  });
+  el("t-next").textContent=current?("Now: "+current.activity):
+    (next?("Next: "+next.activity+" at "+fmt(toMin(next.start))):"Nothing else scheduled today.");
+
+  var box=el("t-list");box.innerHTML="";
+  if(!list.length){box.innerHTML='<p class="empty">Nothing scheduled for '+LONG[i]+'.</p>';return;}
+  var placed=false;
+  list.forEach(function(b){
+    if(!placed&&toMin(b.start)>mins){box.appendChild(nowLine(mins));placed=true;}
+    box.appendChild(itemNode(b,k,b===current,mins));
+  });
+  if(!placed&&mins>=toMin(list[0].start))box.appendChild(nowLine(mins));
+}
+
+function nowLine(mins){
+  var n=document.createElement("div");
+  n.className="nowline";
+  n.setAttribute("aria-label","Now, "+fmt(mins));
+  n.innerHTML='<b></b><span></span><i></i>';
+  n.children[1].textContent=fmt(mins);
+  return n;
+}
+
+function itemNode(b,k,isNow,mins){
+  var t=typeOf(b.type),s=toMin(b.start),isDoneNow=isDone(k,b.id);
+  var row=document.createElement("button");
+  row.type="button";
+  row.className="item"+(isDoneNow?" done":"")+(isNow?" now":"")+
+    (mins!=null&&s+b.mins<=mins?" past":"");
+  row.setAttribute("aria-pressed",isDoneNow?"true":"false");
+  row.style.setProperty("--h",t.hue);
+  row.innerHTML='<span class="tick" aria-hidden="true">&#10003;</span>'+
+    '<span class="when">'+fmt(s)+'</span>'+
+    '<span><span class="ttl">'+esc(b.activity)+(isNow?'<span class="nowpill">now</span>':'')+'</span>'+
+    '<span class="meta"><span class="chip">'+esc(t.name)+'</span>'+
+    esc(b.details||(Math.round(b.mins/60*10)/10)+"h")+'</span></span>';
+  row.addEventListener("click",function(){
+    toggle(k,b.id);
+    renderToday();
+  });
+  return row;
+}
+
+// ---------- week ----------
+var weekDay=dayIdx(new Date());
+function renderWeekChips(){
+  var box=el("w-days");box.innerHTML="";
+  DAYS.forEach(function(name,i){
+    var b=document.createElement("button");
+    b.type="button";b.textContent=name;
+    b.setAttribute("aria-pressed",i===weekDay?"true":"false");
+    b.addEventListener("click",function(){weekDay=i;renderWeek();});
+    box.appendChild(b);
+  });
+}
+function renderWeek(){
+  renderWeekChips();
+  var list=forDay(weekDay);
+  el("w-title").textContent=LONG[weekDay];
+  var total=0;list.forEach(function(b){total+=b.mins;});
+  el("w-hours").textContent=list.length?(list.length+" blocks · "+(Math.round(total/60*10)/10)+"h"):"open";
+  var box=el("w-list");box.innerHTML="";
+  if(!list.length){box.innerHTML='<p class="empty">Nothing on '+LONG[weekDay]+'.</p>';return;}
+  list.forEach(function(b){
+    var t=typeOf(b.type),s=toMin(b.start);
+    var row=document.createElement("div");
+    row.className="item";row.style.setProperty("--h",t.hue);
+    row.style.gridTemplateColumns="minmax(3.6em,auto) 1fr";
+    row.innerHTML='<span class="when">'+fmt(s)+'</span>'+
+      '<span><span class="ttl">'+esc(b.activity)+'</span>'+
+      '<span class="meta"><span class="chip">'+esc(t.name)+'</span>'+
+      fmt(s)+'–'+fmt(s+b.mins)+(b.details?' · '+esc(b.details):'')+'</span></span>';
+    box.appendChild(row);
+  });
+}
+
+// ---------- climb log ----------
+var feel=0;
+function renderStars(){
+  var box=el("c-feel");box.innerHTML="";
+  for(var i=1;i<=5;i++){
+    (function(n){
+      var b=document.createElement("button");
+      b.type="button";b.innerHTML="&#9679;";
+      b.setAttribute("aria-label",n+" out of 5");
+      b.setAttribute("aria-pressed",n<=feel?"true":"false");
+      b.addEventListener("click",function(){feel=(feel===n?0:n);renderStars();});
+      box.appendChild(b);
+    })(i);
+  }
+}
+function renderClimb(){
+  renderStars();
+  var now=new Date(),mk=key(now).slice(0,7);
+  var month=climbs.filter(function(c){return String(c.date||"").slice(0,7)===mk;}).length;
+  el("c-month").textContent=month+" session"+(month===1?"":"s")+" this month";
+
+  var monday=new Date(now);monday.setHours(0,0,0,0);monday.setDate(monday.getDate()-dayIdx(now));
+  var wk=climbs.filter(function(c){
+    var d=c.date?new Date(c.date+"T00:00:00"):null;
+    return d&&d>=monday&&d<=now;
+  }).length;
+  el("c-week").textContent=wk+" of 4 this week";
+
+  var last=climbs.slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date));})[0];
+  el("c-last").textContent=last?("Last: "+last.date+(last.grade?" · "+last.grade:"")):"No sessions logged yet.";
+
+  var box=el("c-list");box.innerHTML="";
+  if(!climbs.length){box.innerHTML='<p class="empty">Log a session after you climb. Grades and notes build the picture of what is working.</p>';return;}
+  climbs.slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date));}).forEach(function(c){
+    var row=document.createElement("div");row.className="logrow";
+    var dots="";for(var i=0;i<(c.feel||0);i++)dots+="●";
+    row.innerHTML='<span class="dt">'+esc(String(c.date||"").slice(5))+'</span>'+
+      '<span><span class="gr">'+esc(c.grade||"session")+'</span> <span style="color:var(--accent)">'+dots+'</span>'+
+      (c.notes?'<span class="nt">'+esc(c.notes)+'</span>':'')+'</span>'+
+      '<button type="button" class="x" aria-label="Delete">&times;</button>';
+    row.querySelector(".x").addEventListener("click",function(){
+      climbs=climbs.filter(function(x){return x.id!==c.id;});
+      save(K.climbs,climbs);renderClimb();
+    });
+    box.appendChild(row);
+  });
+}
+el("c-form").addEventListener("submit",function(ev){
+  ev.preventDefault();
+  climbs.push({
+    id:newId(),
+    date:el("c-date").value||key(new Date()),
+    grade:el("c-grade").value.trim(),
+    feel:feel,
+    notes:el("c-notes").value.trim()
+  });
+  save(K.climbs,climbs);
+  el("c-grade").value="";el("c-notes").value="";feel=0;
+  el("c-date").value=key(new Date());
+  renderClimb();
+});
+
+// ---------- edit ----------
+var picked=[],editing=null;
+function buildEditForm(){
+  var sel=el("e-type");
+  TYPES.forEach(function(t){
+    var o=document.createElement("option");o.value=t.id;o.textContent=t.name;sel.appendChild(o);
+  });
+  var box=el("e-days");
+  DAYS.forEach(function(name,i){
+    var b=document.createElement("button");
+    b.type="button";b.textContent=name;b.setAttribute("aria-pressed","false");
+    b.addEventListener("click",function(){
+      var at=picked.indexOf(i);
+      if(at===-1)picked.push(i);else picked.splice(at,1);
+      b.setAttribute("aria-pressed",at===-1?"true":"false");
+      if(picked.length)showErr("");
+    });
+    box.appendChild(b);
+  });
+}
+function setDays(d){
+  picked=d.slice();
+  var b=el("e-days").children;
+  for(var i=0;i<b.length;i++)b[i].setAttribute("aria-pressed",d.indexOf(i)!==-1?"true":"false");
+}
+function resetEdit(){
+  editing=null;
+  el("e-title").textContent="Add a block";
+  el("e-save").textContent="Add block";
+  el("e-activity").value="";el("e-type").value="study";
+  el("e-start").value="09:00";el("e-mins").value="60";el("e-details").value="";
+  setDays([]);
+  el("e-cancel").classList.add("hide");
+  el("e-delete").classList.add("hide");
+  el("e-confirm").classList.add("hide");
+  showErr("");
+}
+function showErr(msg){
+  var n=el("e-err");
+  n.textContent=msg;
+  n.classList.toggle("hide",!msg);
+}
+function startEdit(b){
+  editing=b.id;
+  el("e-title").textContent="Edit block";
+  el("e-save").textContent="Save changes";
+  el("e-activity").value=b.activity;el("e-type").value=b.type;
+  el("e-start").value=b.start;el("e-mins").value=String(b.mins);
+  el("e-details").value=b.details||"";
+  setDays(b.days);
+  el("e-cancel").classList.remove("hide");
+  el("e-delete").classList.remove("hide");
+  el("e-confirm").classList.add("hide");
+  showErr("");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function renderEditList(){
+  var box=el("e-list");box.innerHTML="";
+  var sorted=blocks.slice().sort(function(a,b){return toMin(a.start)-toMin(b.start);});
+  if(!sorted.length){box.innerHTML='<p class="empty">No blocks yet.</p>';return;}
+  sorted.forEach(function(b){
+    var t=typeOf(b.type);
+    var row=document.createElement("button");
+    row.type="button";row.className="item";row.style.setProperty("--h",t.hue);
+    row.style.gridTemplateColumns="minmax(3.6em,auto) 1fr";
+    row.innerHTML='<span class="when">'+fmt(toMin(b.start))+'</span>'+
+      '<span><span class="ttl">'+esc(b.activity)+'</span>'+
+      '<span class="meta"><span class="chip">'+esc(t.name)+'</span>'+
+      b.days.map(function(d){return DAYS[d];}).join(" ")+'</span></span>';
+    row.addEventListener("click",function(){startEdit(b);});
+    box.appendChild(row);
+  });
+}
+el("e-form").addEventListener("submit",function(ev){
+  ev.preventDefault();
+  if(!picked.length){showErr("Pick at least one day for this block.");return;}
+  var data={
+    id:editing||newId(),
+    activity:el("e-activity").value.trim()||"Untitled",
+    type:el("e-type").value,
+    start:el("e-start").value||"09:00",
+    mins:Math.max(5,Math.min(720,parseInt(el("e-mins").value,10)||60)),
+    details:el("e-details").value.trim(),
+    days:picked.slice().sort(function(a,b){return a-b;})
+  };
+  if(editing)blocks=blocks.map(function(b){return b.id===editing?data:b;});
+  else blocks.push(data);
+  save(K.blocks,blocks);
+  resetEdit();renderEditList();renderToday();
+});
+el("e-cancel").addEventListener("click",resetEdit);
+el("e-delete").addEventListener("click",function(){
+  if(!editing)return;
+  el("e-confirm").classList.remove("hide");
+  el("e-confirm-no").focus();
+});
+el("e-confirm-no").addEventListener("click",function(){
+  el("e-confirm").classList.add("hide");
+});
+el("e-confirm-yes").addEventListener("click",function(){
+  if(!editing)return;
+  blocks=blocks.filter(function(b){return b.id!==editing;});
+  save(K.blocks,blocks);resetEdit();renderEditList();renderToday();
+});
+
+// ---------- backup ----------
+function bundle(){return JSON.stringify({v:1,blocks:blocks,done:done,climbs:climbs});}
+el("x-show").addEventListener("click",function(){
+  el("x-box").classList.remove("hide");
+  el("x-apply").classList.add("hide");
+  el("x-text").value=bundle();
+  el("x-note").textContent="Copy this somewhere safe — Notes, an email to yourself.";
+});
+el("x-import").addEventListener("click",function(){
+  el("x-box").classList.remove("hide");
+  el("x-apply").classList.remove("hide");
+  el("x-text").value="";
+  el("x-note").textContent="Paste a backup here, then tap Load this.";
+});
+el("x-copy").addEventListener("click",function(){
+  var t=el("x-text");t.select();t.setSelectionRange(0,99999);
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t.value).then(function(){el("x-note").textContent="Copied.";},
+      function(){el("x-note").textContent="Selected — use Copy from the menu.";});
+  }else{el("x-note").textContent="Selected — use Copy from the menu.";}
+});
+el("x-apply").addEventListener("click",function(){
+  try{
+    var o=JSON.parse(el("x-text").value);
+    if(!o||!Array.isArray(o.blocks))throw new Error("shape");
+    blocks=o.blocks;done=o.done||{};climbs=o.climbs||[];
+    save(K.blocks,blocks);save(K.done,done);save(K.climbs,climbs);
+    el("x-note").textContent="Restored.";
+    renderToday();renderWeek();renderClimb();renderEditList();
+  }catch(e){el("x-note").textContent="That does not look like a backup from this app.";}
+});
+el("x-reset").addEventListener("click",function(){
+  el("x-confirm").classList.remove("hide");
+  el("x-confirm-no").focus();
+});
+el("x-confirm-no").addEventListener("click",function(){
+  el("x-confirm").classList.add("hide");
+});
+el("x-confirm-yes").addEventListener("click",function(){
+  blocks=DEFAULTS.slice();save(K.blocks,blocks);
+  el("x-confirm").classList.add("hide");
+  resetEdit();renderEditList();renderToday();renderWeek();
+});
+
+// ---------- nav ----------
+var VIEWS={today:"Today",week:"Week",climb:"Climbing",edit:"Schedule"};
+function show(name){
+  Object.keys(VIEWS).forEach(function(v){
+    el("v-"+v).classList.toggle("hide",v!==name);
+  });
+  var btns=document.querySelectorAll("nav button");
+  for(var i=0;i<btns.length;i++){
+    btns[i].setAttribute("aria-pressed",btns[i].getAttribute("data-view")===name?"true":"false");
+  }
+  el("view-title").textContent=VIEWS[name];
+  el("today-label").classList.toggle("hide",name!=="today");
+  if(name==="today")renderToday();
+  if(name==="week")renderWeek();
+  if(name==="climb")renderClimb();
+  if(name==="edit")renderEditList();
+  window.scrollTo(0,0);
+}
+var navBtns=document.querySelectorAll("nav button");
+for(var i=0;i<navBtns.length;i++){
+  navBtns[i].addEventListener("click",function(){show(this.getAttribute("data-view"));});
+}
+
+// ---------- boot ----------
+buildEditForm();resetEdit();
+el("c-date").value=key(new Date());
+syncTypeScale();
+renderToday();renderWeekChips();
+window.addEventListener("resize",syncTypeScale);
+window.addEventListener("pageshow",syncTypeScale);
+
+var standalone=window.navigator.standalone===true||
+  (window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches);
+if(!standalone&&!load("sb.installDismissed",false)){el("install").classList.remove("hide");}
+el("install-x").addEventListener("click",function(){
+  el("install").classList.add("hide");save("sb.installDismissed",true);
+});
+
+document.addEventListener("visibilitychange",function(){
+  if(document.hidden)return;
+  syncTypeScale();
+  if(!el("v-today").classList.contains("hide"))renderToday();
+});
+setInterval(function(){
+  if(!document.hidden&&!el("v-today").classList.contains("hide"))renderToday();
+},60000);
+
+if("serviceWorker" in navigator&&location.protocol!=="file:"){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
+})();
+</script>
+</body>
+</html>
