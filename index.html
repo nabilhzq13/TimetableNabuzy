@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Break</title>
 <meta name="description" content="Offline daily schedule and climbing log. All data stays on this device.">
-<meta name="theme-color" content="#1d3a2b" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#10141a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6f4f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15161a" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,11 +16,14 @@
 <link rel="icon" href="icon-192.png">
 <style>
   :root{
-    --bg:#eef0f2; --surface:#fff; --surface-2:#f5f7f8; --ink:#15191d; --muted:#5d6771;
-    --faint:#646d76; --line:#d7dde1; --line-soft:#e6eaed;
-    --accent:#2f6b4f; --accent-ink:#fff; --accent-soft:#dceade; --flag:#c2611f;
-    --tint-s:48%; --tint-l:93%; --edge-s:42%; --edge-l:74%; --ink-s:44%; --ink-l:28%;
-    --h-study:232; --h-work:188; --h-move:136; --h-rest:276; --h-social:36; --h-chores:212; --h-travel:12;
+    --bg:#f6f4f0; --surface:#fff; --surface-2:#faf9f6; --ink:#1b1f24; --muted:#5f6872;
+    --faint:#656d77; --line:#e9e5df; --line-soft:#f2efea;
+    --accent:#2e7d57; --accent-ink:#fff; --accent-soft:#e0f1e7; --flag:#c2522f;
+    --radius:18px; --radius-sm:12px;
+    /* Pastel category recipe: soft fill, deeper pill, near-ink text on both. */
+    --tint-s:76%; --tint-l:89%; --edge-s:64%; --edge-l:80%;
+    --pill-s:64%; --pill-l:80%; --ink-s:38%; --ink-l:26%;
+    --h-study:266; --h-work:172; --h-move:138; --h-rest:198; --h-social:44; --h-chores:352; --h-travel:24;
     --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
     /* Type scale: Apple's Large (default) Dynamic Type table, as rem against a
@@ -38,18 +41,19 @@
        still may never fall under 11 pt. */
     --t-tab:clamp(11px,.65rem,15px);
     --glass-fill:rgba(255,255,255,.72);
-    --glass-opaque:#f7f9fa;
-    --fade-rgb:238 240 242;
+    --glass-opaque:#fbfaf8;
+    --fade-rgb:246 244 240;
     color-scheme:light;
   }
   @media (prefers-color-scheme:dark){:root{
-    --bg:#0e1116; --surface:#171d24; --surface-2:#1d242c; --ink:#e8ecef; --muted:#9aa5b1;
-    --faint:#8a95a1; --line:#2a323c; --line-soft:#212832;
-    --accent:#6cbf93; --accent-ink:#0d1612; --accent-soft:#1c3128; --flag:#e49357;
-    --tint-s:30%; --tint-l:21%; --edge-s:34%; --edge-l:40%; --ink-s:52%; --ink-l:80%;
-    --glass-fill:rgba(23,29,36,.72);
-    --glass-opaque:#141a21;
-    --fade-rgb:14 17 22;
+    --bg:#15161a; --surface:#1d1f25; --surface-2:#24262d; --ink:#ece9e5; --muted:#a0a6ae;
+    --faint:#8f959d; --line:#2f323a; --line-soft:#26282f;
+    --accent:#6cc794; --accent-ink:#0e1a13; --accent-soft:#1e3328; --flag:#e08457;
+    --tint-s:34%; --tint-l:23%; --edge-s:40%; --edge-l:42%;
+    --pill-s:40%; --pill-l:30%; --ink-s:55%; --ink-l:88%;
+    --glass-fill:rgba(29,31,37,.72);
+    --glass-opaque:#1a1c21;
+    --fade-rgb:21 22 26;
     color-scheme:dark;
   }}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -77,7 +81,7 @@
   h2{font-size:var(--t-subhead);font-weight:700;margin:0 0 8px}
   .eyebrow{font-size:var(--t-caption2);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600}
   .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
   .hide{display:none!important}
 
   header{margin-bottom:14px}
@@ -121,9 +125,9 @@
   .ttl{display:block;font-size:var(--t-subhead);font-weight:600;line-height:1.25}
   .meta{display:block;font-size:var(--t-caption);color:var(--muted);margin-top:2px}
   .chip{
-    display:inline-block;font-size:var(--t-caption2);font-weight:700;letter-spacing:.05em;text-transform:uppercase;
-    padding:1px 6px;border-radius:5px;margin-right:6px;
-    background:hsl(var(--h) var(--tint-s) var(--tint-l));color:hsl(var(--h) var(--ink-s) var(--ink-l));
+    display:inline-block;font-size:var(--t-caption2);font-weight:700;
+    padding:1px 8px;border-radius:99px;margin-right:6px;
+    background:hsl(var(--h) var(--pill-s) var(--pill-l));color:hsl(var(--h) var(--ink-s) var(--ink-l));
   }
   .nowpill{background:var(--accent);color:var(--accent-ink);font-size:var(--t-caption2);padding:1px 6px;
     border-radius:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-left:6px;
