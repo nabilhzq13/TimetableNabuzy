@@ -890,7 +890,8 @@ function renderNow(st,cn,m){
   det.textContent=show.details||"";det.classList.toggle("hide",!show.details);
   if(cn.cur){
     var left=Math.max(0,Math.ceil(e-m));
-    setArc(el("now-arc"),(m-s)/show.mins);
+    // Empties as the block runs down, like the Clock timer, next to "12m left".
+    setArc(el("now-arc"),1-(m-s)/show.mins);
     el("now-left").textContent=left>=60?Math.floor(left/60)+"h"+(left%60?String(left%60).padStart(2,"0"):""):left+"m";
     ring.setAttribute("aria-label",left+" minutes left");ring.classList.remove("hide");
   }else ring.classList.add("hide");
