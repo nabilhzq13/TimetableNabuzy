@@ -41,11 +41,19 @@ there** — only the app's code does. The schedule you tick off stays on the pho
 
 ## Using it
 
-- **Today** — the day's blocks. Tap one to tick it off. The block you're in is
-  highlighted, and the streak counts days where you finished at least 60% of them.
-- **Week** — any day of the week, with start and end times.
-- **Climb** — log each session: date, best send, how it felt, notes, and up to four
-  photos. **Take a photo** opens the camera; each shot is scaled down to a 1280px
+- **Today** — three rings up top: today's blocks, this week's training minutes,
+  and climbing sessions against your four a week. Below them, the block you're in
+  with a live ring counting down. **Start focus** turns the screen into a big
+  countdown that keeps the phone awake on the desk. Tap a block to tick it, or
+  swipe it right. Tick the last one of the day and see what happens.
+- **The sky** behind everything follows the real time of day — dawn, day, golden
+  hour, dusk, night.
+- **Week** — any day of the week, plus a heatmap of the last eight weeks showing
+  which days you actually kept to the plan.
+- **Climb** — your progression charted from your best sends (V-scale or Font, so
+  6b+ and V4 land on the same scale) with a grade pyramid underneath, and a toast
+  when you beat your hardest send. Log each session: date, best send, how it felt,
+  notes, and up to four photos. **Take a photo** opens the camera; each shot is scaled down to a 1280px
   long edge and stored on the phone, so a season of sessions stays small. Tap a
   thumbnail to see it full screen. Deleting a session deletes its photos too.
 - **Edit** — change the schedule. Tap any block to edit or delete it, or add new
