@@ -234,6 +234,37 @@
   }
   .confirm p{margin:0;flex:1 1 11em;font-size:var(--t-footnote)}
 
+  /* Photos: thumbnails in the form and on each logged session. */
+  .shots{display:flex;flex-wrap:wrap;gap:var(--s2);margin-bottom:var(--s2)}
+  .shots:empty{display:none}
+  .shot{
+    position:relative;width:64px;height:64px;border-radius:12px;overflow:hidden;
+    border:1px solid var(--line);background:var(--surface-2);
+  }
+  .shot .open{display:block;width:100%;height:100%;padding:0;border:0;background:none;cursor:pointer}
+  .shot img{width:100%;height:100%;object-fit:cover;display:block}
+  .shot .drop{
+    position:absolute;top:2px;right:2px;width:24px;height:24px;border:0;border-radius:99px;
+    background:rgba(20,16,12,.62);color:#fff;font-size:15px;line-height:1;cursor:pointer;
+    display:grid;place-items:center;
+  }
+  .logshots{display:flex;flex-wrap:wrap;gap:var(--s1);margin-top:var(--s2)}
+  .logshots .shot{width:52px;height:52px;border-radius:10px}
+
+  /* Full-screen viewer. Dark on purpose — a photo reads best against it. */
+  .viewer{
+    position:fixed;inset:0;z-index:50;background:rgba(18,16,14,.94);
+    display:grid;place-items:center;padding:var(--s4);
+    padding-top:calc(env(safe-area-inset-top,0px) + var(--s4));
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + var(--s4));
+  }
+  .viewer img{max-width:100%;max-height:100%;border-radius:12px;display:block}
+  .viewer .close{
+    position:absolute;top:calc(env(safe-area-inset-top,0px) + var(--s2));
+    right:var(--s3);width:44px;height:44px;border:0;border-radius:99px;
+    background:rgba(255,255,255,.16);color:#fff;font-size:22px;cursor:pointer;
+  }
+
   .stars{display:flex;gap:4px}
   .stars button{
     font:inherit;font-size:var(--t-title3);line-height:1;background:transparent;border:0;cursor:pointer;
@@ -355,6 +386,13 @@
           <div class="stars" id="c-feel" role="group" aria-labelledby="c-feel-label"></div>
         </div>
         <div><label for="c-notes">Notes</label><textarea id="c-notes" maxlength="300" placeholder="Overhang, heel hooks. Left hand still cutting loose."></textarea></div>
+        <div id="c-photo-field" class="hide">
+          <label id="c-photo-label">Photos</label>
+          <div class="shots" id="c-shots"></div>
+          <input type="file" id="c-photo" accept="image/*" capture="environment" multiple hidden>
+          <button type="button" class="btn ghost" id="c-photo-btn">Take a photo</button>
+          <p class="note" id="c-photo-note">Up to 4. They stay on this phone and are not in the backup text.</p>
+        </div>
         <div class="btns"><button type="submit" class="btn">Save session</button></div>
       </form>
     </div>
@@ -690,6 +728,123 @@ function renderWeek(){
   });
 }
 
+// ---------- photos ----------
+// Pictures live in IndexedDB on this phone. localStorage holds a few megabytes
+// of text and would fill after a handful of shots, so each photo is scaled to a
+// 1280px long edge and re-encoded as JPEG before it is stored — plenty to look
+// at, small enough to keep a season of sessions.
+var PHOTO_DB="break-photos",PHOTO_STORE="photos",PHOTO_MAX=4;
+var PHOTO_NOTE="Up to 4. They stay on this phone and are not part of the backup text.";
+var dbPromise=null,urlCache={},pendingShots=[];
+
+function photoDB(){
+  if(dbPromise)return dbPromise;
+  dbPromise=new Promise(function(res,rej){
+    try{
+      if(!window.indexedDB){rej(new Error("no indexeddb"));return;}
+      var r=indexedDB.open(PHOTO_DB,1);
+      r.onupgradeneeded=function(){
+        if(!r.result.objectStoreNames.contains(PHOTO_STORE))r.result.createObjectStore(PHOTO_STORE);
+      };
+      r.onsuccess=function(){res(r.result);};
+      r.onerror=function(){rej(r.error||new Error("open failed"));};
+    }catch(e){rej(e);}
+  });
+  return dbPromise;
+}
+function photoTx(mode,fn){
+  return photoDB().then(function(db){
+    return new Promise(function(res,rej){
+      var tx=db.transaction(PHOTO_STORE,mode),req=fn(tx.objectStore(PHOTO_STORE));
+      tx.oncomplete=function(){res(req?req.result:undefined);};
+      tx.onerror=function(){rej(tx.error);};
+      tx.onabort=function(){rej(tx.error);};
+    });
+  });
+}
+function photoPut(id,blob){return photoTx("readwrite",function(s){return s.put(blob,id);});}
+function photoGet(id){return photoTx("readonly",function(s){return s.get(id);});}
+function photoDel(id){return photoTx("readwrite",function(s){return s["delete"](id);});}
+
+function shrink(file){
+  return new Promise(function(res,rej){
+    var url=URL.createObjectURL(file),img=new Image();
+    img.onload=function(){
+      var w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+      var k=Math.min(1,1280/Math.max(w,h));
+      var c=document.createElement("canvas");
+      c.width=Math.max(1,Math.round(w*k));
+      c.height=Math.max(1,Math.round(h*k));
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+      if(!c.toBlob){rej(new Error("no toBlob"));return;}
+      c.toBlob(function(b){b?res(b):rej(new Error("encode failed"));},"image/jpeg",.72);
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);rej(new Error("could not read that image"));};
+    img.src=url;
+  });
+}
+function photoURL(id,blob){
+  if(!urlCache[id])urlCache[id]=URL.createObjectURL(blob);
+  return urlCache[id];
+}
+function dropURL(id){
+  if(urlCache[id]){URL.revokeObjectURL(urlCache[id]);delete urlCache[id];}
+}
+
+function openViewer(src){
+  var v=document.createElement("div");
+  v.className="viewer";
+  v.innerHTML='<button type="button" class="close" aria-label="Close photo">&times;</button>'+
+    '<img alt="Climbing session photo">';
+  v.querySelector("img").src=src;
+  function shut(){
+    v.remove();
+    document.removeEventListener("keydown",onKey);
+  }
+  function onKey(e){if(e.key==="Escape")shut();}
+  v.addEventListener("click",shut);
+  document.addEventListener("keydown",onKey);
+  document.body.appendChild(v);
+  v.querySelector(".close").focus();
+}
+
+function shotNode(id,blob,onDrop){
+  var wrap=document.createElement("div");
+  wrap.className="shot";
+  var open=document.createElement("button");
+  open.type="button";open.className="open";
+  open.setAttribute("aria-label","View photo");
+  var img=document.createElement("img");
+  img.alt="";
+  img.src=photoURL(id,blob);
+  open.appendChild(img);
+  open.addEventListener("click",function(){openViewer(img.src);});
+  wrap.appendChild(open);
+  if(onDrop){
+    var x=document.createElement("button");
+    x.type="button";x.className="drop";x.innerHTML="&times;";
+    x.setAttribute("aria-label","Remove photo");
+    x.addEventListener("click",function(ev){ev.stopPropagation();onDrop();});
+    wrap.appendChild(x);
+  }
+  return wrap;
+}
+
+function renderPendingShots(){
+  var box=el("c-shots");
+  box.innerHTML="";
+  pendingShots.forEach(function(p){
+    box.appendChild(shotNode(p.id,p.blob,function(){
+      dropURL(p.id);
+      pendingShots=pendingShots.filter(function(x){return x.id!==p.id;});
+      renderPendingShots();
+    }));
+  });
+  el("c-photo-btn").disabled=pendingShots.length>=PHOTO_MAX;
+  el("c-photo-btn").textContent=pendingShots.length?"Add another":"Take a photo";
+}
+
 // ---------- climb log ----------
 var feel=0;
 function renderStars(){
@@ -730,26 +885,74 @@ function renderClimb(){
       '<span><span class="gr">'+esc(c.grade||"session")+'</span> <span style="color:var(--accent)">'+dots+'</span>'+
       (c.notes?'<span class="nt">'+esc(c.notes)+'</span>':'')+'</span>'+
       '<button type="button" class="x" aria-label="Delete">&times;</button>';
+    if(c.shots&&c.shots.length){
+      var strip=document.createElement("div");
+      strip.className="logshots";
+      row.children[1].appendChild(strip);
+      c.shots.forEach(function(pid){
+        photoGet(pid).then(function(blob){
+          if(blob)strip.appendChild(shotNode(pid,blob,null));
+        },function(){});
+      });
+    }
     row.querySelector(".x").addEventListener("click",function(){
+      (c.shots||[]).forEach(function(pid){
+        photoDel(pid).catch(function(){});
+        dropURL(pid);
+      });
       climbs=climbs.filter(function(x){return x.id!==c.id;});
       save(K.climbs,climbs);renderClimb();
     });
     box.appendChild(row);
   });
 }
+
+el("c-photo-btn").addEventListener("click",function(){el("c-photo").click();});
+el("c-photo").addEventListener("change",function(){
+  var files=Array.prototype.slice.call(this.files||[]);
+  this.value="";
+  var room=PHOTO_MAX-pendingShots.length;
+  if(!files.length||room<=0)return;
+  var note=el("c-photo-note");
+  note.textContent="Preparing…";
+  Promise.all(files.slice(0,room).map(function(f){
+    return shrink(f).then(function(blob){return {id:newId(),blob:blob};},function(){return null;});
+  })).then(function(shots){
+    var failed=0;
+    shots.forEach(function(s){s?pendingShots.push(s):failed++;});
+    renderPendingShots();
+    note.textContent=failed
+      ? (failed===1?"One photo couldn't be read. ":failed+" photos couldn't be read. ")+PHOTO_NOTE
+      : PHOTO_NOTE;
+  });
+});
+
 el("c-form").addEventListener("submit",function(ev){
   ev.preventDefault();
-  climbs.push({
+  var rec={
     id:newId(),
     date:el("c-date").value||key(new Date()),
     grade:el("c-grade").value.trim(),
     feel:feel,
-    notes:el("c-notes").value.trim()
+    notes:el("c-notes").value.trim(),
+    shots:[]
+  };
+  // Only ids that actually reached storage go on the record, so a failed
+  // write can never leave a session pointing at a photo that isn't there.
+  Promise.all(pendingShots.map(function(p){
+    return photoPut(p.id,p.blob).then(function(){return p.id;},function(){return null;});
+  })).then(function(ids){
+    rec.shots=ids.filter(Boolean);
+    var lost=ids.length-rec.shots.length;
+    climbs.push(rec);
+    save(K.climbs,climbs);
+    pendingShots=[];
+    renderPendingShots();
+    el("c-grade").value="";el("c-notes").value="";feel=0;
+    el("c-date").value=key(new Date());
+    el("c-photo-note").textContent=lost?"Saved, but "+lost+" photo(s) could not be stored.":PHOTO_NOTE;
+    renderClimb();
   });
-  save(K.climbs,climbs);
-  el("c-grade").value="";el("c-notes").value="";feel=0;
-  el("c-date").value=key(new Date());
-  renderClimb();
 });
 
 // ---------- edit ----------
@@ -928,6 +1131,12 @@ for(var i=0;i<navBtns.length;i++){
 buildEditForm();resetEdit();
 el("c-date").value=key(new Date());
 syncTypeScale();
+// Photo storage can be absent (a private window, blocked site data), so the
+// field only appears once IndexedDB has actually opened.
+photoDB().then(function(){
+  el("c-photo-field").classList.remove("hide");
+  el("c-photo-note").textContent=PHOTO_NOTE;
+},function(){});
 renderToday();renderWeekChips();
 window.addEventListener("resize",syncTypeScale);
 window.addEventListener("pageshow",syncTypeScale);

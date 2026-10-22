@@ -44,8 +44,10 @@ there** — only the app's code does. The schedule you tick off stays on the pho
 - **Today** — the day's blocks. Tap one to tick it off. The block you're in is
   highlighted, and the streak counts days where you finished at least 60% of them.
 - **Week** — any day of the week, with start and end times.
-- **Climb** — log each session: date, best send, how it felt, notes. It counts
-  sessions this month and how many of your four you've done this week.
+- **Climb** — log each session: date, best send, how it felt, notes, and up to four
+  photos. **Take a photo** opens the camera; each shot is scaled down to a 1280px
+  long edge and stored on the phone, so a season of sessions stays small. Tap a
+  thumbnail to see it full screen. Deleting a session deletes its photos too.
 - **Edit** — change the schedule. Tap any block to edit or delete it, or add new
   ones. **Reset schedule** puts the original plan back without touching your ticks
   or climbing log.
@@ -63,6 +65,11 @@ Your data lives in Safari's storage for this app. Deleting the app, or clearing
 Safari's website data, erases it. Every few weeks open **Edit → Show backup**, copy
 the text, and paste it into Notes or email it to yourself. **Restore from backup**
 pastes it back.
+
+**Photos are not in that backup.** It's plain text meant to be pasted into a note,
+and photos would make it enormous. They live in the phone's own image store
+(IndexedDB) and go when the app goes. If a photo matters, save it to your camera
+roll too: tap the thumbnail to open it full screen, then press and hold.
 
 ## Changing the app later
 
