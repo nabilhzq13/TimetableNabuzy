@@ -48,9 +48,14 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   swipe it right. Tick the last one of the day and see what happens.
 - **The sky** behind everything follows the real time of day — dawn, day, golden
   hour, dusk, night.
-- **Week** — any day of the week, plus a heatmap of the last eight weeks showing
-  which days you actually kept to the plan.
-- **Climb** — your progression charted from your best sends (V-scale or Font, so
+- **Week** — any day of the week with the gym's hours for that day, plus a heatmap
+  of the last eight weeks showing which days you actually kept to the plan.
+- **Climb** — the gym's opening hours up top, with a live badge (open, midday
+  break, or closed and when it opens next) and your own session times marked
+  against each day. If you move a climbing block somewhere the gym is shut, it
+  says which one and why. During a climbing block, Today shows the same badge. If
+  the gym changes its hours, edit the `GYM` list in `index.html` (minutes from
+  midnight, Monday first). Below that, your progression charted from your best sends (V-scale or Font, so
   6b+ and V4 land on the same scale) with a grade pyramid underneath, and a toast
   when you beat your hardest send. Log each session: date, best send, how it felt,
   notes, and up to four photos. **Take a photo** opens the camera; each shot is scaled down to a 1280px

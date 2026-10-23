@@ -293,6 +293,35 @@
   .legend{display:flex;align-items:center;gap:5px;margin-top:var(--s3);font-size:var(--t-caption);font-weight:700;color:var(--ink-2)}
   .legend .hc{width:12px}
 
+  /* ---------------- climbing gym ---------------- */
+  .gym-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s2) var(--s3);flex-wrap:wrap}
+  /* Status is a word and a shape as well as a colour. Text colours measured
+     at 4.8:1 or better on the tinted pill over every sky phase. */
+  .gym-status{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;
+    font-size:var(--t-footnote);font-weight:800;white-space:nowrap}
+  .gym-status::before{content:"";width:8px;height:8px;border-radius:99px;background:currentColor;flex:0 0 auto}
+  .gym-status.open{background:rgba(21,128,61,.12);color:#14532d}
+  .gym-status.break{background:rgba(180,120,0,.12);color:#6b4400}
+  .gym-status.closed{background:rgba(194,65,12,.12);color:#7c2d12}
+  .gym-status.closed::before{border-radius:2px}
+  .gym-status.break::before{background:transparent;box-shadow:inset 0 0 0 2px currentColor}
+  .hours{width:100%;border-collapse:collapse;margin-top:var(--s3);font-size:var(--t-subhead)}
+  .hours th{text-align:left;font-weight:800;padding:9px 8px 9px 0;width:3.2em;vertical-align:top}
+  .hours td{padding:9px 0;color:var(--ink-2);font-weight:600}
+  .hours tr+tr th,.hours tr+tr td{border-top:1px solid var(--line)}
+  .hours tr.today{background:rgba(11,102,228,.08)}
+  .hours tr.today th{padding-left:8px;box-shadow:inset 3px 0 0 var(--tint)}
+  .hours tr.today th,.hours tr.today td{color:var(--ink)}
+  .hours .shut{font-style:italic}
+  /* The gap sits after the hours, so a marker that wraps starts flush left. */
+  .hours td>span:first-child{margin-right:6px}
+  .hours .you{display:inline-block;font-size:var(--t-caption);font-weight:800;color:var(--tint-text);white-space:nowrap}
+  .gym-fit{margin:var(--s3) 0 0;font-size:var(--t-footnote);font-weight:700;color:var(--ink-2)}
+  .gym-fit.warn{color:#7c2d12}
+  .gym-fit ul{margin:4px 0 0;padding-left:1.2em}
+  .now-gym{margin:var(--s2) 0 0;position:relative;z-index:1}
+  .w-gym{margin:0;padding:0 var(--s4) var(--s2);font-size:var(--t-footnote);font-weight:700;color:var(--ink-2)}
+
   /* ---------------- climb ---------------- */
   .chart{width:100%;height:auto;display:block;margin-top:var(--s2);overflow:visible}
   .chart .grid{stroke:rgba(15,20,40,.10);stroke-width:1}
@@ -470,6 +499,7 @@
           <p class="label" id="now-label">Now</p>
           <h2 class="now-title" id="now-title">Nothing scheduled</h2>
           <p class="now-when" id="now-when"></p>
+          <p class="now-gym hide" id="now-gym"><span class="gym-status" id="now-gym-pill"></span></p>
         </div>
         <div class="nowring hide" id="nowring" role="img" aria-label="">
           <svg viewBox="0 0 68 68" aria-hidden="true">
@@ -501,6 +531,7 @@
     <div class="daysel" id="w-days"></div>
     <section class="material seccard">
       <div class="dayhead"><h2 id="w-title">—</h2><span class="muted" id="w-hours" style="font-weight:700;font-size:var(--t-footnote)"></span></div>
+      <p class="w-gym" id="w-gym"></p>
       <div id="w-list"></div>
     </section>
     <section class="material heat-wrap" aria-labelledby="heat-h">
@@ -515,6 +546,18 @@
 
   <!-- CLIMB -->
   <section id="v-climb" class="hide">
+    <section class="material pad" aria-labelledby="gym-h">
+      <div class="gym-head">
+        <div>
+          <p class="label">Climbing gym</p>
+          <h2 id="gym-h" style="margin-top:4px">Opening hours</h2>
+        </div>
+        <span class="gym-status" id="gym-status"></span>
+      </div>
+      <table class="hours" id="gym-hours" aria-label="Gym opening hours, Monday to Sunday"></table>
+      <div class="gym-fit hide" id="gym-fit"></div>
+    </section>
+
     <section class="material pad">
       <p class="label">Progression</p>
       <p class="best" id="c-best" style="margin-top:4px">No grades yet</p>
@@ -878,7 +921,7 @@ function renderNow(st,cn,m){
     card.classList.add("idle");card.style.removeProperty("--h");
     el("now-label").textContent=st.list.length?"That's the day":"Nothing scheduled";
     el("now-title").textContent=st.list.length?"Nothing left to do":"An open day";
-    el("now-when").textContent="";det.classList.add("hide");ring.classList.add("hide");
+    el("now-when").textContent="";det.classList.add("hide");ring.classList.add("hide");el("now-gym").classList.add("hide");
     fb.classList.add("hide");db.classList.add("hide");nx.classList.add("hide");return;
   }
   var t=typeOf(show.type),s=toMin(show.start),e=s+show.mins;
@@ -887,6 +930,16 @@ function renderNow(st,cn,m){
   el("now-label").textContent=cn.cur?"Now":"Next up";
   el("now-title").textContent=show.activity;
   el("now-when").textContent=cn.cur?fmt(s)+" – "+fmt(e):"at "+fmt(s)+" · "+dur(show.mins);
+  // For a climbing block, what matters is whether the gym is open when you
+  // get there: right now if it's running, at its start time if it's next.
+  var gw=el("now-gym"),gp=el("now-gym-pill");
+  if(show.type==="move"&&/climb/i.test(show.activity)){
+    var at=new Date();if(!cn.cur)at.setHours(Math.floor(s/60),s%60,0,0);
+    var gs=gymStatus(at);
+    gp.className="gym-status "+gs.kind;
+    gp.textContent=gs.kind==="open"?(cn.cur?"Gym open":"Gym will be open")+" · until "+fmt(gs.until):"Heads up — "+gs.text.charAt(0).toLowerCase()+gs.text.slice(1);
+    gw.classList.remove("hide");
+  }else gw.classList.add("hide");
   det.textContent=show.details||"";det.classList.toggle("hide",!show.details);
   if(cn.cur){
     var left=Math.max(0,Math.ceil(e-m));
@@ -976,6 +1029,7 @@ function renderWeek(){
     b.addEventListener("click",function(){weekDay=i;renderWeek();});box.appendChild(b);});
   var list=forDay(weekDay),total=0;list.forEach(function(b){total+=b.mins;});
   el("w-title").textContent=LONG[weekDay];
+  el("w-gym").textContent=GYM[weekDay].length?"Gym open "+gymDayText(weekDay):"Gym closed";
   el("w-hours").textContent=list.length?list.length+" blocks · "+hrs(total):"open";
   var wl=el("w-list");wl.innerHTML="";
   if(!list.length){wl.innerHTML='<p class="empty">Nothing on '+esc(LONG[weekDay])+'.</p>';}
@@ -1010,6 +1064,98 @@ function renderHeat(){
   }
   el("heat-sum").textContent=good+" strong "+(good===1?"day":"days");
   g.setAttribute("aria-label","Last 8 weeks: "+good+" of "+counted+" days at 60% or more of the plan.");
+}
+
+// ---------- climbing gym ----------
+// The gym's own timetable, as you sent it: closed Mondays, every other day
+// split by a midday break. Minutes from midnight, Monday = 0.
+var GYM=[
+  [],
+  [[600,780],[840,1200]],
+  [[600,780],[840,1320]],
+  [[600,780],[840,1200]],
+  [[600,720],[900,1320]],
+  [[600,780],[840,1320]],
+  [[600,780],[840,1200]]
+];
+function rangeText(r){return fmt(r[0])+"–"+fmt(r[1]);}
+function gymDayText(i){return GYM[i].length?GYM[i].map(rangeText).join(", "):"Closed";}
+// The next opening after minute m of day i, looking up to a week ahead.
+function nextOpen(i,m){
+  for(var k=0;k<8;k++){var d=(i+k)%7;
+    for(var j=0;j<GYM[d].length;j++){if(k>0||GYM[d][j][0]>m)return {day:d,ahead:k,at:GYM[d][j][0]};}}
+  return null;
+}
+function gymStatus(when){
+  var d=when||new Date(),i=dayIdx(d),m=d.getHours()*60+d.getMinutes(),day=GYM[i];
+  for(var j=0;j<day.length;j++){
+    if(m>=day[j][0]&&m<day[j][1])return {kind:"open",until:day[j][1],text:"Open now · until "+fmt(day[j][1])};
+  }
+  var nx=nextOpen(i,m);
+  if(!nx)return {kind:"closed",text:"Closed"};
+  if(nx.ahead===0){
+    var earlier=day.some(function(r){return r[1]<=m;});
+    return earlier?{kind:"break",text:"Midday break · back at "+fmt(nx.at)}
+                  :{kind:"closed",text:"Closed · opens at "+fmt(nx.at)};
+  }
+  return {kind:"closed",text:(day.length?"Closed for today":"Closed today")+" · opens "+
+    (nx.ahead===1?"tomorrow":LONG[nx.day])+" "+fmt(nx.at)};
+}
+function climbBlocks(){return blocks.filter(function(b){return b.type==="move"&&/climb/i.test(b.activity);});}
+// Does every climbing session you've scheduled actually fall inside opening
+// hours? Edit a block in Schedule and this re-checks it.
+function gymFit(){
+  var problems=[],count=0;
+  climbBlocks().forEach(function(b){
+    var s=toMin(b.start),e=s+b.mins;
+    b.days.forEach(function(d){
+      count++;
+      if(GYM[d].some(function(r){return s>=r[0]&&e<=r[1];}))return;
+      var why;
+      if(!GYM[d].length)why="the gym is closed on "+LONG[d]+"s";
+      else{
+        var hit=GYM[d].filter(function(r){return s<r[1]&&e>r[0];})[0];
+        why=!hit?"the gym is shut then — it's open "+gymDayText(d)
+          :s<hit[0]?"the gym opens at "+fmt(hit[0]):"the gym closes at "+fmt(hit[1]);
+      }
+      problems.push(LONG[d]+" "+fmt(s)+"–"+fmt(e)+": "+why);
+    });
+  });
+  return {count:count,problems:problems};
+}
+function renderGym(){
+  var st=gymStatus(),pill=el("gym-status");
+  pill.className="gym-status "+st.kind;pill.textContent=st.text;
+  var today=dayIdx(new Date()),mine={};
+  climbBlocks().forEach(function(b){b.days.forEach(function(d){(mine[d]=mine[d]||[]).push(fmt(toMin(b.start)));});});
+  var t=el("gym-hours");t.innerHTML="";
+  var body=document.createElement("tbody");
+  DAYS.forEach(function(n,i){
+    var tr=document.createElement("tr");if(i===today)tr.className="today";
+    var th=document.createElement("th");th.scope="row";th.textContent=n;
+    th.setAttribute("aria-label",LONG[i]+(i===today?", today":""));
+    var td=document.createElement("td");
+    var hrsTxt=document.createElement("span");hrsTxt.textContent=gymDayText(i);
+    if(!GYM[i].length)hrsTxt.className="shut";
+    td.appendChild(hrsTxt);
+    if(mine[i]){var y=document.createElement("span");y.className="you";y.textContent="you climb "+mine[i].join(", ");td.appendChild(y);}
+    tr.appendChild(th);tr.appendChild(td);body.appendChild(tr);
+  });
+  t.appendChild(body);
+  var fit=gymFit(),f=el("gym-fit");
+  f.innerHTML="";
+  if(!fit.count){f.className="gym-fit hide";return;}
+  if(!fit.problems.length){
+    f.className="gym-fit";
+    f.textContent=(fit.count===1?"Your climbing session falls":"All "+fit.count+" of your climbing sessions fall")+" inside opening hours.";
+    return;
+  }
+  f.className="gym-fit warn";
+  var lead=document.createElement("span");
+  lead.textContent=fit.problems.length===1?"One climbing session falls outside opening hours:":fit.problems.length+" climbing sessions fall outside opening hours:";
+  var ul=document.createElement("ul");
+  fit.problems.forEach(function(p){var li=document.createElement("li");li.textContent=p;ul.appendChild(li);});
+  f.appendChild(lead);f.appendChild(ul);
 }
 
 // ---------- climbing ----------
@@ -1106,7 +1252,7 @@ function renderDots(){var b=el("c-feel");b.innerHTML="";
     d.addEventListener("click",function(){feel=feel===n?0:n;renderDots();});b.appendChild(d);})(i);}
 
 function renderClimb(){
-  renderDots();renderClimbStats();
+  renderGym();renderDots();renderClimbStats();
   var box=el("c-list");box.innerHTML="";
   if(!climbs.length){box.innerHTML='<p class="empty">Log a session after you climb. Grades, notes and photos build the picture of what is working.</p>';return;}
   var h=document.createElement("p");h.className="sechead";h.textContent="Sessions";box.appendChild(h);
@@ -1222,7 +1368,7 @@ document.addEventListener("pointerup",function once(){save("sb.swipeHintSeen",tr
 window.addEventListener("resize",syncTypeScale);window.addEventListener("pageshow",syncTypeScale);
 document.addEventListener("visibilitychange",function(){if(document.hidden)return;syncTypeScale();paintSky();
   if(view==="today")renderToday();if(focusBlock)requestWake();});
-setInterval(function(){if(document.hidden)return;paintSky();if(view==="today"&&!focusBlock)renderToday();},30000);
+setInterval(function(){if(document.hidden)return;paintSky();if(view==="today"&&!focusBlock)renderToday();if(view==="climb")renderGym();},30000);
 
 if("serviceWorker" in navigator&&location.protocol!=="file:")
   window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});
