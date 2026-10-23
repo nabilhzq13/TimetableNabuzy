@@ -62,8 +62,14 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   long edge and stored on the phone, so a season of sessions stays small. Tap a
   thumbnail to see it full screen. Deleting a session deletes its photos too.
 - **Edit** — change the schedule. Tap any block to edit or delete it, or add new
-  ones. **Reset schedule** puts the original plan back without touching your ticks
-  or climbing log.
+  ones. Two blocks can't share the same time on the same day (one ending exactly
+  when the next starts is fine). If a block overlaps others, the form lists each
+  one and what will happen to it. **Add and make room** then shortens those blocks
+  or takes them off the days you share, and the message that follows has an
+  **Undo**. **Start at …** moves your block to the next free time instead, when
+  there is one. Blocks that already overlap are flagged in the list; tap one to
+  fix it. **Reset schedule** puts the original plan back without touching your
+  ticks or climbing log.
 
 ## Text size
 

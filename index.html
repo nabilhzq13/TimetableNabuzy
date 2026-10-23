@@ -44,6 +44,7 @@
     --tint-ink:#ffffff;
     --good:#15803d;
     --flag:#c2410c;
+    --flag-text:#9a3412;      /* flag as text on material: 5.2:1, where #c2410c is only 3.4 */
     --ring-1:#30d158; --ring-2:#ff375f; --ring-3:#0a84ff;
     --press:rgba(15,20,40,.06);
 
@@ -169,7 +170,7 @@
     justify-content:center;gap:8px;color:var(--ink);background:rgba(15,20,40,.07);
   }
   .btn.prominent{background:var(--tint);color:var(--tint-ink);box-shadow:0 8px 20px -8px rgba(11,102,228,.7)}
-  .btn.danger{background:rgba(194,65,12,.1);color:var(--flag)}
+  .btn.danger{background:rgba(194,65,12,.1);color:var(--flag-text)}
   .btn.glassbtn{background:rgba(255,255,255,.6);box-shadow:inset 0 1px 0 #fff,0 4px 14px -6px rgba(8,10,40,.35)}
   .btn:disabled{opacity:.45;cursor:not-allowed}
   .btns{display:flex;flex-wrap:wrap;gap:var(--s2)}
@@ -358,7 +359,18 @@
     color:var(--ink-2);cursor:pointer}
   .dayrow button[aria-pressed="true"]{background:var(--tint);border-color:var(--tint);color:#fff}
   .note{margin:var(--s1) 0 0;font-size:var(--t-caption);color:var(--ink-2)}
-  .err{margin:var(--s1) 0 0;font-size:var(--t-caption);font-weight:800;color:var(--flag)}
+  .err{margin:var(--s1) 0 0;font-size:var(--t-caption);font-weight:800;color:var(--flag-text)}
+  /* A clash lists what is in the way and what making room does to each.
+     Opaque, so its text holds 6.7:1 whatever sky sits behind the card. */
+  .clash{margin-top:var(--s2);padding:var(--s3);border-radius:var(--radius-sm);background:#fff4ec;
+    box-shadow:inset 0 0 0 1px rgba(194,65,12,.22)}
+  .clash-lead{margin:0;font-size:var(--t-subhead);font-weight:800;color:var(--flag-text)}
+  .clash-sub{margin:2px 0 0;font-size:var(--t-footnote);font-weight:600;color:var(--ink-2)}
+  .clash ul{margin:var(--s2) 0 0;padding:0;list-style:none;display:grid;gap:6px}
+  .clash li{font-size:var(--t-footnote);line-height:1.4}
+  .clash li b{font-weight:800}
+  .clash .btn{margin-top:var(--s3)}
+  .overlap{color:var(--flag-text);font-weight:800}
   .confirm{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;margin-top:var(--s3);
     padding:var(--s3);border-radius:var(--radius-sm);background:rgba(194,65,12,.08)}
   .confirm p{margin:0;flex:1 1 11em;font-size:var(--t-footnote);font-weight:600}
@@ -436,8 +448,17 @@
   .toast{
     position:fixed;z-index:50;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);
     transform:translateX(-50%);padding:12px 20px;border-radius:999px;font-weight:800;
-    font-size:var(--t-subhead);color:var(--ink);white-space:nowrap;animation:drop .5s cubic-bezier(.3,1.4,.5,1);
+    font-size:var(--t-subhead);color:var(--ink);animation:drop .5s cubic-bezier(.3,1.4,.5,1);
+    /* One line while it fits, wrapping at large text sizes instead of running off screen. */
+    width:max-content;max-width:calc(100vw - 32px);text-align:center;
+    display:flex;align-items:center;justify-content:center;gap:var(--s3);
   }
+  /* A solid capsule, because tinted text on glass drops to 2.5:1 over the night sky.
+     The button stays 44px tall; only the capsule inside it is drawn. */
+  .toast-undo{flex:none;font:inherit;background:none;border:0;cursor:pointer;padding:0;
+    min-height:44px;margin:-12px -12px -12px 0;display:flex;align-items:center}
+  .toast-undo span{padding:6px 14px;border-radius:999px;background:var(--tint);color:var(--tint-ink);font-size:var(--t-footnote)}
+  .toast-undo:active span{filter:brightness(.92)}
   @keyframes drop{from{transform:translate(-50%,-40px);opacity:0}}
   .viewer{position:fixed;inset:0;z-index:60;background:rgba(10,10,14,.92);display:grid;place-items:center;
     padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
@@ -601,7 +622,13 @@
           <div><label for="e-mins">Minutes</label><input type="number" id="e-mins" inputmode="numeric" value="60" min="5" max="720" step="5" required></div>
         </div>
         <div><label id="e-days-label">Days</label><div class="dayrow" id="e-days" role="group" aria-labelledby="e-days-label"></div>
-          <p class="err hide" id="e-err" role="alert"></p></div>
+          <p class="err hide" id="e-err" role="alert"></p>
+          <div class="clash hide" id="e-clash">
+            <p class="clash-lead" id="e-clash-lead"></p>
+            <p class="clash-sub">To make room for this one:</p>
+            <ul id="e-clash-list"></ul>
+            <button type="button" class="btn hide" id="e-clash-fix"></button>
+          </div></div>
         <div><label for="e-details">Details</label><textarea id="e-details" maxlength="240"></textarea></div>
         <div class="btns">
           <button type="submit" class="btn prominent" id="e-save">Add block</button>
@@ -995,9 +1022,11 @@ el("f-done").addEventListener("click",function(){var b=focusBlock,k=key(new Date
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!el("focus").hidden)closeFocus();});
 
 // ---------- celebration ----------
-function toast(text){
+function toast(text,undo){
   var t=document.createElement("div");t.className="toast glass";t.textContent=text;
-  document.body.appendChild(t);setTimeout(function(){t.remove();},2400);
+  if(undo){var u=document.createElement("button");u.type="button";u.className="toast-undo";u.innerHTML="<span>Undo</span>";
+    u.addEventListener("click",function(){t.remove();undo();});t.appendChild(u);}
+  document.body.appendChild(t);setTimeout(function(){t.remove();},undo?6000:2400);
 }
 function celebrate(){
   announce("Day complete. Every block is ticked.");toast("Day complete — every block ticked");
@@ -1290,30 +1319,129 @@ var picked=[],editing=null;
 (function(){var s=el("e-type");TYPES.forEach(function(t){var o=document.createElement("option");o.value=t.id;o.textContent=t.name;s.appendChild(o);});
   var box=el("e-days");DAYS.forEach(function(n,i){var b=document.createElement("button");b.type="button";b.textContent=n;b.setAttribute("aria-pressed","false");
     b.addEventListener("click",function(){var at=picked.indexOf(i);if(at===-1)picked.push(i);else picked.splice(at,1);
-      b.setAttribute("aria-pressed",at===-1?"true":"false");if(picked.length)showErr("");});box.appendChild(b);});})();
+      b.setAttribute("aria-pressed",at===-1?"true":"false");if(picked.length)showErr("");checkClash();});box.appendChild(b);});})();
 function setDays(d){picked=d.slice();var b=el("e-days").children;for(var i=0;i<b.length;i++)b[i].setAttribute("aria-pressed",d.indexOf(i)!==-1?"true":"false");}
 function showErr(m){var n=el("e-err");n.textContent=m;n.classList.toggle("hide",!m);}
-function resetEdit(){editing=null;el("e-title").textContent="Add a block";el("e-save").textContent="Add block";
+
+// ---------- clashes ----------
+// Two blocks clash when they share a day and their times overlap. Ending
+// exactly when the next starts is fine: 10am-12pm then 12pm-1pm don't clash.
+function clashes(start,mins,days,ignoreId){
+  var s=toMin(start),e=s+mins,out=[];
+  blocks.forEach(function(b){
+    if(b.id===ignoreId)return;
+    var bs=toMin(b.start),be=bs+b.mins;
+    if(!(s<be&&bs<e))return;
+    var shared=days.filter(function(d){return b.days.indexOf(d)!==-1;});
+    if(shared.length)out.push({b:b,days:shared});
+  });
+  return out;
+}
+function hhmm(m){return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");}
+function span(s,e){return fmt(s)+"–"+fmt(e);}
+function dayList(ds){return ds.length===7?"every day":ds.map(function(d){return DAYS[d];}).join(", ");}
+// The earliest start at or after the one asked for that is free on every
+// chosen day and still ends by midnight. A gap always opens where some
+// block ends, so those are the only times worth trying.
+function nextFree(start,mins,days,ignoreId){
+  var from=toMin(start),tries=[from];
+  blocks.forEach(function(b){var e=toMin(b.start)+b.mins;if(b.id!==ignoreId&&e>from)tries.push(e);});
+  tries.sort(function(a,b){return a-b;});
+  for(var i=0;i<tries.length;i++)
+    if(tries[i]+mins<=1440&&!clashes(hhmm(tries[i]),mins,days,ignoreId).length)return hhmm(tries[i]);
+  return null;
+}
+// Making room: on the days they share, each block in the way keeps only the
+// parts outside the new block's time, and comes off those days when no
+// piece of five minutes or more is left. Its other days stay as they were.
+function roomPlan(start,mins,days,ignoreId){
+  var s=toMin(start),e=s+mins;
+  return clashes(start,mins,days,ignoreId).map(function(x){
+    var bs=toMin(x.b.start),be=bs+x.b.mins,keep=[];
+    if(s-bs>=5)keep.push({s:bs,e:s});
+    if(be-e>=5)keep.push({s:e,e:be});
+    return {b:x.b,days:x.days,keep:keep,rest:x.b.days.filter(function(d){return x.days.indexOf(d)===-1;})};
+  });
+}
+function applyRoom(plan){
+  plan.forEach(function(p){
+    blocks=blocks.filter(function(b){return b.id!==p.b.id;});
+    if(p.rest.length)blocks.push(Object.assign({},p.b,{days:p.rest}));
+    p.keep.forEach(function(k,i){
+      // With no other days left, the first piece keeps the id, so today's tick stays with it.
+      blocks.push(Object.assign({},p.b,{id:!p.rest.length&&i===0?p.b.id:newId(),start:hhmm(k.s),mins:k.e-k.s,days:p.days.slice()}));
+    });
+  });
+}
+function roomLine(p){
+  var s=toMin(p.b.start),on=p.rest.length?" on "+dayList(p.days):"";
+  var what=p.keep.length?"becomes "+p.keep.map(function(k){return span(k.s,k.e);}).join(" and ")+on
+    :p.rest.length?"comes off "+dayList(p.days):"is removed";
+  return "<b>"+esc(p.b.activity)+"</b> ("+span(s,s+p.b.mins)+") "+what;
+}
+function formMins(){return Math.max(5,Math.min(720,parseInt(el("e-mins").value,10)||60));}
+// Checked live as the time, length and days change. Saving over a clash
+// makes room, so the save button says so before it is pressed.
+var clashSig="";
+function checkClash(){
+  var box=el("e-clash"),fix=el("e-clash-fix");
+  var start=el("e-start").value||"09:00",mins=formMins();
+  var plan=picked.length?roomPlan(start,mins,picked,editing):[];
+  el("e-save").textContent=plan.length?(editing?"Save and make room":"Add and make room"):(editing?"Save changes":"Add block");
+  if(!plan.length){box.classList.add("hide");clashSig="";return plan;}
+  el("e-clash-lead").textContent="Overlaps "+plan.length+(plan.length===1?" block":" blocks");
+  var lines=plan.slice(0,4).map(function(p){return "<li>"+roomLine(p)+"</li>";});
+  if(plan.length>4)lines.push("<li>and "+(plan.length-4)+" more</li>");
+  el("e-clash-list").innerHTML=lines.join("");
+  var free=nextFree(start,mins,picked,editing);
+  fix.classList.toggle("hide",!free);
+  if(free){fix.textContent="Start at "+fmt(toMin(free))+" instead";
+    fix.onclick=function(){el("e-start").value=free;checkClash();announce("Start moved to "+fmt(toMin(free))+".");el("e-save").focus();};}
+  box.classList.remove("hide");
+  var sig=plan.map(function(p){return p.b.id+p.days.join("");}).join();
+  if(sig!==clashSig)announce("Overlaps "+plan.slice(0,2).map(function(p){return p.b.activity;}).join(" and ")+
+    (plan.length>2?" and "+(plan.length-2)+" more":"")+".");
+  clashSig=sig;
+  return plan;
+}
+["e-start","e-mins"].forEach(function(id){el(id).addEventListener("input",checkClash);el(id).addEventListener("change",checkClash);});
+
+function resetEdit(){editing=null;el("e-title").textContent="Add a block";
   el("e-activity").value="";el("e-type").value="study";el("e-start").value="09:00";el("e-mins").value="60";el("e-details").value="";
-  setDays([]);el("e-cancel").classList.add("hide");el("e-delete").classList.add("hide");el("e-confirm").classList.add("hide");showErr("");}
-function startEdit(b){editing=b.id;el("e-title").textContent="Edit block";el("e-save").textContent="Save changes";
+  setDays([]);el("e-cancel").classList.add("hide");el("e-delete").classList.add("hide");el("e-confirm").classList.add("hide");showErr("");
+  checkClash();}
+function startEdit(b){editing=b.id;el("e-title").textContent="Edit block";
   el("e-activity").value=b.activity;el("e-type").value=b.type;el("e-start").value=b.start;el("e-mins").value=String(b.mins);
   el("e-details").value=b.details||"";setDays(b.days);el("e-cancel").classList.remove("hide");el("e-delete").classList.remove("hide");
-  el("e-confirm").classList.add("hide");showErr("");window.scrollTo({top:0,behavior:reduceMotion()?"auto":"smooth"});}
+  el("e-confirm").classList.add("hide");showErr("");checkClash();window.scrollTo({top:0,behavior:reduceMotion()?"auto":"smooth"});}
 function renderEditList(){var box=el("e-list");box.innerHTML="";
-  var h=document.createElement("p");h.className="sechead";h.textContent="All blocks · tap one to edit";box.appendChild(h);
+  var bad=blocks.filter(function(b){return clashes(b.start,b.mins,b.days,b.id).length;}).length;
+  var h=document.createElement("p");h.className="sechead";
+  h.innerHTML=bad?'All blocks · <span class="overlap">'+bad+' overlap</span> — tap one to fix':"All blocks · tap one to edit";
+  box.appendChild(h);
   blocks.slice().sort(function(a,b){return toMin(a.start)-toMin(b.start);}).forEach(function(b){var t=typeOf(b.type);
     var r=document.createElement("button");r.type="button";r.className="item";r.style.setProperty("--h",t.hue);
     r.innerHTML='<span class="cat"></span><span class="when"></span><span class="body"><span class="ttl"></span><span class="meta"></span></span><span></span>';
     r.querySelector(".when").textContent=fmt(toMin(b.start));r.querySelector(".ttl").textContent=b.activity;
-    r.querySelector(".meta").innerHTML='<span class="chip" style="--h:'+t.hue+'">'+esc(t.name)+'</span>'+esc(b.days.map(function(d){return DAYS[d];}).join(" "));
+    var c=clashes(b.start,b.mins,b.days,b.id);
+    r.querySelector(".meta").innerHTML='<span class="chip" style="--h:'+t.hue+'">'+esc(t.name)+'</span>'+esc(b.days.map(function(d){return DAYS[d];}).join(" "))+
+      (c.length?' · <span class="overlap">Overlaps '+esc(c[0].b.activity)+(c.length>1?" +"+(c.length-1):"")+'</span>':"");
     r.addEventListener("click",function(){startEdit(b);});box.appendChild(r);});}
 el("e-form").addEventListener("submit",function(e){e.preventDefault();
   if(!picked.length){showErr("Pick at least one day for this block.");return;}
   var d={id:editing||newId(),activity:el("e-activity").value.trim()||"Untitled",type:el("e-type").value,start:el("e-start").value||"09:00",
-    mins:Math.max(5,Math.min(720,parseInt(el("e-mins").value,10)||60)),details:el("e-details").value.trim(),days:picked.slice().sort(function(a,b){return a-b;})};
+    mins:formMins(),details:el("e-details").value.trim(),days:picked.slice().sort(function(a,b){return a-b;})};
+  var plan=roomPlan(d.start,d.mins,d.days,editing),before=blocks.slice();
+  applyRoom(plan);
   if(editing)blocks=blocks.map(function(b){return b.id===editing?d:b;});else blocks.push(d);
-  save(K.blocks,blocks);var was=editing;resetEdit();renderEditList();renderToday();toast(was?"Block updated":"Block added");});
+  save(K.blocks,blocks);var was=editing;resetEdit();renderEditList();renderToday();
+  if(!plan.length){toast(was?"Block updated":"Block added");return;}
+  var n=plan.length+(plan.length===1?" block":" blocks");
+  announce((was?"Block updated. ":"Block added. ")+n+" changed to make room.");
+  toast((was?"Saved":"Added")+" · "+n+" changed",function(){
+    blocks=before;save(K.blocks,blocks);
+    if(editing&&!blocks.some(function(b){return b.id===editing;}))resetEdit();else checkClash();
+    renderEditList();renderToday();announce("Undone. The schedule is back as it was.");});});
 el("e-cancel").addEventListener("click",resetEdit);
 el("e-delete").addEventListener("click",function(){if(!editing)return;el("e-confirm").classList.remove("hide");el("e-confirm-no").focus();});
 el("e-confirm-no").addEventListener("click",function(){el("e-confirm").classList.add("hide");});
