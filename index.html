@@ -258,10 +258,6 @@
   .nowline b{width:4px;align-self:stretch;min-height:12px;background:var(--tint)}
   .nowline i{height:2px;flex:1;background:var(--tint);border-radius:2px;opacity:.55}
   .nowline span{font-family:var(--round);font-size:var(--t-caption);font-weight:800;color:var(--tint-text)}
-  /* On glass, never bare on the sky: white text over the brightest phase
-     would fall under 3:1. */
-  .hint{display:block;width:fit-content;max-width:100%;margin:0 auto var(--s4);padding:8px 16px;
-    border-radius:999px;text-align:center;font-size:var(--t-footnote);font-weight:700;color:var(--ink)}
 
   body.big-type .item{grid-template-columns:4px 1fr auto;row-gap:var(--s1)}
   body.big-type .when{grid-column:2;text-align:left}
@@ -538,7 +534,6 @@
       <p class="now-next hide" id="now-next"></p>
     </section>
 
-    <p class="hint glass" id="swipe-hint">Swipe a block right to tick it off</p>
     <div id="t-list"></div>
 
     <div class="material install hide" id="install">
@@ -1490,8 +1485,6 @@ renderToday();
 var standalone=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
 if(!standalone&&!load("sb.installDismissed",false))el("install").classList.remove("hide");
 el("install-x").addEventListener("click",function(){el("install").classList.add("hide");save("sb.installDismissed",true);});
-if(load("sb.swipeHintSeen",false))el("swipe-hint").classList.add("hide");
-document.addEventListener("pointerup",function once(){save("sb.swipeHintSeen",true);document.removeEventListener("pointerup",once);},{once:true});
 
 window.addEventListener("resize",syncTypeScale);window.addEventListener("pageshow",syncTypeScale);
 document.addEventListener("visibilitychange",function(){if(document.hidden)return;syncTypeScale();paintSky();
