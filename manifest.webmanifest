@@ -1,7 +1,7 @@
 {
   "name": "Break",
   "short_name": "Break",
-  "description": "Offline daily schedule and climbing log. All data stays on this device.",
+  "description": "Offline daily schedule, climbing log and prayer tracker. All data stays on this device.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

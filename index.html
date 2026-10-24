@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Break</title>
-<meta name="description" content="Offline daily schedule and climbing log. All data stays on this device.">
+<meta name="description" content="Offline daily schedule, climbing log and prayer tracker. All data stays on this device.">
 <meta name="theme-color" content="#0b4f8a" id="theme-color">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -259,10 +259,13 @@
   .nowline i{height:2px;flex:1;background:var(--tint);border-radius:2px;opacity:.55}
   .nowline span{font-family:var(--round);font-size:var(--t-caption);font-weight:800;color:var(--tint-text)}
 
+  /* Every cell placed explicitly: a tick with only a row set gets auto-placed
+     first, into the 4px edge column, on top of the time. */
   body.big-type .item{grid-template-columns:4px 1fr auto;row-gap:var(--s1)}
-  body.big-type .when{grid-column:2;text-align:left}
-  body.big-type .item .body{grid-column:2}
-  body.big-type .item .tick{grid-row:1 / span 2}
+  body.big-type .item .cat{grid-column:1;grid-row:1 / span 2}
+  body.big-type .when{grid-column:2;grid-row:1;text-align:left}
+  body.big-type .item .body{grid-column:2;grid-row:2}
+  body.big-type .item .tick{grid-column:3;grid-row:1 / span 2}
   body.big-type .two{grid-template-columns:1fr}
   body.big-type .ringcard{grid-template-columns:1fr;justify-items:center}
 
@@ -392,16 +395,100 @@
     font-size:var(--t-title3);cursor:pointer;display:grid;place-items:center}
   .empty{margin:0;padding:var(--s5) var(--s4);text-align:center;color:var(--ink-2);font-size:var(--t-subhead)}
 
+  /* ---------------- solat ---------------- */
+  /* Each prayer wears the sky of its hour: dawn rose, noon blue, afternoon
+     amber, sunset violet, night indigo. Status is always a word too. */
+  .s-head{padding:var(--s4) var(--s4) var(--s3)}
+  .s-head h2{margin-top:4px}
+  .s-sub{margin:2px 0 0;font-size:var(--t-footnote);font-weight:700;color:var(--ink-2)}
+  .s-intro{margin:var(--s2) 0 var(--s4);font-size:var(--t-subhead);color:var(--ink-2)}
+  .s-src{margin:0;padding:var(--s3) var(--s4);border-top:1px solid var(--line);font-size:var(--t-caption);color:var(--ink-2)}
+  .plist .item:first-child{border-top:0}
+  .item .tag{white-space:nowrap;font-weight:800}
+  .item .ok{color:#14532d;font-weight:800}
+  .item .flagt{color:var(--flag-text);font-weight:800}
+  .item .nowt{color:var(--tint-text);font-weight:800}
+  .item.owed .tick{border-color:var(--flag);background:rgba(194,65,12,.08)}
+  .item.excused .tick{border-style:dashed}
+  .item.excused .ttl{color:var(--ink-2)}
+  .q-break{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--s2)}
+  .q-break:empty{display:none}
+  .qchip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;
+    font-size:var(--t-caption);font-weight:800;background:hsl(var(--h) 70% 89%);color:hsl(var(--h) 50% 20%)}
+  .qchip b{font-family:var(--round)}
+  .qrow{display:grid;grid-template-columns:4px 1fr auto;gap:var(--s3);align-items:center;
+    padding:var(--s2) var(--s4) var(--s2) 0;border-top:1px solid var(--line)}
+  .qrow .cat{align-self:stretch}
+  .qbody{font:inherit;color:var(--ink);background:none;border:0;padding:6px 0;text-align:left;cursor:pointer;
+    min-height:44px;border-radius:10px;min-width:0}
+  .qbody:active{background:var(--press)}
+  .qrow .btn{padding:0 14px;font-size:var(--t-footnote)}
+  .q-more{display:block;width:100%;min-height:44px;border:0;border-top:1px solid var(--line);background:none;
+    font:inherit;font-size:var(--t-footnote);font-weight:800;color:var(--tint-text);cursor:pointer}
+  .about summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;
+    gap:var(--s3);min-height:44px;border-radius:12px}
+  .about summary::-webkit-details-marker{display:none}
+  .about summary .label{display:block}
+  .about .chev{font-size:var(--t-title2);font-weight:700;color:var(--ink-2);transition:transform .2s ease}
+  .about[open] .chev{transform:rotate(90deg)}
+  .about dl{margin:var(--s4) 0 0;display:grid;gap:var(--s3)}
+  .about dt{font-size:var(--t-subhead);font-weight:800}
+  .about dd{margin:2px 0 0;font-size:var(--t-subhead);color:var(--ink-2);line-height:1.5}
+  .about a{color:var(--tint-text);font-weight:700;font-size:var(--t-footnote);white-space:nowrap}
+  .about .niat{display:block;margin-top:4px;color:var(--ink);font-style:italic}
+  .about .note{margin-top:var(--s4)}
+  .solat-mini{padding:var(--s3) var(--s4) var(--s4)}
+  .sm-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s2);min-height:32px}
+  .sm-q{font:inherit;font-size:var(--t-footnote);font-weight:800;border:0;background:none;color:var(--tint-text);
+    cursor:pointer;min-height:44px;padding:0 6px;margin:-6px -6px -6px 0;border-radius:10px}
+  .sm-q.flag{color:var(--flag-text)}
+  .sm-setup p{margin:var(--s1) 0 var(--s3);font-size:var(--t-subhead);color:var(--ink-2)}
+  /* Five across even on a 320pt phone: the labels scale with the row, never
+     below the 11pt minimum, and small phones give the row more of the card. */
+  .pchips{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:var(--s2);container-type:inline-size}
+  .pchip{font:inherit;border:0;cursor:pointer;min-height:58px;padding:8px 2px;border-radius:16px;display:grid;
+    place-content:center;gap:3px;background:rgba(15,20,40,.05);color:var(--ink);text-align:center;min-width:0}
+  .pchip b{font-size:max(11px,min(var(--t-footnote),4cqi));font-weight:800;line-height:1.15}
+  .pchip span{font-size:max(11px,min(var(--t-caption),3.7cqi));font-weight:700;color:var(--ink-2);line-height:1.15;white-space:nowrap}
+  @media (max-width:359px){
+    .solat-mini{padding-left:10px;padding-right:10px}
+    .pchips{gap:4px}
+    .pchip{padding-left:0;padding-right:0}
+  }
+  .pchip.on,.pchip.made{background:rgba(21,128,61,.12)}
+  .pchip.on span,.pchip.made span{color:#14532d}
+  .pchip.now{background:#fff;box-shadow:inset 0 0 0 2px var(--tint)}
+  .pchip.now span{color:var(--tint-text)}
+  .pchip.owed{background:rgba(194,65,12,.1)}
+  .pchip.owed span{color:#7c2d12}  /* the tint costs flag-text its 4.5:1 */
+  .pchip.excused span{font-style:italic}
+  .pchip:active{transform:scale(.95)}
+  body.big-type .pchips{grid-template-columns:repeat(2,1fr)}
+  body.big-type .pchip b{font-size:var(--t-footnote)}
+  body.big-type .pchip span{font-size:var(--t-caption)}
+  /* Action sheet. Opaque, like the clash box: it sits over the busiest screens. */
+  .sheet{border:0;padding:0;margin:auto auto 0;width:100%;max-width:min(520px,100%);max-height:none;
+    background:transparent;color:var(--ink);overflow:visible}
+  .sheet::backdrop{background:rgba(10,12,30,.5)}
+  .sheet-in{background:#f7f8fb;border-radius:28px 28px 0 0;box-shadow:0 -10px 40px -10px rgba(8,10,40,.5);
+    padding:var(--s5) max(var(--s4),env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + var(--s4)) max(var(--s4),env(safe-area-inset-left,0px))}
+  .sheet[open] .sheet-in{animation:rise .32s cubic-bezier(.3,1.2,.5,1)}
+  @keyframes rise{from{transform:translateY(40%);opacity:0}}
+  .sheet h2{margin-top:4px;font-size:var(--t-title2)}
+  .sheet .note{font-size:var(--t-footnote)}
+  .sheet .btns{flex-direction:column;align-items:stretch;margin-top:var(--s4)}
+  .sheet .btn{min-height:50px;font-size:var(--t-callout)}
+
   /* ---------------- floating tab bar (Liquid Glass) ---------------- */
   .tabbar{
     position:fixed;z-index:30;left:max(16px,env(safe-area-inset-left,0px));
     right:max(16px,env(safe-area-inset-right,0px));
     bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
     max-width:520px;margin:0 auto;height:64px;border-radius:999px;padding:6px;
-    display:grid;grid-template-columns:repeat(4,1fr);
+    display:grid;grid-template-columns:repeat(5,1fr);
   }
   .lens{
-    position:absolute;top:6px;bottom:6px;left:6px;width:calc((100% - 12px) / 4);border-radius:999px;
+    position:absolute;top:6px;bottom:6px;left:6px;width:calc((100% - 12px) / 5);border-radius:999px;
     background:rgba(255,255,255,.72);
     box-shadow:inset 0 1px 1px #fff,inset 0 -1px 2px rgba(15,20,40,.06),0 4px 14px -4px rgba(8,10,40,.35);
     transform:translateX(calc(var(--i,0) * 100%));
@@ -468,10 +555,10 @@
     font-size:var(--t-title3);color:var(--ink-2);cursor:pointer}
 
   @media (prefers-reduced-motion:reduce){
-    .blob,.focus,.toast{animation:none}
+    .blob,.focus,.toast,.sheet[open] .sheet-in{animation:none}
     :root{transition:none}
-    .lens,.rings .arc,.nowring .arc,.item,.focus-rule{transition:none}
-    .btn:active,.tabbar button:active{transform:none}
+    .lens,.rings .arc,.nowring .arc,.item,.focus-rule,.about .chev{transition:none}
+    .btn:active,.tabbar button:active,.pchip:active{transform:none}
   }
 </style>
 </head>
@@ -532,6 +619,18 @@
         <button type="button" class="btn glassbtn hide" id="now-done">Mark done</button>
       </div>
       <p class="now-next hide" id="now-next"></p>
+    </section>
+
+    <section class="material solat-mini" id="t-solat" aria-labelledby="sm-h">
+      <div class="sm-head">
+        <p class="label" id="sm-h">Solat</p>
+        <button type="button" class="sm-q hide" id="sm-q"></button>
+      </div>
+      <div class="pchips hide" id="sm-chips"></div>
+      <div class="sm-setup" id="sm-setup">
+        <p>Tick your five prayers. Any whose time runs out unticked are kept as qadha to make up.</p>
+        <button type="button" class="btn prominent" id="sm-go">Set up</button>
+      </div>
     </section>
 
     <div id="t-list"></div>
@@ -605,6 +704,67 @@
     <section class="material seccard" id="c-list"></section>
   </section>
 
+  <!-- SOLAT -->
+  <section id="v-solat" class="hide">
+    <section class="material pad hide" id="s-setup" aria-labelledby="ss-h">
+      <p class="label">Solat</p>
+      <h2 id="ss-h" style="margin-top:4px">Track your five prayers</h2>
+      <p class="s-intro">Tick each prayer once you've prayed it. If its time runs out first, it's counted as qadha and goes on your make-up list, oldest first.</p>
+      <label for="ss-zone">Your JAKIM zone</label>
+      <select id="ss-zone"></select>
+      <div class="btns" style="margin-top:var(--s3)"><button type="button" class="btn prominent" id="ss-go">Get prayer times</button></div>
+      <p class="err hide" id="ss-err" role="alert"></p>
+      <p class="note">Official times from JAKIM's e-Solat. The app downloads your zone's timetable once a year and sends nothing but the zone code.</p>
+    </section>
+
+    <div class="hide" id="s-main">
+      <section class="material seccard" aria-labelledby="s-h">
+        <div class="s-head">
+          <p class="label" id="s-day"></p>
+          <h2 id="s-h"></h2>
+          <p class="s-sub" id="s-sub"></p>
+        </div>
+        <div class="plist" id="s-list"></div>
+        <p class="s-src" id="s-src"></p>
+      </section>
+
+      <section class="material seccard" aria-labelledby="q-h">
+        <div class="s-head">
+          <p class="label">Qadha</p>
+          <h2 id="q-h"></h2>
+          <div class="q-break" id="q-break"></div>
+        </div>
+        <div id="q-list"></div>
+        <button type="button" class="q-more hide" id="q-more"></button>
+        <p class="s-src" id="q-foot"></p>
+      </section>
+    </div>
+
+    <section class="material pad">
+      <details class="about">
+        <summary><span><span class="label">Shafi'i school</span><h2 style="margin-top:4px">How qadha works</h2></span><span class="chev" aria-hidden="true">›</span></summary>
+        <dl>
+          <div><dt>What it is</dt><dd>A fard prayer that isn't prayed before its time ends becomes a debt. You repay it, qadha, by praying it later with the same rakaat: Subuh 2, Zohor 4, Asar 4, Maghrib 3, Isyak 4.</dd></div>
+          <div><dt>When each time ends</dt><dd>Subuh at syuruk (sunrise). Zohor when Asar comes in. Asar at Maghrib (sunset). Maghrib when Isyak comes in. Isyak at Subuh the next morning, so it stays open past midnight. <a href="https://muftiwp.gov.my/en/artikel/al-kafi-li-al-fatawi/1249-al-kafi-266-the-ending-time-for-isha-prayer" target="_blank" rel="noopener">Al-Kafi #266</a></dd></div>
+          <div><dt>How soon</dt><dd>Missed because you slept or forgot: make it up when you remember, and doing it soon is sunat. Missed without an excuse: making it up straight away is wajib. <a href="https://www.muftiwp.gov.my/artikel/al-kafi-li-al-fatawi/4186-al-kafi-1608-mana-lebih-utama-mendahulukan-qadha-solat-fardhu-dahulu-atau-mengerjakan-solat-fardhu-tunai" target="_blank" rel="noopener">Al-Kafi #1608</a></dd></div>
+          <div><dt>Which first</dt><dd>Oldest first: Subuh before Zohor, Zohor before Asar. Keeping that order is sunat, and prayers missed without an excuse go before ones missed with one. If the current prayer's time is safe, it's sunat to make up the missed one first; if it's running out, pray the current one first. <a href="https://www.muftiwp.gov.my/artikel/al-kafi-li-al-fatawi/4186-al-kafi-1608-mana-lebih-utama-mendahulukan-qadha-solat-fardhu-dahulu-atau-mengerjakan-solat-fardhu-tunai" target="_blank" rel="noopener">Al-Kafi #1608</a></dd></div>
+          <div><dt>Any time of day</dt><dd>A missed fard prayer can be made up even after Asar, when sunat prayers are normally avoided. <a href="https://muftiwp.gov.my/en/artikel/irsyad-fatwa/irsyad-fatwa-umum-cat/2551-irsyad-al-fatwa-series-164-the-ruling-of-sunnah-prayer-after-asar" target="_blank" rel="noopener">Irsyad al-Fatwa #164</a></dd></div>
+          <div><dt>Niat</dt><dd>Name the prayer you're making up, for example:<span class="niat">Sahaja aku solat fardu Zohor empat rakaat qadha kerana Allah Taala.</span></dd></div>
+          <div><dt>Not owed</dt><dd>Prayers missed during haid or nifas are not made up. <a href="https://www.muftiwp.gov.my/en/artikel/irsyad-fatwa/irsyad-fatwa-umum-cat/3061-irsyad-fatwa-series-287-if-the-haid-ends-at-maghrib-it-is-not-necessary-to-qadha-zuhr-and-asr" target="_blank" rel="noopener">Irsyad al-Fatwa #287</a></dd></div>
+        </dl>
+        <p class="note">This follows the Shafi'i school as Malaysia's fatwa offices teach it. For your own situation, ask an ustaz or your state mufti.</p>
+      </details>
+    </section>
+
+    <section class="material pad hide" id="s-zone-card" aria-labelledby="sz-h">
+      <h2 id="sz-h" style="margin-bottom:var(--s3)">Prayer times</h2>
+      <label for="sz-zone">Your JAKIM zone</label>
+      <select id="sz-zone"></select>
+      <div class="btns" style="margin-top:var(--s3)"><button type="button" class="btn" id="sz-get">Update times</button></div>
+      <p class="note" id="sz-note"></p>
+    </section>
+  </section>
+
   <!-- SCHEDULE -->
   <section id="v-edit" class="hide">
     <section class="material pad">
@@ -642,7 +802,7 @@
 
     <section class="material pad">
       <h2>Your data</h2>
-      <p class="note" style="margin-bottom:var(--s3)">Everything lives on this phone only. Nothing is uploaded and nobody else can see it. Clearing Safari's website data would erase it, so copy a backup now and then. Photos are not part of the backup text.</p>
+      <p class="note" style="margin-bottom:var(--s3)">Everything lives on this phone only. Nothing is uploaded and nobody else can see it. The one thing the app fetches is your prayer timetable, which sends JAKIM only your zone code. Clearing Safari's website data would erase it all, so copy a backup now and then. The backup includes your prayer ticks; photos are not part of it.</p>
       <div class="btns">
         <button type="button" class="btn" id="x-show">Show backup</button>
         <button type="button" class="btn" id="x-import">Restore from backup</button>
@@ -670,6 +830,7 @@
   <button type="button" data-view="today" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a3 3 0 0 1 3 3v1H2V7a3 3 0 0 1 3-3Zm2-3a1 1 0 0 1 1 1v2H6V2a1 1 0 0 1 1-1Zm10 0a1 1 0 0 1 1 1v2h-2V2a1 1 0 0 1 1-1Z"/><path d="M2 10h20v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-9Z"/></svg>Today</button>
   <button type="button" data-view="week" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="4.5" height="16" rx="1.6"/><rect x="9.75" y="4" width="4.5" height="16" rx="1.6"/><rect x="16.5" y="4" width="4.5" height="16" rx="1.6"/></svg>Week</button>
   <button type="button" data-view="climb" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.9 4.6a1.1 1.1 0 0 0-1.8 0l-8.2 13A1.1 1.1 0 0 0 3.8 19h16.4a1.1 1.1 0 0 0 .9-1.7Z"/></svg>Climb</button>
+  <button type="button" data-view="solat" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.4.6h1.2V3h-1.2Z"/><path d="M12 2.6c.9 1.7 2.7 2.8 4.3 4 1.6 1.2 2.7 2.8 2.7 5v.4H5v-.4c0-2.2 1.1-3.8 2.7-5 1.6-1.2 3.4-2.3 4.3-4Z"/><path d="M4 13.4h16V21h-5.5v-3.2a2.5 2.5 0 0 0-5 0V21H4Z"/></svg>Solat</button>
   <button type="button" data-view="edit" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.6" width="18" height="2.8" rx="1.4"/><circle cx="9" cy="7" r="3.1"/><rect x="3" y="15.6" width="18" height="2.8" rx="1.4"/><circle cx="15" cy="17" r="3.1"/></svg>Schedule</button>
 </nav>
 
@@ -687,6 +848,21 @@
     <p class="focus-lock" id="f-lock" hidden>The screen stays on while you focus.</p>
   </div>
 </div>
+
+<dialog class="sheet" id="p-sheet" aria-labelledby="ps-title">
+  <div class="sheet-in">
+    <p class="label" id="ps-date"></p>
+    <h2 id="ps-title"></h2>
+    <p class="note" id="ps-sub"></p>
+    <div class="btns">
+      <button type="button" class="btn prominent" id="ps-made">I've made it up</button>
+      <button type="button" class="btn" id="ps-on">I prayed it on time</button>
+      <button type="button" class="btn" id="ps-x">Excused (haid or nifas)</button>
+      <button type="button" class="btn danger" id="ps-clear">Clear</button>
+      <button type="button" class="btn" id="ps-cancel">Cancel</button>
+    </div>
+  </div>
+</dialog>
 
 <p class="sr" aria-live="polite" id="live"></p>
 
@@ -742,7 +918,7 @@ var RULES=[
 ];
 
 // ---------- storage ----------
-var K={blocks:"sb.blocks",done:"sb.done",climbs:"sb.climbs"};
+var K={blocks:"sb.blocks",done:"sb.done",climbs:"sb.climbs",solat:"sb.solat",solatSet:"sb.solatSet",times:"sb.times"};
 function load(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
 var blocks=load(K.blocks,null);
@@ -851,6 +1027,7 @@ function renderToday(){
   renderRings(st);
   var cn=currentNext(st.list,m);
   renderNow(st,cn,m);
+  renderSolatMini();
 
   var box=el("t-list");box.innerHTML="";
   if(!st.list.length){box.innerHTML='<section class="material"><p class="empty">Nothing scheduled for '+esc(LONG[i])+'.</p></section>';return;}
@@ -1309,6 +1486,329 @@ el("c-form").addEventListener("submit",function(e){e.preventDefault();
     if(v!==null&&prevBest!==null&&v>prevBest){toast("New hardest send — V"+v);announce("New hardest send, V"+v);}
     else toast("Session saved");});});
 
+// ---------- solat ----------
+// The five daily prayers, ticked as you pray them. Times are JAKIM's official
+// e-Solat timetable for your zone, downloaded once a year and kept on the
+// phone. A prayer whose time runs out unticked is owed as qadha.
+var PRAYERS=[
+  {id:"subuh",name:"Subuh",rk:2,h:338},
+  {id:"zohor",name:"Zohor",rk:4,h:205},
+  {id:"asar",name:"Asar",rk:4,h:36},
+  {id:"maghrib",name:"Maghrib",rk:3,h:292},
+  {id:"isyak",name:"Isyak",rk:4,h:238}
+];
+// JAKIM's prayer-time zones, as e-Solat lists them.
+var ZONES=[
+  ["Johor",[["JHR01","Pulau Aur dan Pulau Pemanggil"],["JHR02","Johor Bahru, Kota Tinggi, Mersing, Kulai"],["JHR03","Kluang, Pontian"],["JHR04","Batu Pahat, Muar, Segamat, Gemas Johor, Tangkak"]]],
+  ["Kedah",[["KDH01","Kota Setar, Kubang Pasu, Pokok Sena (Daerah Kecil)"],["KDH02","Kuala Muda, Yan, Pendang"],["KDH03","Padang Terap, Sik"],["KDH04","Baling"],["KDH05","Bandar Baharu, Kulim"],["KDH06","Langkawi"],["KDH07","Puncak Gunung Jerai"]]],
+  ["Kelantan",[["KTN01","Bachok, Kota Bharu, Machang, Pasir Mas, Pasir Puteh, Tanah Merah, Tumpat, Kuala Krai, Mukim Chiku"],["KTN02","Gua Musang (Daerah Galas Dan Bertam), Jeli, Jajahan Kecil Lojing"]]],
+  ["Melaka",[["MLK01","Seluruh Negeri Melaka"]]],
+  ["Negeri Sembilan",[["NGS01","Tampin, Jempol"],["NGS02","Jelebu, Kuala Pilah, Rembau"],["NGS03","Port Dickson, Seremban"]]],
+  ["Pahang",[["PHG01","Pulau Tioman"],["PHG02","Kuantan, Pekan, Muadzam Shah"],["PHG03","Jerantut, Temerloh, Maran, Bera, Chenor, Jengka"],["PHG04","Bentong, Lipis, Raub"],["PHG05","Genting Sempah, Janda Baik, Bukit Tinggi"],["PHG06","Cameron Highlands, Genting Highlands, Bukit Fraser"],["PHG07","Daerah Rompin, (Mukim Rompin, Mukim Endau, Mukim Pontian)"]]],
+  ["Perak",[["PRK01","Tapah, Slim River, Tanjung Malim"],["PRK02","Kuala Kangsar, Sg. Siput, Ipoh, Batu Gajah, Kampar"],["PRK03","Lenggong, Pengkalan Hulu, Grik"],["PRK04","Temengor, Belum"],["PRK05","Kg Gajah, Teluk Intan, Bagan Datuk, Seri Iskandar, Beruas, Parit, Lumut, Sitiawan, Pulau Pangkor"],["PRK06","Selama, Taiping, Bagan Serai, Parit Buntar"],["PRK07","Bukit Larut"]]],
+  ["Perlis",[["PLS01","Kangar, Padang Besar, Arau"]]],
+  ["Pulau Pinang",[["PNG01","Seluruh Negeri Pulau Pinang"]]],
+  ["Sabah",[["SBH01","Bahagian Sandakan (Timur), Bukit Garam, Semawang, Temanggong, Tambisan, Bandar Sandakan, Sukau"],["SBH02","Beluran, Telupid, Pinangah, Terusan, Kuamut, Bahagian Sandakan (Barat)"],["SBH03","Lahad Datu, Silabukan, Kunak, Sahabat, Semporna, Tungku, Bahagian Tawau (Timur)"],["SBH04","Bandar Tawau, Balong, Merotai, Kalabakan, Bahagian Tawau (Barat)"],["SBH05","Kudat, Kota Marudu, Pitas, Pulau Banggi, Bahagian Kudat"],["SBH06","Gunung Kinabalu"],["SBH07","Kota Kinabalu, Ranau, Kota Belud, Tuaran, Penampang, Papar, Putatan, Bahagian Pantai Barat"],["SBH08","Pensiangan, Keningau, Tambunan, Nabawan, Bahagian Pendalaman (Atas)"],["SBH09","Beaufort, Kuala Penyu, Sipitang, Tenom, Long Pasia, Membakut, Weston, Bahagian Pendalaman (Bawah)"]]],
+  ["Sarawak",[["SWK01","Limbang, Lawas, Sundar, Trusan"],["SWK02","Miri, Niah, Bekenu, Sibuti, Marudi"],["SWK03","Pandan, Belaga, Suai, Tatau, Sebauh, Bintulu"],["SWK04","Sibu, Mukah, Dalat, Song, Igan, Oya, Balingian, Kanowit, Kapit"],["SWK05","Sarikei, Matu, Julau, Rajang, Daro, Bintangor, Belawai"],["SWK06","Lubok Antu, Sri Aman, Roban, Debak, Kabong, Lingga, Engkelili, Betong, Spaoh, Pusa, Saratok"],["SWK07","Serian, Simunjan, Samarahan, Sebuyau, Meludam"],["SWK08","Kuching, Bau, Lundu, Sematan"],["SWK09","Zon Khas (Kampung Patarikan)"]]],
+  ["Selangor",[["SGR01","Gombak, Petaling, Sepang, Hulu Langat, Hulu Selangor, S.Alam"],["SGR02","Kuala Selangor, Sabak Bernam"],["SGR03","Klang, Kuala Langat"]]],
+  ["Terengganu",[["TRG01","Kuala Terengganu, Marang, Kuala Nerus"],["TRG02","Besut, Setiu"],["TRG03","Hulu Terengganu"],["TRG04","Dungun, Kemaman"]]],
+  ["Wilayah Persekutuan",[["WLY01","Kuala Lumpur, Putrajaya"],["WLY02","Labuan"]]]
+];
+// One record per prayer: "on" prayed in its time, "m:<date>" made up as qadha
+// that day, "x" excused (haid or nifas). No record once its time is out: owed.
+var plog=load(K.solat,{})||{},pset=load(K.solatSet,null),ptimes=load(K.times,null);
+var timesTry=0,timesBusy=false,qAll=false,sheetAt=null;
+
+function zoneName(c){
+  for(var i=0;i<ZONES.length;i++)for(var j=0;j<ZONES[i][1].length;j++)if(ZONES[i][1][j][0]===c)return ZONES[i][1][j][1];
+  return "";
+}
+function fillZones(sel,cur){
+  sel.innerHTML="";
+  if(!cur){var o=document.createElement("option");o.value="";o.textContent="Choose your zone";sel.appendChild(o);}
+  ZONES.forEach(function(g){
+    var og=document.createElement("optgroup");og.label=g[0];
+    g[1].forEach(function(z){var o=document.createElement("option");o.value=z[0];o.textContent=z[0]+" · "+z[1];og.appendChild(o);});
+    sel.appendChild(og);
+  });
+  sel.value=cur||"";
+}
+
+// e-Solat answers with Malay month names: 01-Mac-2026, 15-Ogos-2026.
+var MON={jan:1,feb:2,mac:3,mar:3,apr:4,mei:5,may:5,jun:6,jul:7,ogo:8,aug:8,sep:9,okt:10,oct:10,nov:11,dis:12,dec:12};
+function hm(s){var p=String(s||"").split(":");return p.length>1?(+p[0])*60+(+p[1]):NaN;}
+function getTimes(zone){
+  var ctl=window.AbortController?new AbortController():null,timer=setTimeout(function(){if(ctl)ctl.abort();},20000);
+  return fetch("https://www.e-solat.gov.my/index.php?r=esolatApi/takwimsolat&period=year&zone="+encodeURIComponent(zone),
+      {cache:"no-store",signal:ctl?ctl.signal:undefined})
+    .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+    .then(function(j){
+      clearTimeout(timer);
+      var years={},n=0;
+      ((j&&j.prayerTime)||[]).forEach(function(x){
+        var dp=String(x.date||"").split("-"),mo=MON[String(dp[1]||"").slice(0,3).toLowerCase()],da=+dp[0],yr=dp[2]||"";
+        if(!mo||!da||!/^\d{4}$/.test(yr))return;
+        var t=[x.fajr,x.syuruk,x.dhuhr,x.asr,x.maghrib,x.isha].map(hm);
+        for(var i=0;i<6;i++)if(isNaN(t[i])||(i&&t[i]<=t[i-1]))return;
+        (years[yr]=years[yr]||{})[String(mo).padStart(2,"0")+"-"+String(da).padStart(2,"0")]=t;n++;
+      });
+      if(n<28)throw new Error("No timetable in the reply");
+      var keep=ptimes&&ptimes.zone===zone&&ptimes.years?ptimes.years:{};
+      Object.keys(years).forEach(function(y){keep[y]=years[y];});
+      var ys=Object.keys(keep).sort();while(ys.length>2)delete keep[ys.shift()];
+      ptimes={zone:zone,got:key(new Date()),years:keep};save(K.times,ptimes);
+      return ptimes;
+    },function(e){clearTimeout(timer);throw e;});
+}
+// Fetch this year's timetable when it's missing: a new zone, a restored
+// backup, or a new year. At most one try an hour, and never while offline.
+function timesStale(){
+  if(!pset)return false;
+  var Y=ptimes&&ptimes.zone===pset.zone&&ptimes.years;
+  return !Y||!Y[String(new Date().getFullYear())];
+}
+function refreshTimes(){
+  if(!timesStale()||timesBusy||Date.now()-timesTry<3600000||navigator.onLine===false)return;
+  timesTry=Date.now();timesBusy=true;
+  getTimes(pset.zone).then(function(){timesBusy=false;renderSolatAll();},function(){timesBusy=false;});
+}
+
+function dayTimes(d){
+  var Y=ptimes&&ptimes.years;if(!Y)return null;
+  var y=String(d.getFullYear()),md=key(d).slice(5);
+  if(Y[y]&&Y[y][md])return {t:Y[y][md],est:false};
+  // A year JAKIM hasn't published yet: the same date in another year lands
+  // within a minute or two, so use it until the real timetable downloads.
+  var ys=Object.keys(Y).sort().reverse();
+  for(var i=0;i<ys.length;i++){var v=Y[ys[i]][md]||(md==="02-29"&&Y[ys[i]]["02-28"]);if(v)return {t:v,est:true};}
+  return null;
+}
+function atMin(d,m){return new Date(d.getFullYear(),d.getMonth(),d.getDate(),0,m);}
+function nextDay(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);}
+// [start, end) of each prayer on day d. Isyak runs to the next Subuh.
+function windows(d){
+  var dt=dayTimes(d);if(!dt)return null;
+  var t=dt.t,n=nextDay(d),nt=dayTimes(n);
+  return {est:dt.est,w:[[atMin(d,t[0]),atMin(d,t[1])],[atMin(d,t[2]),atMin(d,t[3])],[atMin(d,t[3]),atMin(d,t[4])],
+    [atMin(d,t[4]),atMin(d,t[5])],[atMin(d,t[5]),atMin(n,nt?nt.t[0]:t[0])]]};
+}
+// The prayer day runs Subuh to Subuh: at 1am it is still last night's Isyak.
+function prayerDay(now){
+  var d=new Date(now.getFullYear(),now.getMonth(),now.getDate()),W=windows(d);
+  if(W&&now<W.w[0][0])d.setDate(d.getDate()-1);
+  return d;
+}
+function pRec(k,id){return plog[k]?plog[k][id]:undefined;}
+function setRec(k,id,v){
+  var o=plog[k]||{};if(v)o[id]=v;else delete o[id];
+  if(Object.keys(o).length)plog[k]=o;else delete plog[k];save(K.solat,plog);
+}
+function isMade(r){return typeof r==="string"&&r.indexOf("m:")===0;}
+function pState(d,i,now,W){
+  var k=key(d),r=pRec(k,PRAYERS[i].id),w=W&&W.w[i];
+  if(r==="on")return "on";if(r==="x")return "excused";if(isMade(r))return "made";
+  if(!w)return "open";if(now<w[0])return "soon";if(now<w[1])return "now";
+  return pset&&k>=pset.since?"owed":"before";
+}
+// Everything owed since tracking began, oldest first and in prayer order:
+// the order the Shafi'i school recommends making them up in.
+function qadha(now){
+  var owed=[],made=0;if(!pset)return {owed:owed,made:made};
+  var d=fromKey(pset.since),last=prayerDay(now);
+  for(var g=0;g<5000&&d<=last;g++){
+    var W=windows(d);
+    for(var i=0;i<5;i++){var s=pState(d,i,now,W);if(s==="owed")owed.push({d:new Date(d),i:i});else if(s==="made")made++;}
+    d.setDate(d.getDate()+1);
+  }
+  return {owed:owed,made:made};
+}
+function prayerNow(now){
+  var d=prayerDay(now),W=windows(d),cur=-1,next=null;
+  if(W){
+    for(var i=0;i<5;i++){if(now>=W.w[i][0]&&now<W.w[i][1])cur=i;if(!next&&W.w[i][0]>now)next={d:d,i:i,at:W.w[i][0]};}
+    if(!next){var n=nextDay(d),Wn=windows(n);if(Wn)next={d:n,i:0,at:Wn.w[0][0]};}
+  }
+  return {d:d,W:W,cur:cur,next:next};
+}
+function clock(t){return fmt(t.getHours()*60+t.getMinutes());}
+function left(ms){var m=Math.max(1,Math.ceil(ms/60000)),h=Math.floor(m/60);return h?h+"h"+(m%60?" "+m%60+"m":""):m+"m";}
+function longDate(d){return LONG[dayIdx(d)]+" "+d.getDate()+" "+MONTHS[d.getMonth()];}
+function shortDate(d){return DAYS[dayIdx(d)]+" "+d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3);}
+function fromKey(k){var p=String(k).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+function allFive(k){var o=plog[k]||{};return PRAYERS.every(function(p){return o[p.id]==="on"||isMade(o[p.id]);});}
+
+// Inside its time, or before it (jamak taqdim), a tap is a plain tick. Once
+// the time is out an untick would turn it into qadha, so it asks instead.
+function pTap(d,i){
+  var now=new Date(),W=windows(d),w=W&&W.w[i],k=key(d),p=PRAYERS[i],r=pRec(k,p.id);
+  if((!w||now<w[1])&&(!r||r==="on")){
+    var was=allFive(k);setRec(k,p.id,r?null:"on");
+    announce(p.name+(r?" unticked":" ticked"));renderSolatAll();
+    if(!was&&allFive(k))toast("All five prayers ticked");
+    return;
+  }
+  openSheet(d,i);
+}
+function openSheet(d,i){
+  var p=PRAYERS[i],r=pRec(key(d),p.id),W=windows(d),w=W&&W.w[i],ended=!w||new Date()>=w[1];
+  sheetAt={d:new Date(d),i:i};
+  el("ps-date").textContent=longDate(d);el("ps-title").textContent=p.name;
+  el("ps-sub").textContent=p.rk+" rakaat"+(w?" · its time "+(ended?"ended":"ends")+" at "+clock(w[1]):"")+
+    (isMade(r)?" · made up "+shortDate(fromKey(r.slice(2))):r==="on"?" · ticked as prayed":r==="x"?" · marked excused":"");
+  el("ps-made").classList.toggle("hide",!ended||isMade(r)||r==="on");
+  el("ps-on").classList.toggle("hide",r==="on");
+  el("ps-x").classList.toggle("hide",r==="x");
+  el("ps-clear").classList.toggle("hide",!r);
+  el("ps-clear").textContent=!ended?"Clear":r==="on"?"Untick, it counts as qadha":isMade(r)?"Not made up yet":"Not excused";
+  var dlg=el("p-sheet");
+  if(dlg.showModal){if(!dlg.open)dlg.showModal();}else dlg.setAttribute("open","");
+  var first=dlg.querySelector(".btns .btn:not(.hide)");if(first)first.focus();
+}
+function closeSheet(){var dlg=el("p-sheet");if(dlg.close){if(dlg.open)dlg.close();}else dlg.removeAttribute("open");}
+function sheetSet(v,msg){
+  if(!sheetAt)return;
+  var k=key(sheetAt.d),id=PRAYERS[sheetAt.i].id,prev=pRec(k,id)||null;
+  setRec(k,id,v);closeSheet();sheetAt=null;renderSolatAll();announce(msg);
+  toast(msg,function(){setRec(k,id,prev);renderSolatAll();});
+}
+function sheetName(){return sheetAt?PRAYERS[sheetAt.i].name:"";}
+el("ps-made").addEventListener("click",function(){sheetSet("m:"+key(new Date()),sheetName()+" qadha made up");});
+el("ps-on").addEventListener("click",function(){sheetSet("on",sheetName()+" ticked as prayed on time");});
+el("ps-x").addEventListener("click",function(){sheetSet("x",sheetName()+" marked excused");});
+el("ps-clear").addEventListener("click",function(){
+  var r=sheetAt&&pRec(key(sheetAt.d),PRAYERS[sheetAt.i].id);
+  sheetSet(null,sheetName()+(r==="on"?" unticked":isMade(r)?" is back on your qadha list":" cleared"));});
+el("ps-cancel").addEventListener("click",closeSheet);
+// A tap on the dimmed backdrop lands on the dialog itself.
+el("p-sheet").addEventListener("click",function(e){if(e.target===this)closeSheet();});
+el("p-sheet").addEventListener("close",function(){sheetAt=null;});
+
+function makeUp(d,i){
+  var k=key(d),p=PRAYERS[i],prev=pRec(k,p.id)||null,msg=p.name+" qadha made up";
+  setRec(k,p.id,"m:"+key(new Date()));renderSolatAll();announce(msg);
+  toast(msg,function(){setRec(k,p.id,prev);renderSolatAll();});
+}
+
+function renderSolatAll(){renderSolatMini();if(view==="solat")renderSolat();}
+function chipWord(s,w,now){
+  return s==="on"?"Prayed":s==="made"?"Made up":s==="excused"?"Excused":s==="owed"?"Qadha":
+    s==="now"?left(w[1]-now):s==="soon"?clock(w[0]):"–";
+}
+function stateSay(p,s,w,now){
+  return p.name+", "+(s==="on"?"prayed":s==="made"?"made up as qadha":s==="excused"?"excused":
+    s==="owed"?"its time ended at "+clock(w[1])+", counted as qadha":
+    s==="now"?"until "+clock(w[1])+", "+left(w[1]-now)+" left":s==="soon"?"starts at "+clock(w[0]):"not ticked");
+}
+function renderSolatMini(){
+  var ready=!!pset;
+  el("sm-setup").classList.toggle("hide",ready);el("sm-chips").classList.toggle("hide",!ready);el("sm-q").classList.toggle("hide",!ready);
+  if(!ready)return;
+  var now=new Date(),pn=prayerNow(now),box=el("sm-chips");box.innerHTML="";
+  PRAYERS.forEach(function(p,i){
+    var s=pState(pn.d,i,now,pn.W),w=pn.W&&pn.W.w[i];
+    var b=document.createElement("button");b.type="button";b.className="pchip "+s;
+    b.innerHTML="<b></b><span></span>";b.firstChild.textContent=p.name;b.lastChild.textContent=chipWord(s,w,now);
+    b.setAttribute("aria-label",stateSay(p,s,w,now));
+    b.setAttribute("aria-pressed",s==="on"||s==="made"?"true":"false");
+    b.addEventListener("click",function(){pTap(pn.d,i);});
+    box.appendChild(b);
+  });
+  var n=qadha(now).owed.length,q=el("sm-q");
+  q.innerHTML=esc(n?n+" qadha to make up":"No qadha owed")+' <span aria-hidden="true">›</span>';
+  q.classList.toggle("flag",n>0);
+}
+function prayerRow(d,i,now,W){
+  var p=PRAYERS[i],s=pState(d,i,now,W),w=W&&W.w[i],r=pRec(key(d),p.id),ok=s==="on"||s==="made";
+  var row=document.createElement("button");row.type="button";
+  row.className="item "+s+(ok?" done":"")+(s==="before"?" past":"");
+  row.style.setProperty("--h",p.h);row.setAttribute("aria-pressed",ok?"true":"false");
+  row.innerHTML='<span class="cat"></span><span class="when"></span><span class="body"><span class="ttl"></span><span class="meta"></span></span><span class="tick" aria-hidden="true">✓</span>';
+  row.querySelector(".when").textContent=w?clock(w[0]):"";
+  row.querySelector(".ttl").textContent=p.name;
+  // Status first, so a narrow screen wraps the times rather than the status.
+  var meta=row.querySelector(".meta");
+  var tag=s==="on"?["ok","Prayed"]:s==="made"?["ok","Made up "+shortDate(fromKey(r.slice(2)))]:s==="owed"?["flagt","Qadha"]:
+    s==="now"?["nowt",left(w[1]-now)+" left"]:s==="excused"?["","Excused"]:null;
+  if(tag){var t=document.createElement("span");t.className="tag "+tag[0];t.textContent=tag[1];meta.appendChild(t);
+    meta.appendChild(document.createTextNode(" · "));}
+  meta.appendChild(document.createTextNode((w?"until "+clock(w[1])+" · ":"")+p.rk+" rakaat"));
+  row.addEventListener("click",function(){pTap(d,i);});
+  return row;
+}
+function qRow(o,first){
+  var p=PRAYERS[o.i],row=document.createElement("div");row.className="qrow";row.style.setProperty("--h",p.h);
+  row.innerHTML='<span class="cat"></span><button type="button" class="qbody"><span class="ttl"></span><span class="meta"></span></button><button type="button" class="btn qdone">Made up</button>';
+  row.querySelector(".ttl").textContent=p.name+" · "+shortDate(o.d);
+  row.querySelector(".meta").textContent=p.rk+" rakaat"+(first?" · next in order":"");
+  row.querySelector(".qbody").addEventListener("click",function(){openSheet(o.d,o.i);});
+  var b=row.querySelector(".qdone");if(first)b.classList.add("prominent");
+  b.setAttribute("aria-label","Mark "+p.name+" of "+longDate(o.d)+" as made up");
+  b.addEventListener("click",function(){makeUp(o.d,o.i);});
+  return row;
+}
+function renderSolat(){
+  var ready=!!pset;
+  el("s-setup").classList.toggle("hide",ready);el("s-main").classList.toggle("hide",!ready);el("s-zone-card").classList.toggle("hide",!ready);
+  if(!ready){if(!el("ss-zone").options.length)fillZones(el("ss-zone"),"");return;}
+  var now=new Date(),pn=prayerNow(now),d=pn.d,W=pn.W,h="",sub="";
+  el("s-day").textContent=(key(d)===key(now)?"Today · ":"")+longDate(d);
+  if(!W){h="No prayer times yet";sub=navigator.onLine===false?"Connect to the internet once to download your zone's timetable.":"Downloading your zone's timetable…";}
+  else if(pn.cur>=0){
+    var cp=PRAYERS[pn.cur],cs=pState(d,pn.cur,now,W);
+    h=cs==="on"||cs==="made"?cp.name+" prayed":cp.name+" · "+left(W.w[pn.cur][1]-now)+" left";
+    if(pn.next)sub="Next: "+PRAYERS[pn.next.i].name+" at "+clock(pn.next.at);
+  }else if(pn.next){h=PRAYERS[pn.next.i].name+" at "+clock(pn.next.at);sub="Starts in "+left(pn.next.at-now);}
+  el("s-h").textContent=h;el("s-sub").textContent=sub;el("s-sub").classList.toggle("hide",!sub);
+  var list=el("s-list");list.innerHTML="";
+  PRAYERS.forEach(function(p,i){list.appendChild(prayerRow(d,i,now,W));});
+  el("s-src").textContent="JAKIM e-Solat · "+pset.zone+" "+zoneName(pset.zone)+
+    (W&&W.est?". Estimated from last year's timetable until this year's downloads.":"");
+
+  var q=qadha(now),n=q.owed.length,br=el("q-break"),ql=el("q-list");
+  el("q-h").textContent=n?n+(n===1?" prayer":" prayers")+" to make up":"Nothing to make up";
+  br.innerHTML="";
+  PRAYERS.forEach(function(p,i){
+    var c=q.owed.filter(function(o){return o.i===i;}).length;if(!c)return;
+    var s=document.createElement("span");s.className="qchip";s.style.setProperty("--h",p.h);
+    s.textContent=p.name+" ";var b=document.createElement("b");b.textContent=c;s.appendChild(b);br.appendChild(s);
+  });
+  ql.innerHTML="";
+  (qAll?q.owed:q.owed.slice(0,5)).forEach(function(o,ix){ql.appendChild(qRow(o,ix===0));});
+  var more=el("q-more");more.classList.toggle("hide",n<=5);more.textContent=qAll?"Show fewer":"Show all "+n;
+  el("q-foot").textContent=(n?"Oldest first, in prayer order. ":"")+"Made up so far: "+q.made+". Counting since "+shortDate(fromKey(pset.since))+".";
+
+  var zs=el("sz-zone");
+  if(zs.getAttribute("data-zone")!==pset.zone){fillZones(zs,pset.zone);zs.setAttribute("data-zone",pset.zone);syncZoneBtn();}
+  var Y=ptimes&&ptimes.zone===pset.zone&&ptimes.years;
+  el("sz-note").textContent=Y?"Official "+Object.keys(Y).sort().join(" and ")+" timetable, downloaded "+shortDate(fromKey(ptimes.got))+
+    ". The app sends JAKIM nothing but the zone code.":"Not downloaded yet.";
+}
+function syncZoneBtn(){var z=el("sz-zone").value;el("sz-get").textContent=!pset||!z||z===pset.zone?"Update times":"Switch to "+z;}
+
+el("sm-go").addEventListener("click",function(){show("solat");});
+el("sm-q").addEventListener("click",function(){show("solat");});
+el("q-more").addEventListener("click",function(){qAll=!qAll;renderSolat();});
+el("ss-go").addEventListener("click",function(){
+  var z=el("ss-zone").value,err=el("ss-err"),btn=el("ss-go");
+  if(!z){err.textContent="Choose your zone first.";err.classList.remove("hide");el("ss-zone").focus();return;}
+  err.classList.add("hide");btn.disabled=true;btn.textContent="Downloading…";
+  getTimes(z).then(function(){
+    pset={zone:z,since:key(prayerDay(new Date()))};save(K.solatSet,pset);
+    btn.disabled=false;btn.textContent="Get prayer times";renderSolatAll();
+    toast("Tracking from today. Tick any you've already prayed.");
+  },function(){
+    btn.disabled=false;btn.textContent="Get prayer times";
+    err.textContent="Couldn't reach JAKIM e-Solat. Check your connection and try again.";err.classList.remove("hide");
+  });
+});
+el("sz-zone").addEventListener("change",syncZoneBtn);
+el("sz-get").addEventListener("click",function(){
+  var z=el("sz-zone").value||pset.zone,btn=el("sz-get");
+  btn.disabled=true;btn.textContent="Downloading…";
+  getTimes(z).then(function(){pset.zone=z;save(K.solatSet,pset);btn.disabled=false;renderSolatAll();syncZoneBtn();toast("Prayer times updated");},
+    function(){btn.disabled=false;syncZoneBtn();toast("Couldn't reach JAKIM e-Solat. Your times are unchanged.");});
+});
+
 // ---------- schedule ----------
 var picked=[],editing=null;
 (function(){var s=el("e-type");TYPES.forEach(function(t){var o=document.createElement("option");o.value=t.id;o.textContent=t.name;s.appendChild(o);});
@@ -1443,7 +1943,7 @@ el("e-confirm-no").addEventListener("click",function(){el("e-confirm").classList
 el("e-confirm-yes").addEventListener("click",function(){if(!editing)return;blocks=blocks.filter(function(b){return b.id!==editing;});
   save(K.blocks,blocks);resetEdit();renderEditList();renderToday();toast("Block deleted");});
 
-function bundle(){return JSON.stringify({v:1,blocks:blocks,done:done,climbs:climbs});}
+function bundle(){return JSON.stringify({v:1,blocks:blocks,done:done,climbs:climbs,solat:{log:plog,set:pset}});}
 el("x-show").addEventListener("click",function(){el("x-box").classList.remove("hide");el("x-apply").classList.add("hide");
   el("x-text").value=bundle();el("x-note").textContent="Copy this somewhere safe — Notes, or an email to yourself.";});
 el("x-import").addEventListener("click",function(){el("x-box").classList.remove("hide");el("x-apply").classList.remove("hide");
@@ -1453,6 +1953,7 @@ el("x-copy").addEventListener("click",function(){var t=el("x-text");t.select();t
     function(){el("x-note").textContent="Selected — use Copy from the menu.";});else el("x-note").textContent="Selected — use Copy from the menu.";});
 el("x-apply").addEventListener("click",function(){try{var o=JSON.parse(el("x-text").value);if(!o||!Array.isArray(o.blocks))throw 0;
   blocks=o.blocks;done=o.done||{};climbs=o.climbs||[];save(K.blocks,blocks);save(K.done,done);save(K.climbs,climbs);
+  if(o.solat){plog=o.solat.log||{};pset=o.solat.set||null;save(K.solat,plog);save(K.solatSet,pset);timesTry=0;refreshTimes();}
   el("x-note").textContent="Restored.";renderToday();renderEditList();}catch(e){el("x-note").textContent="That doesn't look like a backup from this app.";}});
 el("x-reset").addEventListener("click",function(){el("x-confirm").classList.remove("hide");el("x-confirm-no").focus();});
 el("x-confirm-no").addEventListener("click",function(){el("x-confirm").classList.add("hide");});
@@ -1460,7 +1961,7 @@ el("x-confirm-yes").addEventListener("click",function(){blocks=DEFAULTS.slice();
   resetEdit();renderEditList();renderToday();toast("Schedule reset");});
 
 // ---------- navigation ----------
-var VIEWS={today:"Today",week:"Week",climb:"Climbing",edit:"Schedule"},ORDER=["today","week","climb","edit"],view="today";
+var VIEWS={today:"Today",week:"Week",climb:"Climbing",solat:"Solat",edit:"Schedule"},ORDER=["today","week","climb","solat","edit"],view="today";
 function show(name){
   view=name;
   ORDER.forEach(function(v){el("v-"+v).classList.toggle("hide",v!==name);});
@@ -1469,6 +1970,7 @@ function show(name){
   el("lens").style.setProperty("--i",ORDER.indexOf(name));
   el("view-title").textContent=VIEWS[name];
   if(name==="today")renderToday();if(name==="week")renderWeek();if(name==="climb")renderClimb();if(name==="edit")renderEditList();
+  if(name==="solat"){renderSolat();refreshTimes();}
   window.scrollTo(0,0);
 }
 Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"),function(b){
@@ -1488,8 +1990,11 @@ el("install-x").addEventListener("click",function(){el("install").classList.add(
 
 window.addEventListener("resize",syncTypeScale);window.addEventListener("pageshow",syncTypeScale);
 document.addEventListener("visibilitychange",function(){if(document.hidden)return;syncTypeScale();paintSky();
-  if(view==="today")renderToday();if(focusBlock)requestWake();});
-setInterval(function(){if(document.hidden)return;paintSky();if(view==="today"&&!focusBlock)renderToday();if(view==="climb")renderGym();},30000);
+  if(view==="today")renderToday();if(view==="solat")renderSolat();refreshTimes();if(focusBlock)requestWake();});
+window.addEventListener("online",refreshTimes);
+setInterval(function(){if(document.hidden)return;paintSky();if(view==="today"&&!focusBlock)renderToday();if(view==="climb")renderGym();
+  if(view==="solat")renderSolat();},30000);
+refreshTimes();
 
 if("serviceWorker" in navigator&&location.protocol!=="file:")
   window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});

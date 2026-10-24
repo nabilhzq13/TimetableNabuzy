@@ -1,6 +1,6 @@
 /* Break — offline cache.
    Bump CACHE when you change any file, so phones pick the new version up. */
-var CACHE = "break-v17";
+var CACHE = "break-v18";
 var FILES = [
   "./",
   "./index.html",
@@ -30,6 +30,8 @@ self.addEventListener("activate", function (ev) {
 self.addEventListener("fetch", function (ev) {
   var req = ev.request;
   if (req.method !== "GET") return;
+  // The prayer timetable comes from JAKIM; the app stores it itself.
+  if (new URL(req.url).origin !== self.location.origin) return;
 
   // Navigations: try the network, fall back to the cached shell when offline.
   if (req.mode === "navigate") {

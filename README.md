@@ -1,8 +1,10 @@
 # Break — putting it on your iPhone
 
-An offline schedule and climbing log. Once it's on your home screen it opens like any
-app, works with no signal, and keeps every tick, block and session **on the phone
-itself**. Nothing is uploaded, there is no account, and no one else can see it.
+An offline schedule, climbing log and prayer tracker. Once it's on your home screen
+it opens like any app, works with no signal, and keeps every tick, block and session
+**on the phone itself**. Nothing is uploaded, there is no account, and no one else
+can see it. The one thing it fetches is your zone's prayer timetable from JAKIM's
+e-Solat, once a year, and that request carries only the zone code.
 
 ## Files
 
@@ -61,6 +63,17 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   notes, and up to four photos. **Take a photo** opens the camera; each shot is scaled down to a 1280px
   long edge and stored on the phone, so a season of sessions stays small. Tap a
   thumbnail to see it full screen. Deleting a session deletes its photos too.
+- **Solat** — the five daily prayers with your zone's official JAKIM times. Pick
+  your zone once and the app downloads that year's timetable from e-Solat, then
+  works offline. Tick a prayer when you've prayed it, here or from the row of five
+  on Today. If a prayer's time ends before you tick it (Subuh at syuruk, Zohor at
+  Asar, Asar at Maghrib, Maghrib at Isyak, Isyak at the next Subuh), it goes on
+  your qadha list, oldest first and in prayer order, and stays there until you tap
+  **Made up**. Forgot to tick one you did pray on time? Tap it and choose **I
+  prayed it on time**. **Excused** is for haid or nifas, when no qadha is owed.
+  **How qadha works** sums up the rulings (Shafi'i school, from the Federal
+  Territory Mufti's office) with links to each source. Until JAKIM publishes a
+  new year's timetable, the app uses the same dates from last year and says so.
 - **Edit** — change the schedule. Tap any block to edit or delete it, or add new
   ones. Two blocks can't share the same time on the same day (one ending exactly
   when the next starts is fine). If a block overlaps others, the form lists each
@@ -83,7 +96,8 @@ labels stay put, which is what iOS itself does.
 Your data lives in Safari's storage for this app. Deleting the app, or clearing
 Safari's website data, erases it. Every few weeks open **Edit → Show backup**, copy
 the text, and paste it into Notes or email it to yourself. **Restore from backup**
-pastes it back.
+pastes it back. The backup includes your prayer ticks and qadha record; the prayer
+timetable downloads again by itself.
 
 **Photos are not in that backup.** It's plain text meant to be pasted into a note,
 and photos would make it enormous. They live in the phone's own image store
