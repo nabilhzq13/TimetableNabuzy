@@ -71,6 +71,10 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   your qadha list, oldest first and in prayer order, and stays there until you tap
   **Made up**. Forgot to tick one you did pray on time? Tap it and choose **I
   prayed it on time**. **Excused** is for haid or nifas, when no qadha is owed.
+  Qadha from before you started tracking goes in with **Add qadha from before**:
+  either "missed all five for about 2 years" (a month counts as 30 days, a year
+  as 365), or a count for each prayer. Each **Made up** takes one off, **Made up
+  one of each** takes one off all five, and a bar shows how far you've come.
   **How qadha works** sums up the rulings (Shafi'i school, from the Federal
   Territory Mufti's office) with links to each source. Until JAKIM publishes a
   new year's timetable, the app uses the same dates from last year and says so.
@@ -96,7 +100,7 @@ labels stay put, which is what iOS itself does.
 Your data lives in Safari's storage for this app. Deleting the app, or clearing
 Safari's website data, erases it. Every few weeks open **Edit → Show backup**, copy
 the text, and paste it into Notes or email it to yourself. **Restore from backup**
-pastes it back. The backup includes your prayer ticks and qadha record; the prayer
+pastes it back. The backup includes your prayer ticks and qadha record, earlier qadha too; the prayer
 timetable downloads again by itself.
 
 **Photos are not in that backup.** It's plain text meant to be pasted into a note,

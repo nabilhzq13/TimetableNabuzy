@@ -478,6 +478,33 @@
   .sheet .note{font-size:var(--t-footnote)}
   .sheet .btns{flex-direction:column;align-items:stretch;margin-top:var(--s4)}
   .sheet .btn{min-height:50px;font-size:var(--t-callout)}
+  .sheet-in{max-height:92vh;max-height:calc(100dvh - 12px);overflow-y:auto;overscroll-behavior:contain}
+  /* Qadha from before tracking: a count per prayer, chipped away one at a time. */
+  .qtext{padding:6px 0;min-width:0}
+  .qrow .tag{white-space:nowrap;font-weight:800}
+  .qrow .ok{color:#14532d}
+  .q-oldhead{display:flex;justify-content:space-between;align-items:center;gap:var(--s2);border-top:1px solid var(--line)}
+  .q-edit{font:inherit;font-size:var(--t-footnote);font-weight:800;color:var(--tint-text);background:none;border:0;
+    min-height:44px;padding:0 var(--s4);cursor:pointer;border-radius:10px}
+  .q-prog{padding:var(--s3) var(--s4) 0;border-top:1px solid var(--line)}
+  .q-bar{height:8px;border-radius:99px;background:rgba(15,20,40,.08);overflow:hidden}
+  .q-bar i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#4ade80,#15803d);transition:width .5s ease}
+  .q-prog p{margin:6px 0 0;font-size:var(--t-footnote);font-weight:700;color:var(--ink-2)}
+  .q-oldacts{padding:var(--s3) var(--s4) 0}
+  .o-est{margin-top:var(--s4);padding:var(--s3);border-radius:var(--radius-sm);background:rgba(15,20,40,.05)}
+  .o-estrow{display:grid;grid-template-columns:5em 1fr auto;gap:var(--s2);align-items:center}
+  .o-rows{margin-top:var(--s4);display:grid;gap:var(--s2)}
+  .o-row{display:grid;grid-template-columns:1fr 44px 5.5em 44px;gap:var(--s2);align-items:center}
+  .o-name{font-size:var(--t-callout);font-weight:800}
+  .o-step{font:inherit;font-size:var(--t-title3);font-weight:700;width:44px;height:44px;border-radius:14px;border:0;
+    background:rgba(15,20,40,.07);color:var(--ink);cursor:pointer;display:grid;place-items:center}
+  .o-step:active{background:rgba(15,20,40,.14)}
+  .o-row input{text-align:center;padding:10px 6px}
+  .o-total{margin:var(--s3) 0 0;font-size:var(--t-subhead);font-weight:800}
+  body.big-type .o-row{grid-template-columns:44px 1fr 44px}
+  body.big-type .o-name{grid-column:1 / -1}
+  body.big-type .o-estrow{grid-template-columns:1fr 1fr}
+  body.big-type .o-estrow .btn{grid-column:1 / -1}
 
   /* ---------------- floating tab bar (Liquid Glass) ---------------- */
   .tabbar{
@@ -734,8 +761,19 @@
           <h2 id="q-h"></h2>
           <div class="q-break" id="q-break"></div>
         </div>
+        <p class="sechead hide" id="q-new-h"></p>
         <div id="q-list"></div>
         <button type="button" class="q-more hide" id="q-more"></button>
+        <div class="hide" id="q-old">
+          <div class="q-oldhead"><p class="sechead" id="q-old-h"></p><button type="button" class="q-edit" id="q-edit">Edit</button></div>
+          <div id="q-old-list"></div>
+          <div class="q-prog">
+            <div class="q-bar" id="q-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-labelledby="q-prog-t"><i id="q-bar-fill"></i></div>
+            <p id="q-prog-t"></p>
+          </div>
+          <div class="q-oldacts"><button type="button" class="btn" id="q-day">Made up one of each</button></div>
+        </div>
+        <button type="button" class="q-more" id="q-add"></button>
         <p class="s-src" id="q-foot"></p>
       </section>
     </div>
@@ -750,6 +788,7 @@
           <div><dt>Which first</dt><dd>Oldest first: Subuh before Zohor, Zohor before Asar. Keeping that order is sunat, and prayers missed without an excuse go before ones missed with one. If the current prayer's time is safe, it's sunat to make up the missed one first; if it's running out, pray the current one first. <a href="https://www.muftiwp.gov.my/artikel/al-kafi-li-al-fatawi/4186-al-kafi-1608-mana-lebih-utama-mendahulukan-qadha-solat-fardhu-dahulu-atau-mengerjakan-solat-fardhu-tunai" target="_blank" rel="noopener">Al-Kafi #1608</a></dd></div>
           <div><dt>Any time of day</dt><dd>A missed fard prayer can be made up even after Asar, when sunat prayers are normally avoided. <a href="https://muftiwp.gov.my/en/artikel/irsyad-fatwa/irsyad-fatwa-umum-cat/2551-irsyad-al-fatwa-series-164-the-ruling-of-sunnah-prayer-after-asar" target="_blank" rel="noopener">Irsyad al-Fatwa #164</a></dd></div>
           <div><dt>Niat</dt><dd>Name the prayer you're making up, for example:<span class="niat">Sahaja aku solat fardu Zohor empat rakaat qadha kerana Allah Taala.</span></dd></div>
+          <div><dt>Missed for years</dt><dd>Make them up as far as you're able, a few at a time if need be, until they're done, along with taubat. Count them by your best estimate; if you've lost count, keep going until you're sure none are left. <a href="https://www.muftiwp.gov.my/ms/artikel/irsyad-hukum/umum/2013-5" target="_blank" rel="noopener">Irsyad Hukum #5</a> <a href="https://www.muftiwp.gov.my/en/artikel/al-kafi-li-al-fatawi/6606-al-kafi-2057-hukum-melakukan-solat-qada-semasa-khutbah-jumaat" target="_blank" rel="noopener">Al-Kafi #2057</a></dd></div>
           <div><dt>Not owed</dt><dd>Prayers missed during haid or nifas are not made up. <a href="https://www.muftiwp.gov.my/en/artikel/irsyad-fatwa/irsyad-fatwa-umum-cat/3061-irsyad-fatwa-series-287-if-the-haid-ends-at-maghrib-it-is-not-necessary-to-qadha-zuhr-and-asr" target="_blank" rel="noopener">Irsyad al-Fatwa #287</a></dd></div>
         </dl>
         <p class="note">This follows the Shafi'i school as Malaysia's fatwa offices teach it. For your own situation, ask an ustaz or your state mufti.</p>
@@ -864,6 +903,29 @@
   </div>
 </dialog>
 
+<dialog class="sheet" id="o-sheet" aria-labelledby="os-title">
+  <div class="sheet-in">
+    <p class="label">Qadha</p>
+    <h2 id="os-title">From before you started</h2>
+    <p class="note">What you still owe from before <span id="os-since"></span>. A best estimate is fine; if you've lost count, keep making them up until you're sure none are left.</p>
+    <div class="o-est">
+      <label for="os-n">Missed all five for about</label>
+      <div class="o-estrow">
+        <input type="number" id="os-n" inputmode="numeric" min="1" max="999" placeholder="2">
+        <select id="os-unit" aria-label="Unit"><option value="1">days</option><option value="30">months</option><option value="365" selected>years</option></select>
+        <button type="button" class="btn" id="os-add">Add</button>
+      </div>
+      <p class="note" id="os-estnote"></p>
+    </div>
+    <div class="o-rows" id="os-rows"></div>
+    <p class="o-total" id="os-total"></p>
+    <div class="btns">
+      <button type="button" class="btn prominent" id="os-save">Save</button>
+      <button type="button" class="btn" id="os-cancel">Cancel</button>
+    </div>
+  </div>
+</dialog>
+
 <p class="sr" aria-live="polite" id="live"></p>
 
 <script>
@@ -918,7 +980,7 @@ var RULES=[
 ];
 
 // ---------- storage ----------
-var K={blocks:"sb.blocks",done:"sb.done",climbs:"sb.climbs",solat:"sb.solat",solatSet:"sb.solatSet",times:"sb.times"};
+var K={blocks:"sb.blocks",done:"sb.done",climbs:"sb.climbs",solat:"sb.solat",solatSet:"sb.solatSet",times:"sb.times",qold:"sb.qadhaOld"};
 function load(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
 var blocks=load(K.blocks,null);
@@ -1517,6 +1579,9 @@ var ZONES=[
 // One record per prayer: "on" prayed in its time, "m:<date>" made up as qadha
 // that day, "x" excused (haid or nifas). No record once its time is out: owed.
 var plog=load(K.solat,{})||{},pset=load(K.solatSet,null),ptimes=load(K.times,null);
+// Qadha from before tracking began has no dates, so it's a count per prayer:
+// {left:{subuh:n,...}, done:{subuh:n,...}}, done kept for the progress bar.
+var qold=load(K.qold,null);
 var timesTry=0,timesBusy=false,qAll=false,sheetAt=null;
 
 function zoneName(c){
@@ -1689,6 +1754,78 @@ function makeUp(d,i){
   toast(msg,function(){setRec(k,p.id,prev);renderSolatAll();});
 }
 
+function oldLeft(id){return qold&&qold.left&&qold.left[id]||0;}
+function oldDone(id){return qold&&qold.done&&qold.done[id]||0;}
+function oldSum(f){return PRAYERS.reduce(function(a,p){return a+f(p.id);},0);}
+function saveOld(){if(qold&&!oldSum(oldLeft)&&!oldSum(oldDone))qold=null;save(K.qold,qold);}
+function oldMakeUp(ids,msg){
+  var prev=JSON.stringify(qold);
+  ids.forEach(function(id){if(oldLeft(id)>0){qold.left[id]--;qold.done[id]=oldDone(id)+1;}});
+  saveOld();renderSolatAll();
+  if(!oldSum(oldLeft))msg="Every qadha from before is made up";
+  announce(msg);toast(msg,function(){qold=JSON.parse(prev);saveOld();renderSolatAll();});
+}
+function aboutDays(d){return d<=60?d+(d===1?" day":" days"):d<730?Math.round(d/30.44)+" months":Math.round(d/36.5)/10+" years";}
+function oldRow(p){
+  var left=oldLeft(p.id),row=document.createElement("div");row.className="qrow";row.style.setProperty("--h",p.h);
+  row.innerHTML='<span class="cat"></span><span class="qtext"><span class="ttl"></span><span class="meta"></span></span>';
+  row.querySelector(".ttl").textContent=p.name;
+  var meta=row.querySelector(".meta");
+  if(left){
+    meta.textContent=left+" left · "+p.rk+" rakaat each";
+    var b=document.createElement("button");b.type="button";b.className="btn qdone";b.textContent="Made up";
+    b.setAttribute("aria-label","Mark one "+p.name+" from before as made up. "+left+" left.");
+    b.addEventListener("click",function(){oldMakeUp([p.id],p.name+" qadha made up, "+(left-1)+" left");});
+    row.appendChild(b);
+  }else{var t=document.createElement("span");t.className="tag ok";t.textContent=oldDone(p.id)?"All made up":"None owed";meta.appendChild(t);}
+  return row;
+}
+
+// The editor: a quick estimate ("missed all five for about 2 years") that
+// fills the five counts, which can then be set one by one.
+var EST_NOTE="Adds that many days of all five. A month counts as 30 days, a year as 365.";
+function whole(v){v=Math.floor(+v);return isFinite(v)&&v>0?Math.min(v,99999):0;}
+function oldTotalNote(){var t=0;PRAYERS.forEach(function(p){t+=whole(el("os-"+p.id).value);});
+  el("os-total").textContent="Total: "+t+(t===1?" prayer":" prayers");}
+(function(){
+  var box=el("os-rows");
+  PRAYERS.forEach(function(p){
+    var r=document.createElement("div");r.className="o-row";
+    r.innerHTML='<span class="o-name"></span><button type="button" class="o-step">−</button><input type="number" inputmode="numeric" min="0" max="99999"><button type="button" class="o-step">+</button>';
+    r.querySelector(".o-name").textContent=p.name;
+    var inp=r.querySelector("input"),bs=r.querySelectorAll(".o-step");
+    inp.id="os-"+p.id;inp.setAttribute("aria-label",p.name+" owed from before");
+    bs[0].setAttribute("aria-label","One fewer "+p.name);bs[1].setAttribute("aria-label","One more "+p.name);
+    bs[0].addEventListener("click",function(){inp.value=Math.max(0,whole(inp.value)-1);oldTotalNote();});
+    bs[1].addEventListener("click",function(){inp.value=Math.min(99999,whole(inp.value)+1);oldTotalNote();});
+    inp.addEventListener("input",oldTotalNote);
+    box.appendChild(r);
+  });
+})();
+function openOld(){
+  el("os-since").textContent=shortDate(fromKey(pset.since));
+  PRAYERS.forEach(function(p){el("os-"+p.id).value=oldLeft(p.id);});
+  el("os-n").value="";el("os-estnote").textContent=EST_NOTE;oldTotalNote();
+  var dlg=el("o-sheet");if(dlg.showModal){if(!dlg.open)dlg.showModal();}else dlg.setAttribute("open","");
+}
+function closeOld(){var dlg=el("o-sheet");if(dlg.close){if(dlg.open)dlg.close();}else dlg.removeAttribute("open");}
+el("os-add").addEventListener("click",function(){
+  var days=whole(el("os-n").value)*(+el("os-unit").value||1),note=el("os-estnote");
+  if(!days){note.textContent="Enter how long first.";el("os-n").focus();return;}
+  PRAYERS.forEach(function(p){var i=el("os-"+p.id);i.value=Math.min(99999,whole(i.value)+days);});
+  note.textContent="Added "+days+" of each prayer. Change any of them below.";oldTotalNote();
+});
+el("os-save").addEventListener("click",function(){
+  var left={},t=0;PRAYERS.forEach(function(p){left[p.id]=whole(el("os-"+p.id).value);t+=left[p.id];});
+  if(!qold)qold={left:{},done:{}};qold.left=left;if(!qold.done)qold.done={};
+  saveOld();closeOld();renderSolatAll();toast(t?"Saved: "+t+" qadha from before":"Earlier qadha cleared");
+});
+el("os-cancel").addEventListener("click",closeOld);
+el("o-sheet").addEventListener("click",function(e){if(e.target===this)closeOld();});
+el("q-edit").addEventListener("click",openOld);
+el("q-add").addEventListener("click",openOld);
+el("q-day").addEventListener("click",function(){oldMakeUp(PRAYERS.map(function(p){return p.id;}),"One of each made up");});
+
 function renderSolatAll(){renderSolatMini();if(view==="solat")renderSolat();}
 function chipWord(s,w,now){
   return s==="on"?"Prayed":s==="made"?"Made up":s==="excused"?"Excused":s==="owed"?"Qadha":
@@ -1713,8 +1850,9 @@ function renderSolatMini(){
     b.addEventListener("click",function(){pTap(pn.d,i);});
     box.appendChild(b);
   });
-  var n=qadha(now).owed.length,q=el("sm-q");
-  q.innerHTML=esc(n?n+" qadha to make up":"No qadha owed")+' <span aria-hidden="true">›</span>';
+  // The count includes earlier qadha; it turns red only for prayers missed lately.
+  var n=qadha(now).owed.length,tot=n+oldSum(oldLeft),q=el("sm-q");
+  q.innerHTML=esc(tot?tot+" qadha to make up":"No qadha owed")+' <span aria-hidden="true">›</span>';
   q.classList.toggle("flag",n>0);
 }
 function prayerRow(d,i,now,W){
@@ -1764,18 +1902,32 @@ function renderSolat(){
   el("s-src").textContent="JAKIM e-Solat · "+pset.zone+" "+zoneName(pset.zone)+
     (W&&W.est?". Estimated from last year's timetable until this year's downloads.":"");
 
-  var q=qadha(now),n=q.owed.length,br=el("q-break"),ql=el("q-list");
-  el("q-h").textContent=n?n+(n===1?" prayer":" prayers")+" to make up":"Nothing to make up";
+  var q=qadha(now),n=q.owed.length,ot=oldSum(oldLeft),od=oldSum(oldDone),hasOld=ot+od>0,total=n+ot;
+  var since=shortDate(fromKey(pset.since)),br=el("q-break"),ql=el("q-list");
+  el("q-h").textContent=total?total+(total===1?" prayer":" prayers")+" to make up":"Nothing to make up";
   br.innerHTML="";
   PRAYERS.forEach(function(p,i){
-    var c=q.owed.filter(function(o){return o.i===i;}).length;if(!c)return;
+    var c=q.owed.filter(function(o){return o.i===i;}).length+oldLeft(p.id);if(!c)return;
     var s=document.createElement("span");s.className="qchip";s.style.setProperty("--h",p.h);
     s.textContent=p.name+" ";var b=document.createElement("b");b.textContent=c;s.appendChild(b);br.appendChild(s);
   });
+  var nh=el("q-new-h");nh.textContent="Missed since "+since;nh.classList.toggle("hide",!(n&&hasOld));
   ql.innerHTML="";
-  (qAll?q.owed:q.owed.slice(0,5)).forEach(function(o,ix){ql.appendChild(qRow(o,ix===0));});
+  // "Next in order" only makes sense when nothing older is waiting.
+  (qAll?q.owed:q.owed.slice(0,5)).forEach(function(o,ix){ql.appendChild(qRow(o,ix===0&&!hasOld));});
   var more=el("q-more");more.classList.toggle("hide",n<=5);more.textContent=qAll?"Show fewer":"Show all "+n;
-  el("q-foot").textContent=(n?"Oldest first, in prayer order. ":"")+"Made up so far: "+q.made+". Counting since "+shortDate(fromKey(pset.since))+".";
+
+  el("q-old").classList.toggle("hide",!hasOld);el("q-add").classList.toggle("hide",hasOld);
+  el("q-add").textContent="Add qadha from before "+since;
+  if(hasOld){
+    el("q-old-h").textContent="From before "+since;
+    var ol=el("q-old-list");ol.innerHTML="";PRAYERS.forEach(function(p){ol.appendChild(oldRow(p));});
+    var pct=Math.round(od/(od+ot)*100),most=Math.max.apply(null,PRAYERS.map(function(p){return oldLeft(p.id);}));
+    el("q-bar-fill").style.width=pct+"%";el("q-bar").setAttribute("aria-valuenow",pct);
+    el("q-prog-t").textContent="Made up "+od+" of "+(od+ot)+(ot?". At one of each a day, about "+aboutDays(most)+" to go.":". All done.");
+    el("q-day").classList.toggle("hide",PRAYERS.filter(function(p){return oldLeft(p.id)>0;}).length<2);
+  }
+  el("q-foot").textContent=(n?"Oldest first, in prayer order. ":"")+"Made up so far: "+(q.made+od)+". Counting since "+since+".";
 
   var zs=el("sz-zone");
   if(zs.getAttribute("data-zone")!==pset.zone){fillZones(zs,pset.zone);zs.setAttribute("data-zone",pset.zone);syncZoneBtn();}
@@ -1943,7 +2095,7 @@ el("e-confirm-no").addEventListener("click",function(){el("e-confirm").classList
 el("e-confirm-yes").addEventListener("click",function(){if(!editing)return;blocks=blocks.filter(function(b){return b.id!==editing;});
   save(K.blocks,blocks);resetEdit();renderEditList();renderToday();toast("Block deleted");});
 
-function bundle(){return JSON.stringify({v:1,blocks:blocks,done:done,climbs:climbs,solat:{log:plog,set:pset}});}
+function bundle(){return JSON.stringify({v:1,blocks:blocks,done:done,climbs:climbs,solat:{log:plog,set:pset,old:qold}});}
 el("x-show").addEventListener("click",function(){el("x-box").classList.remove("hide");el("x-apply").classList.add("hide");
   el("x-text").value=bundle();el("x-note").textContent="Copy this somewhere safe — Notes, or an email to yourself.";});
 el("x-import").addEventListener("click",function(){el("x-box").classList.remove("hide");el("x-apply").classList.remove("hide");
@@ -1953,7 +2105,8 @@ el("x-copy").addEventListener("click",function(){var t=el("x-text");t.select();t
     function(){el("x-note").textContent="Selected — use Copy from the menu.";});else el("x-note").textContent="Selected — use Copy from the menu.";});
 el("x-apply").addEventListener("click",function(){try{var o=JSON.parse(el("x-text").value);if(!o||!Array.isArray(o.blocks))throw 0;
   blocks=o.blocks;done=o.done||{};climbs=o.climbs||[];save(K.blocks,blocks);save(K.done,done);save(K.climbs,climbs);
-  if(o.solat){plog=o.solat.log||{};pset=o.solat.set||null;save(K.solat,plog);save(K.solatSet,pset);timesTry=0;refreshTimes();}
+  if(o.solat){plog=o.solat.log||{};pset=o.solat.set||null;qold=o.solat.old||null;
+    save(K.solat,plog);save(K.solatSet,pset);save(K.qold,qold);timesTry=0;refreshTimes();}
   el("x-note").textContent="Restored.";renderToday();renderEditList();}catch(e){el("x-note").textContent="That doesn't look like a backup from this app.";}});
 el("x-reset").addEventListener("click",function(){el("x-confirm").classList.remove("hide");el("x-confirm-no").focus();});
 el("x-confirm-no").addEventListener("click",function(){el("x-confirm").classList.add("hide");});
