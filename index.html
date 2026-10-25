@@ -227,12 +227,19 @@
   /* ---------------- grouped lists ---------------- */
   .seccard{overflow:hidden}
   .sechead{margin:0;padding:var(--s3) var(--s4) var(--s1);font-size:var(--t-footnote);font-weight:800;color:var(--ink-2)}
-  .swipe{position:relative;overflow:hidden;--p:0}
+  .swipe{position:relative;overflow:hidden;--p:0;--q:0}
   .swipe::before{
     content:attr(data-act);position:absolute;inset:0;display:flex;align-items:center;
     padding-left:var(--s4);background:var(--good);color:#fff;font-weight:800;
     font-size:var(--t-footnote);opacity:var(--p);
   }
+  /* The long swipe left: Edit appears on the right as the row slides away. */
+  .swipe::after{
+    content:attr(data-edit);position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;
+    padding-right:var(--s4);background:var(--tint);color:#fff;font-weight:800;
+    font-size:var(--t-footnote);opacity:var(--q);
+  }
+  .swipe>.item{z-index:1}
   .item{
     position:relative;display:grid;grid-template-columns:4px 3.3em 1fr auto;gap:var(--s3);align-items:center;
     width:100%;min-height:58px;padding:var(--s3) var(--s4) var(--s3) 0;border:0;border-top:1px solid var(--line);
@@ -1177,7 +1184,7 @@ function nowLine(m){
 function rowNode(b,k,isNow,m){
   var t=typeOf(b.type),s=toMin(b.start),isD=isDone(k,b.id);
   var wrap=document.createElement("div");wrap.className="swipe";
-  wrap.setAttribute("data-act",isD?"↺  Undo":"✓  Done");
+  wrap.setAttribute("data-act",isD?"↺  Undo":"✓  Done");wrap.setAttribute("data-edit","✎  Edit");
   var row=document.createElement("button");row.type="button";
   row.className="item"+(isD?" done":"")+(isNow?" now":"")+(s+b.mins<=m?" past":"");
   row.setAttribute("aria-pressed",isD?"true":"false");
@@ -1189,7 +1196,7 @@ function rowNode(b,k,isNow,m){
   row.title=b.activity+(b.details?" — "+b.details:"");
   function act(){tick(k,b.id);}
   row.addEventListener("click",function(){if(row._swiped)return;act();});
-  attachSwipe(wrap,row,act);
+  attachSwipe(wrap,row,act,function(){editBlock(b);});
   wrap.appendChild(row);
   return wrap;
 }
@@ -1204,29 +1211,35 @@ function tick(k,id){
   if(before<1&&after>=1&&k===key(new Date()))celebrate();
 }
 
-// Swipe right to tick. Vertical scrolling stays native (touch-action: pan-y);
-// the gesture only takes over once the movement is clearly sideways.
-function attachSwipe(wrap,row,onCommit){
-  var sx=0,sy=0,dx=0,mode=null,pid=null,TH=84;
+// Swipe right to tick; a long swipe left opens the block in the editor.
+// Vertical scrolling stays native (touch-action: pan-y); the gesture only
+// takes over once the movement is clearly sideways.
+function attachSwipe(wrap,row,onCommit,onEdit){
+  var sx=0,sy=0,dx=0,mode=null,pid=null,TH=84,TL=120;
   row.addEventListener("pointerdown",function(e){
     if(e.pointerType==="mouse"&&e.button!==0)return;
     sx=e.clientX;sy=e.clientY;dx=0;mode=null;pid=e.pointerId;
   });
   row.addEventListener("pointermove",function(e){
     if(pid!==e.pointerId)return;
-    var mx=e.clientX-sx,my=e.clientY-sy;
+    var mx=e.clientX-sx,my=e.clientY-sy,side=Math.abs(mx)>Math.abs(my)*1.4;
     if(!mode){
-      if(mx>10&&Math.abs(mx)>Math.abs(my)*1.4){mode="h";try{row.setPointerCapture(pid);}catch(_){}wrap.classList.add("swiping");}
+      if(mx>10&&side)mode="h";else if(mx<-10&&side&&onEdit)mode="l";
       else if(Math.abs(my)>10||mx<-10)mode="v";
+      if(mode==="h"||mode==="l"){try{row.setPointerCapture(pid);}catch(_){}wrap.classList.add("swiping");}
     }
     if(mode==="h"){dx=Math.max(0,Math.min(160,mx));row.style.transform="translateX("+dx+"px)";
       wrap.style.setProperty("--p",Math.min(1,dx/TH).toFixed(2));}
+    // Further than the tick swipe, so a short flick left never opens the editor.
+    if(mode==="l"){dx=Math.min(0,Math.max(-190,mx));row.style.transform="translateX("+dx+"px)";
+      wrap.style.setProperty("--q",Math.min(1,-dx/TL).toFixed(2));}
   });
   function end(){
-    if(mode==="h"){
+    if(mode==="h"||mode==="l"){
       row._swiped=true;setTimeout(function(){row._swiped=false;},400);
-      wrap.classList.remove("swiping");row.style.transform="";wrap.style.setProperty("--p",0);
-      if(dx>=TH)onCommit();
+      wrap.classList.remove("swiping");row.style.transform="";wrap.style.setProperty("--p",0);wrap.style.setProperty("--q",0);
+      if(mode==="h"&&dx>=TH)onCommit();
+      if(mode==="l"&&-dx>=TL)onEdit();
     }
     pid=null;mode=null;
   }
@@ -2055,7 +2068,7 @@ el("sz-get").addEventListener("click",function(){
 });
 
 // ---------- schedule ----------
-var picked=[],editing=null;
+var picked=[],editing=null,editReturn=null;
 (function(){var s=el("e-type");TYPES.forEach(function(t){var o=document.createElement("option");o.value=t.id;o.textContent=t.name;s.appendChild(o);});
   var box=el("e-days");DAYS.forEach(function(n,i){var b=document.createElement("button");b.type="button";b.textContent=n;b.setAttribute("aria-pressed","false");
     b.addEventListener("click",function(){var at=picked.indexOf(i);if(at===-1)picked.push(i);else picked.splice(at,1);
@@ -2154,6 +2167,10 @@ function startEdit(b){editing=b.id;el("e-title").textContent="Edit block";
   el("e-activity").value=b.activity;el("e-type").value=b.type;el("e-start").value=b.start;el("e-mins").value=String(b.mins);
   el("e-details").value=b.details||"";setDays(b.days);el("e-cancel").classList.remove("hide");el("e-delete").classList.remove("hide");
   el("e-confirm").classList.add("hide");showErr("");checkClash();window.scrollTo({top:0,behavior:reduceMotion()?"auto":"smooth"});}
+// A long swipe left on Today lands here, and saving, cancelling or deleting
+// goes back to Today rather than leaving you in Schedule.
+function editBlock(b){show("edit");startEdit(b);editReturn="today";announce("Editing "+b.activity);}
+function backFromEdit(){if(editReturn){var v=editReturn;editReturn=null;show(v);}}
 function renderEditList(){var box=el("e-list");box.innerHTML="";
   var bad=blocks.filter(function(b){return clashes(b.start,b.mins,b.days,b.id).length;}).length;
   var h=document.createElement("p");h.className="sechead";
@@ -2174,7 +2191,7 @@ el("e-form").addEventListener("submit",function(e){e.preventDefault();
   var plan=roomPlan(d.start,d.mins,d.days,editing),before=blocks.slice();
   applyRoom(plan);
   if(editing)blocks=blocks.map(function(b){return b.id===editing?d:b;});else blocks.push(d);
-  save(K.blocks,blocks);var was=editing;resetEdit();renderEditList();renderToday();
+  save(K.blocks,blocks);var was=editing;resetEdit();renderEditList();renderToday();backFromEdit();
   if(!plan.length){toast(was?"Block updated":"Block added");return;}
   var n=plan.length+(plan.length===1?" block":" blocks");
   announce((was?"Block updated. ":"Block added. ")+n+" changed to make room.");
@@ -2182,11 +2199,11 @@ el("e-form").addEventListener("submit",function(e){e.preventDefault();
     blocks=before;save(K.blocks,blocks);
     if(editing&&!blocks.some(function(b){return b.id===editing;}))resetEdit();else checkClash();
     renderEditList();renderToday();announce("Undone. The schedule is back as it was.");});});
-el("e-cancel").addEventListener("click",resetEdit);
+el("e-cancel").addEventListener("click",function(){resetEdit();backFromEdit();});
 el("e-delete").addEventListener("click",function(){if(!editing)return;el("e-confirm").classList.remove("hide");el("e-confirm-no").focus();});
 el("e-confirm-no").addEventListener("click",function(){el("e-confirm").classList.add("hide");});
 el("e-confirm-yes").addEventListener("click",function(){if(!editing)return;blocks=blocks.filter(function(b){return b.id!==editing;});
-  save(K.blocks,blocks);resetEdit();renderEditList();renderToday();toast("Block deleted");});
+  save(K.blocks,blocks);resetEdit();renderEditList();renderToday();backFromEdit();toast("Block deleted");});
 
 // ---------- backup ----------
 // One file holding everything, photos included. It goes out through the share
@@ -2335,7 +2352,7 @@ el("x-confirm-yes").addEventListener("click",function(){blocks=DEFAULTS.slice();
 // ---------- navigation ----------
 var VIEWS={today:"Today",week:"Week",climb:"Climbing",solat:"Solat",edit:"Schedule"},ORDER=["today","week","climb","solat","edit"],view="today";
 function show(name){
-  view=name;
+  view=name;if(name!=="edit")editReturn=null;
   ORDER.forEach(function(v){el("v-"+v).classList.toggle("hide",v!==name);});
   var bs=document.querySelectorAll(".tabbar button");
   for(var i=0;i<bs.length;i++)bs[i].setAttribute("aria-pressed",bs[i].getAttribute("data-view")===name?"true":"false");

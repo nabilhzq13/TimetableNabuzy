@@ -47,7 +47,9 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   and climbing sessions against your four a week. Below them, the block you're in
   with a live ring counting down. **Start focus** turns the screen into a big
   countdown that keeps the phone awake on the desk. Tap a block to tick it, or
-  swipe it right. Tick the last one of the day and see what happens.
+  swipe it right. A long swipe left opens that block in the editor; save, cancel
+  or delete and you're back on Today. Tick the last one of the day and see what
+  happens.
 - **The sky** behind everything follows the real time of day — dawn, day, golden
   hour, dusk, night.
 - **Week** — any day of the week with the gym's hours for that day, plus a heatmap
