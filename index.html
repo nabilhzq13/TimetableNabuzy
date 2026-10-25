@@ -711,7 +711,7 @@
   <section id="v-week" class="hide">
     <div class="daysel" id="w-days"></div>
     <section class="material seccard">
-      <div class="dayhead"><h2 id="w-title">—</h2><span class="muted" id="w-hours" style="font-weight:700;font-size:var(--t-footnote)"></span></div>
+      <div class="dayhead"><h2 id="w-title">—</h2></div>
       <p class="w-gym" id="w-gym"></p>
       <div id="w-list"></div>
     </section>
@@ -1348,10 +1348,9 @@ function renderWeek(){
     b.className="chip-btn material";b.style.marginBottom="0";b.textContent=n;
     b.setAttribute("aria-pressed",i===weekDay?"true":"false");
     b.addEventListener("click",function(){weekDay=i;renderWeek();});box.appendChild(b);});
-  var list=forDay(weekDay),total=0;list.forEach(function(b){total+=b.mins;});
+  var list=forDay(weekDay);
   el("w-title").textContent=LONG[weekDay];
   el("w-gym").textContent=GYM[weekDay].length?"Gym open "+gymDayText(weekDay):"Gym closed";
-  el("w-hours").textContent=list.length?list.length+" blocks · "+hrs(total):"open";
   var wl=el("w-list");wl.innerHTML="";
   if(!list.length){wl.innerHTML='<p class="empty">Nothing on '+esc(LONG[weekDay])+'.</p>';}
   list.forEach(function(b){
