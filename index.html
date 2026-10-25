@@ -176,12 +176,12 @@
   .btns{display:flex;flex-wrap:wrap;gap:var(--s2)}
 
   /* Every tappable thing answers within 120ms. */
-  .btn,.item,.chip-btn,.dayrow button,.dots button,.x,.tabbar button,.shot .open{
+  .btn,.item,.chip-btn,.dayrow button,.x,.tabbar button,.shot .open{
     transition:transform .12s ease,background-color .12s ease,opacity .12s ease,filter .12s ease;
   }
   .btn:active{transform:scale(.96)}
   .btn.prominent:active{filter:brightness(.92)}
-  .item:active,.chip-btn:active,.dayrow button:active,.dots button:active,.x:active{background:var(--press)}
+  .item:active,.chip-btn:active,.dayrow button:active,.x:active{background:var(--press)}
   .tabbar button:active{transform:scale(.92)}
 
   /* ---------------- activity rings ---------------- */
@@ -348,10 +348,30 @@
   textarea{min-height:64px;resize:vertical}
   .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8.5rem),1fr));gap:var(--s3)}
   .two>*{min-width:0}
-  .dots{display:flex;gap:4px}
-  .dots button{font:inherit;width:44px;height:44px;border-radius:14px;border:0;background:transparent;
-    cursor:pointer;font-size:var(--t-title3);color:rgba(15,20,40,.18)}
-  .dots button[aria-pressed="true"]{color:var(--ring-2)}
+  /* How it felt: five faces on a feedback scale, best on the left like a
+     rating card. The colour, the face and the word all say the same thing. */
+  .feel-faces{position:relative;display:grid;grid-template-columns:repeat(5,1fr);container-type:inline-size}
+  .feel-bar{position:absolute;left:0;right:0;top:59px;height:10px;border-radius:99px;pointer-events:none;
+    background:linear-gradient(90deg,#8fdcff 0 10%,#79dccb 10% 20%,#86f07e 20% 30%,#b3f06a 30% 40%,#fff04f 40% 50%,
+      #ffd24f 50% 60%,#ffb05e 60% 70%,#ff8259 70% 80%,#ff5b5b 80% 90%,#e7325b 90% 100%)}
+  .feel-bar i{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#fff;
+    box-shadow:0 0 0 3px var(--ring),0 3px 8px rgba(8,10,40,.35);transition:left .25s cubic-bezier(.3,1.3,.5,1)}
+  .feel-btn{position:relative;z-index:1;display:grid;justify-items:center;gap:28px;padding:4px 0;border:0;background:none;
+    font:inherit;color:inherit;cursor:pointer;min-width:0;border-radius:16px}
+  .face{display:block;border-radius:50%;background:linear-gradient(180deg,var(--top),var(--bot));
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.65),0 4px 10px -4px rgba(8,10,40,.35)}
+  .face svg{display:block;width:100%;height:100%}
+  .face svg path,.face svg circle,.face svg ellipse{stroke:none}
+  .face svg .ln{fill:none;stroke:inherit;stroke-width:2.6;stroke-linecap:round}
+  .feel-btn .face{width:46px;height:46px;transition:transform .2s cubic-bezier(.3,1.4,.5,1),opacity .2s ease,filter .2s ease}
+  .feel-word{font-size:max(11px,min(var(--t-caption),3.9cqi));font-weight:800;color:var(--ink-2);line-height:1.2}
+  .feel.picked .feel-btn:not(.on) .face{opacity:.4;filter:saturate(.6)}
+  .feel-btn.on .face{transform:scale(1.14);box-shadow:0 0 0 3px #fff,0 6px 14px -4px rgba(8,10,40,.5)}
+  .feel-btn.on .feel-word{color:var(--txt)}
+  .feel-btn:active .face{transform:scale(.94)}
+  .feeltag{display:inline-flex;align-items:center;gap:5px;margin-left:6px;vertical-align:-3px;
+    font-size:var(--t-caption);font-weight:800;color:var(--txt)}
+  .feeltag .face{width:18px;height:18px;box-shadow:none}
   .dayrow{display:flex;flex-wrap:wrap;gap:6px}
   .dayrow button{font:inherit;font-size:var(--t-caption);font-weight:800;min-width:44px;min-height:44px;
     padding:0 10px;border-radius:14px;border:1px solid rgba(15,20,40,.12);background:rgba(255,255,255,.6);
@@ -594,8 +614,8 @@
   @media (prefers-reduced-motion:reduce){
     .blob,.focus,.toast,.sheet[open] .sheet-in{animation:none}
     :root{transition:none}
-    .lens,.rings .arc,.nowring .arc,.item,.focus-rule,.about .chev{transition:none}
-    .btn:active,.tabbar button:active,.pchip:active{transform:none}
+    .lens,.rings .arc,.nowring .arc,.item,.focus-rule,.about .chev,.feel-btn .face,.feel-bar i{transition:none}
+    .btn:active,.tabbar button:active,.pchip:active,.feel-btn:active .face{transform:none}
   }
 </style>
 </head>
@@ -734,7 +754,7 @@
           <div><label for="c-date">Date</label><input type="date" id="c-date"></div>
           <div><label for="c-grade">Best send</label><input type="text" id="c-grade" placeholder="V4 or 6b" maxlength="24" autocapitalize="characters"></div>
         </div>
-        <div><label id="c-feel-label">How it felt</label><div class="dots" id="c-feel" role="group" aria-labelledby="c-feel-label"></div></div>
+        <div><label id="c-feel-label">How it felt</label><div class="feel" id="c-feel" role="group" aria-labelledby="c-feel-label"></div></div>
         <div><label for="c-notes">Notes</label><textarea id="c-notes" maxlength="300" placeholder="Overhang, heel hooks. Left hand still cutting loose."></textarea></div>
         <div id="c-photo-field" class="hide">
           <label>Photos</label>
@@ -1546,21 +1566,57 @@ function renderPending(){var b=el("c-shots");b.innerHTML="";
   el("c-photo-btn").disabled=pending.length>=PHOTO_MAX;
   el("c-photo-btn").textContent=pending.length?"Add another":"Take a photo";}
 
+// How a session felt, stored 1 (awful) to 5 (great) as before, now shown as
+// a face whose colour runs from blue for great to red for awful.
+var FEELS={
+  5:{name:"Great",top:"#99e4ff",bot:"#45b9ee",ink:"#0878b0",txt:"#075985"},
+  4:{name:"Good",top:"#90f48b",bot:"#4cc955",ink:"#13901c",txt:"#14532d"},
+  3:{name:"Okay",top:"#fff27a",bot:"#e8d81a",ink:"#9c8a00",txt:"#713f12"},
+  2:{name:"Bad",top:"#ffbe70",bot:"#f2891f",ink:"#b45a00",txt:"#9a3412"},
+  1:{name:"Awful",top:"#ff8a8a",bot:"#ef4444",ink:"#b91c1c",txt:"#991b1b"}
+};
+// Brows, eyes and mouth on a 48-unit face; "ln" parts are strokes.
+var FACES={
+  5:'<path class="ln" d="M12.5 14.5q4.5-4 9 0M26.5 14.5q4.5-4 9 0"/><circle cx="17" cy="21" r="3.2"/><circle cx="31" cy="21" r="3.2"/><path d="M14.5 27.5h19a9.5 9.5 0 0 1-19 0z"/>',
+  4:'<path class="ln" d="M13 15q4-3 8 0M27 15q4-3 8 0"/><circle cx="17" cy="21" r="3.2"/><circle cx="31" cy="21" r="3.2"/><path class="ln" d="M15.5 29q8.5 7.5 17 0"/>',
+  3:'<path class="ln" d="M13 15h8M27 15h8"/><circle cx="17" cy="21" r="3.2"/><circle cx="31" cy="21" r="3.2"/><path class="ln" d="M17 31.5h14"/>',
+  2:'<path class="ln" d="M13 16h8M27 16h8"/><ellipse cx="17" cy="22" rx="3.4" ry="2.6"/><ellipse cx="31" cy="22" rx="3.4" ry="2.6"/><path class="ln" d="M16.5 33.5q7.5-6.5 15 0"/>',
+  1:'<path class="ln" d="M12.5 14l8.5 3.2M35.5 14l-8.5 3.2"/><circle cx="17" cy="22" r="3"/><circle cx="31" cy="22" r="3"/><path d="M15 34.5a9 8.5 0 0 1 18 0z"/>'
+};
+function faceNode(n){var f=FEELS[n];
+  return '<span class="face" style="--top:'+f.top+';--bot:'+f.bot+'"><svg viewBox="0 0 48 48" aria-hidden="true" style="fill:'+f.ink+';stroke:'+f.ink+'">'+FACES[n]+'</svg></span>';}
+function feelTag(n){var f=FEELS[n];return f?'<span class="feeltag" style="--txt:'+f.txt+'">'+faceNode(n)+esc(f.name)+'</span>':"";}
 var feel=0;
-function renderDots(){var b=el("c-feel");b.innerHTML="";
-  for(var i=1;i<=5;i++)(function(n){var d=document.createElement("button");d.type="button";d.textContent="●";
-    d.setAttribute("aria-label",n+" out of 5");d.setAttribute("aria-pressed",n<=feel?"true":"false");
-    d.addEventListener("click",function(){feel=feel===n?0:n;renderDots();});b.appendChild(d);})(i);}
+// Built once, then only its state changes, so the marker can glide along the bar.
+function renderFeel(){
+  var box=el("c-feel");
+  if(!box.firstChild){
+    var row=document.createElement("div");row.className="feel-faces";
+    row.innerHTML='<div class="feel-bar" aria-hidden="true"><i class="hide"></i></div>';
+    [5,4,3,2,1].forEach(function(n){
+      var b=document.createElement("button");b.type="button";b.className="feel-btn";b.setAttribute("data-n",n);
+      b.innerHTML=faceNode(n)+'<span class="feel-word" style="--txt:'+FEELS[n].txt+'">'+FEELS[n].name+'</span>';
+      b.addEventListener("click",function(){feel=feel===n?0:n;renderFeel();});
+      row.appendChild(b);
+    });
+    box.appendChild(row);
+  }
+  box.classList.toggle("picked",feel>0);
+  Array.prototype.forEach.call(box.querySelectorAll(".feel-btn"),function(b){
+    var on=+b.getAttribute("data-n")===feel;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on?"true":"false");});
+  var k=box.querySelector(".feel-bar i");k.classList.toggle("hide",!feel);
+  if(feel){k.style.left=((5-feel)*20+10)+"%";k.style.setProperty("--ring",FEELS[feel].bot);}
+}
 
 function renderClimb(){
-  renderGym();renderDots();renderClimbStats();
+  renderGym();renderFeel();renderClimbStats();
   var box=el("c-list");box.innerHTML="";
   if(!climbs.length){box.innerHTML='<p class="empty">Log a session after you climb. Grades, notes and photos build the picture of what is working.</p>';return;}
   var h=document.createElement("p");h.className="sechead";h.textContent="Sessions";box.appendChild(h);
   climbs.slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date));}).forEach(function(c){
-    var r=document.createElement("div");r.className="logrow";var dots="";for(var i=0;i<(c.feel||0);i++)dots+="●";
+    var r=document.createElement("div");r.className="logrow";
     r.innerHTML='<span class="dt">'+esc(String(c.date||"").slice(5))+'</span><span><span class="gr">'+esc(c.grade||"Session")+
-      '</span> <span style="color:var(--ring-2);letter-spacing:1px">'+dots+'</span>'+(c.notes?'<span class="nt">'+esc(c.notes)+'</span>':'')+
+      '</span>'+feelTag(c.feel)+(c.notes?'<span class="nt">'+esc(c.notes)+'</span>':'')+
       '</span><button type="button" class="x" aria-label="Delete session">&times;</button>';
     if(c.shots&&c.shots.length){var s=document.createElement("div");s.className="logshots";r.children[1].appendChild(s);
       c.shots.forEach(function(pid){pget(pid).then(function(b){if(b)s.appendChild(shotNode(pid,b,null));},function(){});});}

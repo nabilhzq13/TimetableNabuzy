@@ -59,8 +59,9 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   the gym changes its hours, edit the `GYM` list in `index.html` (minutes from
   midnight, Monday first). Below that, your progression charted from your best sends (V-scale or Font, so
   6b+ and V4 land on the same scale) with a grade pyramid underneath, and a toast
-  when you beat your hardest send. Log each session: date, best send, how it felt,
-  notes, and up to four photos. **Take a photo** opens the camera; each shot is scaled down to a 1280px
+  when you beat your hardest send. Log each session: date, best send, how it felt
+  (five faces from blue Great to red Awful, which also show in the log), notes, and
+  up to four photos. **Take a photo** opens the camera; each shot is scaled down to a 1280px
   long edge and stored on the phone, so a season of sessions stays small. Tap a
   thumbnail to see it full screen. Deleting a session deletes its photos too.
 - **Solat** — the five daily prayers with your zone's official JAKIM times. Pick
