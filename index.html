@@ -577,6 +577,16 @@
     border:0;border-radius:99px;background:rgba(255,255,255,.18);color:#fff;font-size:22px;cursor:pointer}
   .confetti{position:fixed;inset:0;z-index:55;pointer-events:none}
 
+  /* Backup: a status line in Your data, a nudge on Today once a week has passed. */
+  .b-status{margin:4px 0 var(--s2);font-size:var(--t-footnote);font-weight:700;color:var(--ink-2)}
+  .b-remind{padding:var(--s4)}
+  .br-text{margin:4px 0 var(--s3);font-size:var(--t-subhead);color:var(--ink-2)}
+  .b-more{margin-top:var(--s2)}
+  .b-more summary{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;
+    font-size:var(--t-footnote);font-weight:800;color:var(--tint-text);border-radius:10px}
+  .b-more summary::-webkit-details-marker{display:none}
+  .confirm.stack p{flex-basis:100%}  /* a long question gets its own line, both answers under it */
+
   .install{display:flex;gap:var(--s3);align-items:flex-start;padding:var(--s3) var(--s4);font-size:var(--t-footnote)}
   .install button{margin-left:auto;flex:0 0 auto;width:36px;height:36px;border:0;border-radius:12px;background:transparent;
     font-size:var(--t-title3);color:var(--ink-2);cursor:pointer}
@@ -657,6 +667,15 @@
       <div class="sm-setup" id="sm-setup">
         <p>Tick your five prayers. Any whose time runs out unticked are kept as qadha to make up.</p>
         <button type="button" class="btn prominent" id="sm-go">Set up</button>
+      </div>
+    </section>
+
+    <section class="material b-remind hide" id="b-remind" aria-labelledby="br-h">
+      <p class="label" id="br-h">Backup</p>
+      <p class="br-text" id="br-text"></p>
+      <div class="btns">
+        <button type="button" class="btn prominent" id="br-save">Back up now</button>
+        <button type="button" class="btn" id="br-later">Later</button>
       </div>
     </section>
 
@@ -839,26 +858,43 @@
 
     <section class="material seccard" id="e-list"></section>
 
-    <section class="material pad">
-      <h2>Your data</h2>
-      <p class="note" style="margin-bottom:var(--s3)">Everything lives on this phone only. Nothing is uploaded and nobody else can see it. The one thing the app fetches is your prayer timetable, which sends JAKIM only your zone code. Clearing Safari's website data would erase it all, so copy a backup now and then. The backup includes your prayer ticks; photos are not part of it.</p>
+    <section class="material pad" aria-labelledby="data-h">
+      <h2 id="data-h">Your data</h2>
+      <p class="b-status" id="b-status">No backup yet</p>
+      <p class="note" style="margin-bottom:var(--s3)">Everything lives on this phone, so keep a copy in iCloud. Tap <b>Back up to iCloud</b>, choose <b>Save to Files</b>, then <b>iCloud Drive</b>. The file holds your schedule, ticks, climbing log with photos, and prayers. To bring it back, here or on a new phone, tap <b>Restore from file</b> and pick it.</p>
       <div class="btns">
-        <button type="button" class="btn" id="x-show">Show backup</button>
-        <button type="button" class="btn" id="x-import">Restore from backup</button>
-        <button type="button" class="btn danger" id="x-reset">Reset schedule</button>
+        <button type="button" class="btn prominent" id="b-save">Back up to iCloud</button>
+        <button type="button" class="btn" id="b-load">Restore from file</button>
       </div>
+      <input type="file" id="b-file" accept=".json,application/json" hidden>
+      <p class="err hide" id="b-err" role="alert"></p>
+      <div class="confirm stack hide" id="b-confirm">
+        <p id="b-summary"></p>
+        <button type="button" class="btn" id="b-no">Cancel</button>
+        <button type="button" class="btn danger" id="b-yes">Replace</button>
+      </div>
+      <p class="note">Nothing leaves the phone unless you save or send it. The one thing the app fetches is your prayer timetable, which sends JAKIM only your zone code.</p>
+      <details class="b-more">
+        <summary>Copy or paste a text backup instead</summary>
+        <p class="note" style="margin-top:0">Plain text for Notes or an email. It leaves out photos.</p>
+        <div class="btns" style="margin-top:var(--s2)">
+          <button type="button" class="btn" id="x-show">Show backup text</button>
+          <button type="button" class="btn" id="x-import">Paste backup text</button>
+        </div>
+        <div id="x-box" class="hide" style="margin-top:var(--s3)">
+          <textarea id="x-text" style="min-height:120px;font-size:12px"></textarea>
+          <div class="btns" style="margin-top:var(--s2)">
+            <button type="button" class="btn" id="x-copy">Copy</button>
+            <button type="button" class="btn prominent hide" id="x-apply">Load this</button>
+          </div>
+          <p class="note" id="x-note"></p>
+        </div>
+      </details>
+      <div class="btns" style="margin-top:var(--s3)"><button type="button" class="btn danger" id="x-reset">Reset schedule</button></div>
       <div class="confirm hide" id="x-confirm">
         <p>Put the schedule back to the original plan? Your ticks and climbing log stay.</p>
         <button type="button" class="btn" id="x-confirm-no">Cancel</button>
         <button type="button" class="btn danger" id="x-confirm-yes">Reset</button>
-      </div>
-      <div id="x-box" class="hide" style="margin-top:var(--s3)">
-        <textarea id="x-text" style="min-height:120px;font-size:12px"></textarea>
-        <div class="btns" style="margin-top:var(--s2)">
-          <button type="button" class="btn" id="x-copy">Copy</button>
-          <button type="button" class="btn prominent hide" id="x-apply">Load this</button>
-        </div>
-        <p class="note" id="x-note"></p>
       </div>
     </section>
   </section>
@@ -980,7 +1016,8 @@ var RULES=[
 ];
 
 // ---------- storage ----------
-var K={blocks:"sb.blocks",done:"sb.done",climbs:"sb.climbs",solat:"sb.solat",solatSet:"sb.solatSet",times:"sb.times",qold:"sb.qadhaOld"};
+var K={blocks:"sb.blocks",done:"sb.done",climbs:"sb.climbs",solat:"sb.solat",solatSet:"sb.solatSet",times:"sb.times",qold:"sb.qadhaOld",
+  lastBackup:"sb.lastBackup",snooze:"sb.backupSnooze"};
 function load(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
 var blocks=load(K.blocks,null);
@@ -1090,6 +1127,7 @@ function renderToday(){
   var cn=currentNext(st.list,m);
   renderNow(st,cn,m);
   renderSolatMini();
+  renderBackupNudge();
 
   var box=el("t-list");box.innerHTML="";
   if(!st.list.length){box.innerHTML='<section class="material"><p class="empty">Nothing scheduled for '+esc(LONG[i])+'.</p></section>';return;}
@@ -2095,6 +2133,134 @@ el("e-confirm-no").addEventListener("click",function(){el("e-confirm").classList
 el("e-confirm-yes").addEventListener("click",function(){if(!editing)return;blocks=blocks.filter(function(b){return b.id!==editing;});
   save(K.blocks,blocks);resetEdit();renderEditList();renderToday();toast("Block deleted");});
 
+// ---------- backup ----------
+// One file holding everything, photos included. It goes out through the share
+// sheet (Save to Files, then iCloud Drive) and comes back by picking it again.
+var lastBackup=load(K.lastBackup,null),pcache={},warming=null,restoreFrom=null;
+var DAY=86400000,NUDGE_DAYS=7;
+function photoIds(){var ids=[];climbs.forEach(function(c){(c.shots||[]).forEach(function(id){ids.push(id);});});return ids;}
+function dataURL(b){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};
+  r.onerror=function(){rej(r.error);};r.readAsDataURL(b);});}
+// Photos are read ahead of time. iOS only opens the share sheet while the tap
+// still counts, so the file has to be built inside the tap, with no waiting.
+function warmPhotos(){
+  if(warming)return warming;
+  var need=photoIds().filter(function(id){return !(id in pcache);});
+  if(!need.length)return Promise.resolve();
+  warming=Promise.all(need.map(function(id){
+    return pget(id).then(function(b){return b?dataURL(b):null;}).then(function(u){pcache[id]=u;},function(){pcache[id]=null;});
+  })).then(function(){warming=null;});
+  return warming;
+}
+function backupFile(){
+  var photos={},n=0;
+  photoIds().forEach(function(id){if(pcache[id]){photos[id]=pcache[id];n++;}});
+  var json=JSON.stringify({app:"Break",v:2,saved:new Date().toISOString(),blocks:blocks,done:done,climbs:climbs,
+    solat:{log:plog,set:pset,old:qold},photos:photos});
+  var name="break-backup-"+key(new Date())+".json",file=null;
+  try{file=new File([json],name,{type:"application/json"});}catch(e){}
+  return {json:json,name:name,file:file,photos:n,size:file?file.size:json.length};
+}
+function saveDownload(b){
+  var u=URL.createObjectURL(new Blob([b.json],{type:"application/json"})),a=document.createElement("a");
+  a.href=u;a.download=b.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},60000);
+}
+function backedUp(b){
+  lastBackup={at:Date.now(),size:b.size,photos:b.photos};save(K.lastBackup,lastBackup);
+  renderBackupStatus();renderBackupNudge();announce("Backup saved");toast("Backup saved");
+}
+function backupBusy(on){
+  [["b-save","Back up to iCloud"],["br-save","Back up now"]].forEach(function(x){var b=el(x[0]);b.disabled=on;b.textContent=on?"Preparing…":x[1];});
+}
+function backUp(){
+  if(photoIds().some(function(id){return !(id in pcache);})){
+    backupBusy(true);warmPhotos().then(function(){backupBusy(false);shareBackup();});return;
+  }
+  shareBackup();
+}
+function shareBackup(){
+  var b=backupFile();
+  if(b.file&&navigator.share&&navigator.canShare&&navigator.canShare({files:[b.file]})){
+    navigator.share({files:[b.file],title:"Break backup"}).then(function(){backedUp(b);},function(e){
+      var n=e&&e.name;
+      if(n==="AbortError"||n==="InvalidStateError")return;  // closed without saving, or a sheet is already open
+      // iOS stopped counting it as a tap (the photos took a moment to load).
+      // The file is ready now, so a second tap opens the sheet straight away.
+      if(n==="NotAllowedError"){toast("Backup ready. Tap Back up again");return;}
+      saveDownload(b);backedUp(b);
+    });
+  }else{saveDownload(b);backedUp(b);}
+}
+
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function listText(a){return a.length<2?a.join(""):a.slice(0,-1).join(", ")+" and "+a[a.length-1];}
+function sizeText(n){return n>=1048576?Math.round(n/104857.6)/10+" MB":Math.max(1,Math.round(n/1024))+" KB";}
+function whenText(d){
+  var t=new Date(),k=key(d),y=new Date(t.getFullYear(),t.getMonth(),t.getDate()-1);
+  return (k===key(t)?"today":k===key(y)?"yesterday":shortDate(d)+(d.getFullYear()!==t.getFullYear()?" "+d.getFullYear():""))+" at "+clock(d);
+}
+function isBackup(o){return !!o&&typeof o==="object"&&Array.isArray(o.blocks);}
+function savedAt(o){var d=o&&o.saved?new Date(o.saved):null;return d&&!isNaN(d)?d:null;}
+function restoreSummary(o){
+  var c=(o.climbs||[]).length,p=o.photos?Object.keys(o.photos).length:0,d=savedAt(o);
+  var bits=[plural(o.blocks.length,"block"),plural(c,"climbing session")+(p?" with "+plural(p,"photo"):"")];
+  if(o.solat&&o.solat.set&&o.solat.set.since)bits.push("prayers since "+shortDate(fromKey(o.solat.set.since)));
+  return "Replace everything on this phone with the backup"+(d?" from "+whenText(d):"")+"? It has "+listText(bits)+".";
+}
+function fromDataURL(u){
+  var m=/^data:([^;,]*)(;base64)?,(.*)$/.exec(String(u||""));if(!m||!m[2])return null;
+  try{var bin=atob(m[3]),a=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);
+    return new Blob([a],{type:m[1]||"image/jpeg"});}catch(e){return null;}
+}
+// A backup replaces everything. Photos only when it carries them, so an old
+// text backup (which never had photos) leaves the photos on the phone alone.
+function applyBackup(o){
+  blocks=o.blocks;done=o.done||{};climbs=o.climbs||[];save(K.blocks,blocks);save(K.done,done);save(K.climbs,climbs);
+  if(o.solat){plog=o.solat.log||{};pset=o.solat.set||null;qold=o.solat.old||null;
+    save(K.solat,plog);save(K.solatSet,pset);save(K.qold,qold);timesTry=0;refreshTimes();}
+  var p=o.photos&&typeof o.photos==="object"?o.photos:null,photosIn=Promise.resolve(true);
+  if(p)photosIn=ptx("readwrite",function(s){s.clear();Object.keys(p).forEach(function(id){var b=fromDataURL(p[id]);if(b)s.put(b,id);});return null;})
+    .then(function(){Object.keys(urls).forEach(pdrop);pcache={};Object.keys(p).forEach(function(id){pcache[id]=p[id];});return true;},
+      function(){return false;});
+  return photosIn.then(function(ok){resetEdit();renderToday();renderEditList();if(view==="solat")renderSolat();return ok;});
+}
+
+function renderBackupStatus(){
+  el("b-status").textContent=lastBackup?"Last backup "+whenText(new Date(lastBackup.at))+
+    (lastBackup.size?" · "+sizeText(lastBackup.size):"")+(lastBackup.photos?" · "+plural(lastBackup.photos,"photo"):""):"No backup yet";
+}
+function renderBackupNudge(){
+  var now=Date.now(),days=lastBackup?Math.floor((now-lastBackup.at)/DAY):0;
+  var show=(!lastBackup||days>=NUDGE_DAYS)&&now>=(load(K.snooze,0)||0);
+  el("b-remind").classList.toggle("hide",!show);if(!show)return;
+  el("br-text").textContent=lastBackup?"Your last backup was "+plural(days,"day")+" ago. Save a fresh copy to iCloud.":
+    "Nothing is backed up yet. Save a copy to iCloud so a lost or reset phone doesn't take it all with it.";
+  warmPhotos();
+}
+el("b-save").addEventListener("click",backUp);
+el("br-save").addEventListener("click",backUp);
+el("br-later").addEventListener("click",function(){save(K.snooze,Date.now()+3*DAY);renderBackupNudge();});
+el("b-load").addEventListener("click",function(){el("b-err").classList.add("hide");el("b-file").click();});
+el("b-file").addEventListener("change",function(){
+  var f=this.files&&this.files[0];this.value="";if(!f)return;
+  (f.text?f.text():new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=function(){rej(r.error);};r.readAsText(f);}))
+  .then(function(t){var o=JSON.parse(t);if(!isBackup(o))throw new Error("not a backup");
+    restoreFrom={o:o,size:f.size};el("b-summary").textContent=restoreSummary(o);el("b-confirm").classList.remove("hide");el("b-no").focus();})
+  .catch(function(){var e=el("b-err");e.textContent="That file isn't a Break backup.";e.classList.remove("hide");});
+});
+el("b-no").addEventListener("click",function(){restoreFrom=null;el("b-confirm").classList.add("hide");});
+el("b-yes").addEventListener("click",function(){
+  var r=restoreFrom;if(!r)return;restoreFrom=null;el("b-confirm").classList.add("hide");
+  applyBackup(r.o).then(function(ok){
+    var d=savedAt(r.o);
+    // The phone now matches that backup, so the reminder counts from when it was made.
+    if(d){lastBackup={at:+d,size:r.size,photos:r.o.photos?Object.keys(r.o.photos).length:0};save(K.lastBackup,lastBackup);}
+    renderBackupStatus();renderBackupNudge();
+    toast(ok?"Restored"+(d?" from "+whenText(d):""):"Restored, but the photos couldn't be saved");
+  });
+});
+
+// The plain-text backup, for pasting into Notes. Photos would make it enormous.
 function bundle(){return JSON.stringify({v:1,blocks:blocks,done:done,climbs:climbs,solat:{log:plog,set:pset,old:qold}});}
 el("x-show").addEventListener("click",function(){el("x-box").classList.remove("hide");el("x-apply").classList.add("hide");
   el("x-text").value=bundle();el("x-note").textContent="Copy this somewhere safe — Notes, or an email to yourself.";});
@@ -2103,11 +2269,9 @@ el("x-import").addEventListener("click",function(){el("x-box").classList.remove(
 el("x-copy").addEventListener("click",function(){var t=el("x-text");t.select();t.setSelectionRange(0,999999);
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t.value).then(function(){el("x-note").textContent="Copied.";},
     function(){el("x-note").textContent="Selected — use Copy from the menu.";});else el("x-note").textContent="Selected — use Copy from the menu.";});
-el("x-apply").addEventListener("click",function(){try{var o=JSON.parse(el("x-text").value);if(!o||!Array.isArray(o.blocks))throw 0;
-  blocks=o.blocks;done=o.done||{};climbs=o.climbs||[];save(K.blocks,blocks);save(K.done,done);save(K.climbs,climbs);
-  if(o.solat){plog=o.solat.log||{};pset=o.solat.set||null;qold=o.solat.old||null;
-    save(K.solat,plog);save(K.solatSet,pset);save(K.qold,qold);timesTry=0;refreshTimes();}
-  el("x-note").textContent="Restored.";renderToday();renderEditList();}catch(e){el("x-note").textContent="That doesn't look like a backup from this app.";}});
+el("x-apply").addEventListener("click",function(){var o=null;try{o=JSON.parse(el("x-text").value);}catch(e){}
+  if(!isBackup(o)){el("x-note").textContent="That doesn't look like a backup from this app.";return;}
+  applyBackup(o).then(function(){el("x-note").textContent="Restored.";});});
 el("x-reset").addEventListener("click",function(){el("x-confirm").classList.remove("hide");el("x-confirm-no").focus();});
 el("x-confirm-no").addEventListener("click",function(){el("x-confirm").classList.add("hide");});
 el("x-confirm-yes").addEventListener("click",function(){blocks=DEFAULTS.slice();save(K.blocks,blocks);el("x-confirm").classList.add("hide");
@@ -2122,7 +2286,8 @@ function show(name){
   for(var i=0;i<bs.length;i++)bs[i].setAttribute("aria-pressed",bs[i].getAttribute("data-view")===name?"true":"false");
   el("lens").style.setProperty("--i",ORDER.indexOf(name));
   el("view-title").textContent=VIEWS[name];
-  if(name==="today")renderToday();if(name==="week")renderWeek();if(name==="climb")renderClimb();if(name==="edit")renderEditList();
+  if(name==="today")renderToday();if(name==="week")renderWeek();if(name==="climb")renderClimb();
+  if(name==="edit"){renderEditList();renderBackupStatus();warmPhotos();}
   if(name==="solat"){renderSolat();refreshTimes();}
   window.scrollTo(0,0);
 }
@@ -2136,7 +2301,7 @@ resetEdit();el("c-date").value=key(new Date());syncTypeScale();
 (function(){var rs=document.documentElement.style;rs.transition="none";paintSky();
   requestAnimationFrame(function(){requestAnimationFrame(function(){rs.transition="";});});})();
 pdb().then(function(){el("c-photo-field").classList.remove("hide");el("c-photo-note").textContent=PHOTO_NOTE;},function(){});
-renderToday();
+renderToday();renderBackupStatus();setTimeout(warmPhotos,1500);
 var standalone=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
 if(!standalone&&!load("sb.installDismissed",false))el("install").classList.remove("hide");
 el("install-x").addEventListener("click",function(){el("install").classList.add("hide");save("sb.installDismissed",true);});

@@ -98,15 +98,24 @@ labels stay put, which is what iOS itself does.
 ## Backups
 
 Your data lives in Safari's storage for this app. Deleting the app, or clearing
-Safari's website data, erases it. Every few weeks open **Edit → Show backup**, copy
-the text, and paste it into Notes or email it to yourself. **Restore from backup**
-pastes it back. The backup includes your prayer ticks and qadha record, earlier qadha too; the prayer
-timetable downloads again by itself.
+Safari's website data, erases it, so keep a copy in iCloud:
 
-**Photos are not in that backup.** It's plain text meant to be pasted into a note,
-and photos would make it enormous. They live in the phone's own image store
-(IndexedDB) and go when the app goes. If a photo matters, save it to your camera
-roll too: tap the thumbnail to open it full screen, then press and hold.
+1. Open **Schedule → Your data** and tap **Back up to iCloud**.
+2. In the share sheet, choose **Save to Files**, then **iCloud Drive** (a folder
+   called Break keeps them together), and **Save**.
+
+The file, `break-backup-<date>.json`, holds everything: the schedule, ticks,
+climbing log with its photos, prayer ticks and qadha, earlier qadha included. The
+prayer timetable isn't in it; it downloads again by itself.
+
+To bring it back, on this phone or a new one, tap **Restore from file** and pick
+the file. The app says what's in it and asks before it replaces anything.
+
+When your last backup is more than a week old, Today shows a reminder with **Back
+up now**. **Later** hides it for three days.
+
+There's still a plain-text backup under **Copy or paste a text backup instead**,
+for pasting into Notes. It leaves out photos, which would make it enormous.
 
 ## Changing the app later
 
