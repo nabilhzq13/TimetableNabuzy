@@ -118,6 +118,10 @@
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   html{font:-apple-system-body;font-family:var(--sans);background:var(--sky-base)}
   html,body{min-height:100%}
+  /* No scrollbars over the sky: the page and the action sheets still scroll by
+     touch, wheel and keyboard. The Week day chips hide theirs the same way. */
+  html,.sheet-in{scrollbar-width:none}
+  html::-webkit-scrollbar,body::-webkit-scrollbar,.sheet-in::-webkit-scrollbar{display:none}
   body{
     margin:0;background:var(--sky-base);color:var(--ink);font-family:var(--sans);
     font-size:var(--t-body);line-height:var(--lh-text);letter-spacing:var(--tr-text);-webkit-text-size-adjust:100%;
