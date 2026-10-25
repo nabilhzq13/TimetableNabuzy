@@ -631,18 +631,30 @@
   body.big-type .o-estrow .btn{grid-column:1 / -1}
 
   /* ---------------- floating tab bar (Liquid Glass) ---------------- */
+  /* The lens's place in tabs (--i), how much it magnifies (--mag) and its
+     stretch (--lx, --ly) are registered so they glide. The lens, the copy of
+     the tabs inside it and the mask over the real tabs all move off them. */
+  @property --i{syntax:'<number>';inherits:true;initial-value:0}
+  @property --mag{syntax:'<number>';inherits:true;initial-value:1}
+  @property --lx{syntax:'<number>';inherits:true;initial-value:1}
+  @property --ly{syntax:'<number>';inherits:true;initial-value:1}
   .tabbar{
     position:fixed;z-index:30;left:max(16px,env(safe-area-inset-left,0px));
     right:max(16px,env(safe-area-inset-right,0px));
     bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
     max-width:520px;margin:0 auto;height:64px;border-radius:999px;padding:6px;
     display:grid;grid-template-columns:repeat(5,1fr);
+    touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+    transition:--i .5s cubic-bezier(.34,1.45,.5,1),--mag .3s ease,
+      --lx .34s cubic-bezier(.3,1.5,.5,1),--ly .34s cubic-bezier(.3,1.5,.5,1);
   }
+  .tabbar.dragging{transition:none}
   .lens{
     position:absolute;top:6px;bottom:6px;left:6px;width:calc((100% - 12px) / 5);border-radius:999px;
+    overflow:hidden;pointer-events:none;
     background:rgba(255,255,255,.72);box-shadow:var(--rim),0 4px 14px -4px rgba(8,10,40,.35);
-    transform:translateX(calc(var(--i,0) * 100%));
-    transition:transform .5s cubic-bezier(.34,1.45,.5,1);
+    transform:translateX(calc(var(--i) * 100%)) scale(var(--lx),var(--ly));
+    transition:background-color .2s ease,box-shadow .2s ease;
   }
   .tabbar button{
     position:relative;z-index:1;border:0;background:transparent;cursor:pointer;font:inherit;
@@ -651,6 +663,32 @@
   }
   .tabbar svg{width:clamp(22px,1.4rem,28px);height:clamp(22px,1.4rem,28px);fill:currentColor;display:block}
   .tabbar button[aria-pressed="true"] svg{color:var(--tint)}
+  /* Picked up (a press on the selected tab, a drag along the bar, or a tap's
+     hop), the lens lifts above the tabs as clear glass. Safari has no
+     refraction, so a copy of the tabs inside it is scaled about its centre to
+     magnify, and the real tabs are masked out underneath. The copy undoes the
+     lens's own stretch (--sx, --sy), so the droplet can bulge while what it
+     shows stays evenly magnified. At rest the copy lines up exactly with the
+     tabs, so it can come and go without a jump. */
+  .mag{position:absolute;left:0;top:0;width:500%;height:100%;display:grid;grid-template-columns:repeat(5,1fr);
+    transform-origin:0 0;opacity:0;--sx:calc(var(--mag) / var(--lx));--sy:calc(var(--mag) / var(--ly));
+    transform:translate(calc((1 - var(--sx) * (2 * var(--i) + 1)) * 10%),calc((1 - var(--sy)) * 50%)) scale(var(--sx),var(--sy))}
+  .mag>span{display:grid;place-items:center;gap:1px;padding:4px 2px;font-size:var(--t-tab);font-weight:700;color:#1c2030}
+  .mag>.on svg{color:var(--tint)}
+  .lens::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .2s ease;
+    background:radial-gradient(130% 90% at 28% 0%,rgba(255,255,255,.6),rgba(255,255,255,0) 58%),
+      radial-gradient(90% 70% at 78% 112%,rgba(255,255,255,.4),rgba(255,255,255,0) 62%)}
+  .tabbar.lifted .lens{z-index:2;background:rgba(255,255,255,.2);box-shadow:var(--rim),0 12px 26px -8px rgba(8,10,40,.45)}
+  .tabbar.lifted .lens::after,.tabbar.lifted .mag{opacity:1}
+  .tabbar.lifted button{
+    --hl:calc(var(--i) - var(--j) + .5 - var(--lx) * .46);
+    --hr:calc(var(--i) - var(--j) + .5 + var(--lx) * .46);
+    -webkit-mask-image:linear-gradient(90deg,#000 calc((var(--hl) - .08) * 100%),transparent calc((var(--hl) + .08) * 100%),
+      transparent calc((var(--hr) - .08) * 100%),#000 calc((var(--hr) + .08) * 100%));
+            mask-image:linear-gradient(90deg,#000 calc((var(--hl) - .08) * 100%),transparent calc((var(--hl) + .08) * 100%),
+      transparent calc((var(--hr) - .08) * 100%),#000 calc((var(--hr) + .08) * 100%));
+  }
+  .tabbar.lifted button:active{transform:none}
 
   /* ---------------- focus mode ---------------- */
   .focus{
@@ -725,7 +763,7 @@
   @media (prefers-reduced-motion:reduce){
     .blob,.focus,.toast,.sheet[open] .sheet-in{animation:none}
     :root{transition:none}
-    .lens,.rings .arc,.nowring .arc,.item,.stop,.focus-rule,.about .chev,.feel-btn .face,.feel-bar i{transition:none}
+    .tabbar,.lens,.rings .arc,.nowring .arc,.item,.stop,.focus-rule,.about .chev,.feel-btn .face,.feel-bar i{transition:none}
     .bead,.draw .node,.draw .line::before,.draw .bead,.stop.pop .node,.stop.pop .node::before,.stop.pop .node svg,
     .stop.pop .ttl>span{animation:none}
     .btn:active,.tabbar button:active,.pchip:active,.feel-btn:active .face{transform:none}
@@ -2487,20 +2525,81 @@ el("x-confirm-yes").addEventListener("click",function(){blocks=DEFAULTS.slice();
 
 // ---------- navigation ----------
 var VIEWS={today:"Today",week:"Week",climb:"Climbing",solat:"Solat",edit:"Schedule"},ORDER=["today","week","climb","solat","edit"],view="today";
+var bar=document.querySelector(".tabbar"),tabs=bar.querySelectorAll("button");
 function show(name){
   view=name;if(name!=="edit")editReturn=null;
   ORDER.forEach(function(v){el("v-"+v).classList.toggle("hide",v!==name);});
-  var bs=document.querySelectorAll(".tabbar button");
-  for(var i=0;i<bs.length;i++)bs[i].setAttribute("aria-pressed",bs[i].getAttribute("data-view")===name?"true":"false");
-  el("lens").style.setProperty("--i",ORDER.indexOf(name));
+  for(var i=0;i<tabs.length;i++)tabs[i].setAttribute("aria-pressed",tabs[i].getAttribute("data-view")===name?"true":"false");
+  bar.style.setProperty("--i",ORDER.indexOf(name));
   el("view-title").textContent=VIEWS[name];
   if(name==="today")renderToday(true);if(name==="week")renderWeek();if(name==="climb")renderClimb();
   if(name==="edit"){renderEditList();renderBackupStatus();warmPhotos();}
   if(name==="solat"){renderSolat();refreshTimes();}
   window.scrollTo(0,0);
 }
-Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"),function(b){
-  b.addEventListener("click",function(){show(b.getAttribute("data-view"));});});
+Array.prototype.forEach.call(tabs,function(b){
+  b.addEventListener("click",function(){
+    if(performance.now()-dropped<500)return;   // the drag that just ended has already chosen
+    var v=b.getAttribute("data-view");if(v!==view)hop(ORDER.indexOf(v));show(v);});});
+
+// ---------- the lens ----------
+// Like iOS 26's tab bar, the lens can be dragged as well as tapped. Pressed or
+// dragged, it lifts and magnifies the tabs under it, stretches the faster it
+// goes, and drops onto the nearest tab when let go.
+// Lifted, the droplet is 1.3 tabs wide and nearly the bar's height, and
+// shows what's under it at 1.2 times.
+var LX=1.3,LY=1.15,MAG=1.2,mag=document.createElement("span"),magTabs=[],grab=null,dropped=-1e9;
+mag.className="mag";
+Array.prototype.forEach.call(tabs,function(b,j){b.style.setProperty("--j",j);
+  var c=document.createElement("span");c.innerHTML=b.innerHTML;mag.appendChild(c);magTabs.push(c);});
+el("lens").appendChild(mag);
+function lensSet(i,m,lx,ly){var s=bar.style;if(i!==null)s.setProperty("--i",i);
+  s.setProperty("--mag",m);s.setProperty("--lx",lx);s.setProperty("--ly",ly);}
+function magOn(i){magTabs.forEach(function(c,j){c.classList.toggle("on",j===i);});}
+function lift(i){clearTimeout(settle.t);magOn(i);bar.classList.add("lifted");lensSet(null,MAG,LX,LY);}
+// Back to a resting pill. The copy is dropped only once it has shrunk back
+// to the tabs' own size.
+function settle(){lensSet(null,1,1,1);clearTimeout(settle.t);
+  settle.t=setTimeout(function(){if(!grab)bar.classList.remove("lifted");},reduceMotion()?0:360);}
+// A tap gets a small hop: the lens lifts on its way to the new tab.
+function hop(i){if(reduceMotion())return;lift(i);settle.t=setTimeout(settle,170);}
+function lensNow(){return parseFloat(getComputedStyle(bar).getPropertyValue("--i"))||0;}
+bar.addEventListener("pointerdown",function(e){
+  if(grab||e.pointerType==="mouse"&&e.button!==0)return;
+  var r=bar.getBoundingClientRect(),w=(r.width-12)/tabs.length,at=lensNow();
+  grab={id:e.pointerId,x0:e.clientX,left:r.left+6,w:w,cur:at,to:at,st:0,t:0,raf:0,on:false};
+  // The selected tab can be picked up: pressing it lifts the lens straight away.
+  if(Math.floor((e.clientX-grab.left)/w)===ORDER.indexOf(view))lift(Math.round(at));
+});
+bar.addEventListener("pointermove",function(e){
+  var g=grab;if(!g||e.pointerId!==g.id)return;
+  if(!g.on){if(Math.abs(e.clientX-g.x0)<6)return;
+    g.on=true;try{bar.setPointerCapture(g.id);}catch(_){}
+    bar.classList.add("dragging");lift(Math.round(g.cur));g.raf=requestAnimationFrame(follow);}
+  g.to=Math.max(0,Math.min(tabs.length-1,(e.clientX-g.left)/g.w-.5));
+});
+// The lens chases the finger a little behind, which is what makes it look
+// liquid, and stretches along its way with its speed.
+function follow(t){
+  var g=grab;if(!g)return;
+  var dt=g.t?Math.min(50,Math.max(1,t-g.t)):16.7,was=g.cur;g.t=t;
+  g.cur+=(g.to-g.cur)*(1-Math.pow(.6,dt/16.7));
+  var v=Math.abs(g.cur-was)/dt*16.7;   // tabs per 60Hz frame
+  g.st+=((reduceMotion()?0:Math.min(.3,v*.6))-g.st)*.35;
+  lensSet(g.cur.toFixed(4),MAG,(LX+g.st).toFixed(3),(LY-g.st*.4).toFixed(3));
+  magOn(Math.round(g.cur));
+  g.raf=requestAnimationFrame(follow);
+}
+// Listened for on the window, so a press that wanders off the bar still ends.
+function drop(e){
+  var g=grab;if(!g||e.pointerId!==g.id)return;grab=null;
+  if(!g.on){settle();return;}   // a press without a drag: its click does the rest
+  cancelAnimationFrame(g.raf);dropped=performance.now();bar.classList.remove("dragging");
+  var i=e.type==="pointercancel"?ORDER.indexOf(view):Math.round(g.cur);
+  magOn(i);settle();
+  if(ORDER[i]!==view)show(ORDER[i]);else bar.style.setProperty("--i",i);
+}
+window.addEventListener("pointerup",drop);window.addEventListener("pointercancel",drop);
 
 // ---------- boot ----------
 resetEdit();el("c-date").value=key(new Date());syncTypeScale();

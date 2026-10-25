@@ -53,6 +53,8 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   happens.
 - **The sky** behind everything follows the real time of day — dawn, day, golden
   hour, dusk, night.
+- **The tab bar** — tap a tab, or drag along the bar. The glass lens lifts,
+  magnifies the tabs under it, and drops onto the one you let go on.
 - **Week** — any day of the week with the gym's hours for that day, plus a heatmap
   of the last eight weeks showing which days you actually kept to the plan.
 - **Climb** — the gym's opening hours up top, with a live badge (open, midday
