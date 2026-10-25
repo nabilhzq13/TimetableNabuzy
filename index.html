@@ -255,15 +255,14 @@
     padding-right:var(--s4);background:var(--tint);color:#fff;font-weight:800;
     font-size:var(--t-footnote);opacity:var(--q);
   }
-  .swipe>.item{z-index:1}
+  .swipe>.stop{z-index:1}
   .item{
     position:relative;display:grid;grid-template-columns:4px 3.3em 1fr auto;gap:var(--s3);align-items:center;
     width:100%;min-height:58px;padding:var(--s3) var(--s4) var(--s3) 0;border:0;border-top:1px solid var(--line);
     background:transparent;font:inherit;color:var(--ink);text-align:left;cursor:pointer;
     touch-action:pan-y;transition:transform .28s cubic-bezier(.3,1.3,.5,1),background-color .12s ease;
   }
-  .swipe:first-of-type .item,.sechead+.swipe .item{border-top:0}
-  .swiping .item{transition:none}
+  .swiping .stop{transition:none}
   .cat{align-self:stretch;width:4px;border-radius:0 99px 99px 0;background:hsl(var(--h) var(--cat-s) var(--cat-l))}
   .when{font-size:var(--t-footnote);font-weight:600;color:var(--ink-2);text-align:right}
   .ttl{display:block;font-size:var(--t-callout);font-weight:650;line-height:1.3}
@@ -277,10 +276,83 @@
   .item.done .tick{background:var(--good);border-color:var(--good);color:#fff}
   .item.done .ttl{color:var(--ink-2)}
   .item.done .cat{opacity:.3}
-  .nowline{display:flex;align-items:center;gap:var(--s2);padding:2px var(--s4) 2px 0}
-  .nowline b{width:4px;align-self:stretch;min-height:12px;background:var(--tint)}
-  .nowline i{height:2px;flex:1;background:var(--tint);border-radius:2px;opacity:.55}
-  .nowline span{font-family:var(--round);font-size:var(--t-caption);font-weight:800;color:var(--tint-text)}
+
+  /* ---------------- the day rail: Today and Week ----------------
+     After 21st.dev's Timeline and Process Timeline. The day is one line
+     through every card, and each block is a stop on it, ringed in its
+     category colour. On Today the line fills blue up to now and a bead rides
+     down it at the exact minute. Ticking fills the stop green, draws the
+     check and strikes the title, after 21st.dev's Task Checkbox. */
+  .railhead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s2);padding:var(--s4) var(--s4) var(--s1)}
+  .railhead .count{font-family:var(--round);font-size:var(--t-caption);font-weight:800;color:var(--ink-2);white-space:nowrap}
+  .stop{
+    --ny:calc(12px + .62rem);   /* the stop's centre, level with the title's first line */
+    --rail:rgba(15,20,40,.13);
+    position:relative;display:grid;grid-template-columns:3.4em 26px minmax(0,1fr);column-gap:10px;align-items:start;
+    width:100%;min-height:60px;padding:12px var(--s4) 12px var(--s2);border:0;background:transparent;
+    font:inherit;color:var(--ink);text-align:left;cursor:pointer;touch-action:pan-y;
+    transition:transform .28s cubic-bezier(.3,1.3,.5,1),background-color .12s ease;
+  }
+  div.stop{cursor:default}
+  button.stop:active{background:var(--press)}
+  .stop .when{font-size:var(--t-footnote);font-weight:750;line-height:1.3;padding-top:.12rem;text-align:right;
+    white-space:nowrap;color:var(--ink)}
+  .stop.past .when{font-weight:600;color:var(--ink-2)}
+  .stop .body{position:relative;z-index:3;min-width:0}
+  .stop .meta .left{color:var(--tint-text);font-weight:800;white-space:nowrap}
+  /* The line, blue down to --cut: every stretch before now, and the one now is in as far as the bead. */
+  .stop .line{position:relative;align-self:stretch;margin:-12px 0}
+  .stop .line::before{content:"";position:absolute;left:50%;top:0;bottom:var(--bottom,0px);width:3px;margin-left:-1.5px;
+    background:linear-gradient(transparent 0 var(--top,0px),var(--tint) var(--top,0px) var(--cut,0%),var(--rail) var(--cut,0%))}
+  .stop.first{--top:var(--ny)}                  /* the day's line starts at its first stop */
+  .stop.last{--bottom:calc(100% - var(--ny))}   /* and on Week, ends at its last */
+  .node{position:absolute;z-index:2;left:50%;top:var(--ny);width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;
+    background:#fff;box-shadow:inset 0 0 0 2.5px hsl(var(--h) var(--cat-s) 46%)}
+  .node::before,.node::after{content:"";position:absolute;border-radius:50%}
+  .stop.now .node::after{inset:7px;background:hsl(var(--h) var(--cat-s) 46%)}
+  .stop.past:not(.done) .node{box-shadow:inset 0 0 0 2.5px rgba(15,20,40,.28)}
+  .stop.done .node::before{inset:0;background:var(--good)}
+  .stop.done .node::after{display:none}
+  .node svg{position:absolute;left:5px;top:5px;width:14px;height:14px;fill:none;stroke:#fff;stroke-width:3.2;
+    stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:21;stroke-dashoffset:21}
+  .stop.done .node svg{stroke-dashoffset:0}
+  .stop .ttl>span{background:linear-gradient(currentColor,currentColor) no-repeat 0 55%/0 1.5px;
+    -webkit-box-decoration-break:clone;box-decoration-break:clone}
+  .stop.done .ttl{color:var(--ink-2)}
+  .stop.done .ttl>span{background-size:100% 1.5px}
+  .stop.now{background:linear-gradient(90deg,hsl(var(--h) 80% 60% / .2),hsl(var(--h) 80% 60% / .04) 80%),rgba(255,255,255,.5)}
+  /* The bead is now. It rides the stretch from its block's stop to the next
+     block's, from just under the stop to the foot of the row, so the row
+     holding it gets room to travel. The clock takes that row's time column,
+     and its start time moves into the meta. Before the day's first block it
+     waits above the first stop. */
+  .stop.host{min-height:96px;--at:calc(var(--ny) + 19px + (100% - var(--ny) - 33px) * var(--f,0))}
+  .stop.host:not(.early) .when{visibility:hidden}
+  .stop.early{padding-top:40px;min-height:92px;--ny:calc(40px + .62rem);--at:calc(var(--ny) - 30px)}
+  .stop.early .line{margin-top:-40px}
+  .bead{position:absolute;z-index:1;left:50%;top:var(--at);width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;
+    background:var(--tint);box-shadow:0 0 0 3px #fff,0 0 0 7px rgba(11,102,228,.2);
+    animation:halo 3s ease-in-out var(--ph,0s) infinite}
+  @keyframes halo{50%{box-shadow:0 0 0 3px #fff,0 0 0 10px rgba(11,102,228,.07)}}
+  .bead b{position:absolute;right:calc(100% + 17px);top:50%;transform:translateY(-50%);font-family:var(--round);
+    font-style:normal;font-size:var(--t-caption);font-weight:800;line-height:1;color:var(--tint-text);white-space:nowrap}
+  /* The now-line: from the bead across the row, fading out behind the text. */
+  .bead::after{content:"";position:absolute;left:100%;top:50%;width:min(480px,100vw);height:2px;margin-top:-1px;
+    background:linear-gradient(90deg,rgba(11,102,228,.5),rgba(11,102,228,0) 75%)}
+  .stop.pop .node{animation:stop-pop .4s ease-out}
+  .stop.pop .node::before{animation:stop-fill .3s cubic-bezier(.3,1.4,.5,1)}
+  .stop.pop .node svg{animation:stop-check .2s .06s ease-out both}
+  .stop.pop .ttl>span{animation:stop-strike .25s cubic-bezier(.22,1,.36,1)}
+  @keyframes stop-pop{30%{transform:scale(.9)}70%{transform:scale(1.05)}}
+  @keyframes stop-fill{from{transform:scale(0)}}
+  @keyframes stop-check{from{stroke-dashoffset:21}}
+  @keyframes stop-strike{from{background-size:0 1.5px}}
+  /* Arriving on Today or on a day of the week, the line draws itself down the list, stop by stop. */
+  .draw .node{animation:stop-in .36s cubic-bezier(.3,1.5,.5,1) var(--d,0s) both}
+  .draw .line::before{transform-origin:top;animation:line-in .34s cubic-bezier(.3,.9,.4,1) var(--d2,0s) both}
+  .draw .bead{animation:halo 3s ease-in-out var(--ph,0s) infinite,stop-in .3s ease-out var(--d2,0s) both}
+  @keyframes stop-in{from{transform:scale(.4);opacity:0}}
+  @keyframes line-in{from{transform:scaleY(0)}}
 
   /* Every cell placed explicitly: a tick with only a row set gets auto-placed
      first, into the 4px edge column, on top of the time. */
@@ -289,6 +361,15 @@
   body.big-type .when{grid-column:2;grid-row:1;text-align:left}
   body.big-type .item .body{grid-column:2;grid-row:2}
   body.big-type .item .tick{grid-column:3;grid-row:1 / span 2}
+  /* On the rail the time goes above the title, and the clock beside the bead
+     gives way to it. */
+  body.big-type .stop{grid-template-columns:28px minmax(0,1fr);row-gap:2px;--ny:calc(12px + .5rem)}
+  body.big-type .stop .line{grid-column:1;grid-row:1 / span 2}
+  body.big-type .stop .when{grid-column:2;grid-row:1;text-align:left;padding-top:0}
+  body.big-type .stop .body{grid-column:2;grid-row:2}
+  body.big-type .stop.host .when{visibility:visible}
+  body.big-type .stop.early{--ny:calc(40px + .5rem)}
+  body.big-type .bead b{display:none}
   body.big-type .two{grid-template-columns:1fr}
   body.big-type .ringcard{grid-template-columns:1fr;justify-items:center}
 
@@ -644,7 +725,9 @@
   @media (prefers-reduced-motion:reduce){
     .blob,.focus,.toast,.sheet[open] .sheet-in{animation:none}
     :root{transition:none}
-    .lens,.rings .arc,.nowring .arc,.item,.focus-rule,.about .chev,.feel-btn .face,.feel-bar i{transition:none}
+    .lens,.rings .arc,.nowring .arc,.item,.stop,.focus-rule,.about .chev,.feel-btn .face,.feel-bar i{transition:none}
+    .bead,.draw .node,.draw .line::before,.draw .bead,.stop.pop .node,.stop.pop .node::before,.stop.pop .node svg,
+    .stop.pop .ttl>span{animation:none}
     .btn:active,.tabbar button:active,.pchip:active,.feel-btn:active .face{transform:none}
   }
 </style>
@@ -1170,7 +1253,9 @@ function currentNext(list,m){
   return {cur:cur,nxt:nxt};
 }
 
-function renderToday(){
+// intro: the line draws itself in, for arriving on Today rather than the
+// half-minute refresh.
+function renderToday(intro){
   var now=new Date(),i=dayIdx(now),st=dayStats(now),m=minsNow();
   el("today-label").textContent=LONG[i]+" "+now.getDate()+" "+MONTHS[now.getMonth()];
   renderRings(st);
@@ -1181,41 +1266,66 @@ function renderToday(){
 
   var box=el("t-list");box.innerHTML="";
   if(!st.list.length){box.innerHTML='<section class="material"><p class="empty">Nothing scheduled for '+esc(LONG[i])+'.</p></section>';return;}
+  var at=nowAt(st.list,m),n=0;
   PARTS.forEach(function(part,pi){
     var from=pi?PARTS[pi-1].until:0;
     var rows=st.list.filter(function(b){var s=toMin(b.start);return s>=from&&s<part.until;});
     if(!rows.length)return;
-    var card=document.createElement("section");card.className="material seccard";
-    var h=document.createElement("p");h.className="sechead";h.textContent=part.name;card.appendChild(h);
-    var here=m>=from&&m<part.until,marked=false;
+    var card=document.createElement("section");card.className="material seccard"+(intro&&!reduceMotion()?" draw":"");
+    var ticked=rows.filter(function(b){return isDone(st.k,b.id);}).length;
+    card.innerHTML='<div class="railhead"><p class="label"></p><span class="count"></span></div>';
+    card.querySelector(".label").textContent=part.name;
+    card.querySelector(".count").textContent=ticked+" of "+rows.length+" done";
     rows.forEach(function(b){
-      if(here&&!marked&&toMin(b.start)>m){card.appendChild(nowLine(m));marked=true;}
-      card.appendChild(rowNode(b,st.k,b===cn.cur,m));
+      var j=st.list.indexOf(b),here=at&&at.i===j;
+      if(here&&at.early)card.appendChild(nowNote(m));
+      card.appendChild(rowNode(b,st.k,b===cn.cur,m,j,at,n++));
+      if(here&&!at.early)card.appendChild(nowNote(m));
     });
-    if(here&&!marked)card.appendChild(nowLine(m));
     box.appendChild(card);
   });
 }
 
-function nowLine(m){
-  var n=document.createElement("div");n.className="nowline";
-  n.setAttribute("aria-label","Now, "+fmt(Math.floor(m)));
-  n.innerHTML="<b></b><span></span><i></i>";n.children[1].textContent=fmt(Math.floor(m));
-  return n;
+// Where now sits on the day's line: in the stretch from the last block that
+// has started to the start of the next, f of the way along, or above the
+// first stop before the day begins.
+function nowAt(list,m){
+  if(!list.length)return null;
+  if(m<toMin(list[0].start))return {i:0,f:0,early:true};
+  for(var i=list.length-1;i>=0;i--){
+    var s=toMin(list[i].start);if(m<s)continue;
+    var e=i+1<list.length?toMin(list[i+1].start):s+list[i].mins;
+    return {i:i,f:e>s?Math.min(1,(m-s)/(e-s)):1,early:false};
+  }
+  return null;
 }
+// The bead is drawn, so screen readers get now as a line of its own, in its place among the blocks.
+function nowNote(m){var p=document.createElement("p");p.className="sr";p.textContent="Now, "+fmt(Math.floor(m));return p;}
 
-function rowNode(b,k,isNow,m){
-  var t=typeOf(b.type),s=toMin(b.start),isD=isDone(k,b.id);
+var CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5L10 17.5L19 7.5"/></svg>',popId=null;
+function rowNode(b,k,isNow,m,i,at,n){
+  var t=typeOf(b.type),s=toMin(b.start),e=s+b.mins,isD=isDone(k,b.id),host=!!at&&at.i===i;
   var wrap=document.createElement("div");wrap.className="swipe";
   wrap.setAttribute("data-act",isD?"↺  Undo":"✓  Done");wrap.setAttribute("data-edit","✎  Edit");
   var row=document.createElement("button");row.type="button";
-  row.className="item"+(isD?" done":"")+(isNow?" now":"")+(s+b.mins<=m?" past":"");
+  row.className="stop"+(i?"":" first")+(isD?" done":"")+(isNow?" now":"")+(e<=m?" past":"")+
+    (host?" host"+(at.early?" early":""):"")+(b.id===popId?" pop":"");
   row.setAttribute("aria-pressed",isD?"true":"false");
   row.style.setProperty("--h",t.hue);
-  row.innerHTML='<span class="cat"></span><span class="when"></span><span class="body"><span class="ttl"></span><span class="meta"></span></span><span class="tick" aria-hidden="true">✓</span>';
+  row.style.setProperty("--cut",!at||at.early||i>at.i?"0%":i<at.i?"100%":"var(--at)");
+  row.style.setProperty("--d",n*45+"ms");row.style.setProperty("--d2",n*45+100+"ms");
+  row.innerHTML='<span class="when"></span><span class="line" aria-hidden="true"><i class="node">'+CHECK+'</i>'+
+    (host?'<i class="bead"><b></b></i>':"")+'</span><span class="body"><span class="ttl"><span></span></span><span class="meta"></span></span>';
   row.querySelector(".when").textContent=fmt(s);
-  row.querySelector(".ttl").textContent=b.activity;
-  row.querySelector(".meta").textContent=t.name+" · "+dur(b.mins)+(isNow?" · now":"");
+  row.querySelector(".ttl>span").textContent=b.activity;
+  var meta=row.querySelector(".meta");
+  if(isNow){meta.textContent=t.name+" · until "+fmt(e)+" · ";
+    var l=document.createElement("b");l.className="left";l.textContent=left((e-m)*60000)+" left";meta.appendChild(l);}
+  else meta.textContent=t.name+" · "+(host&&!at.early?fmt(s)+"–"+fmt(e):dur(b.mins));
+  if(host){row.style.setProperty("--f",at.f.toFixed(4));
+    var bead=row.querySelector(".bead");bead.firstChild.textContent=fmt(Math.floor(m));
+    // In step with the clock, so the halo doesn't restart at every refresh.
+    bead.style.setProperty("--ph",-(Date.now()%3000)+"ms");}
   row.title=b.activity+(b.details?" — "+b.details:"");
   function act(){tick(k,b.id);}
   row.addEventListener("click",function(){if(row._swiped)return;act();});
@@ -1229,7 +1339,8 @@ function rowNode(b,k,isNow,m){
 function tick(k,id){
   var before=dayStats().frac;
   toggle(k,id);
-  renderToday();
+  popId=isDone(k,id)?id:null;   // the stop just ticked fills, draws its check and strikes its title
+  renderToday();popId=null;
   var after=dayStats().frac;
   if(before<1&&after>=1&&k===key(new Date()))celebrate();
 }
@@ -1387,13 +1498,15 @@ function renderWeek(){
   var list=forDay(weekDay);
   el("w-title").textContent=LONG[weekDay];
   el("w-gym").textContent=GYM[weekDay].length?"Gym open "+gymDayText(weekDay):"Gym closed";
-  var wl=el("w-list");wl.innerHTML="";
+  var wl=el("w-list");wl.innerHTML="";wl.className=reduceMotion()?"":"draw";
   if(!list.length){wl.innerHTML='<p class="empty">Nothing on '+esc(LONG[weekDay])+'.</p>';}
-  list.forEach(function(b){
+  // The same line as Today, as a plan: no ticks, and it ends at the last stop.
+  list.forEach(function(b,i){
     var t=typeOf(b.type),s=toMin(b.start);
-    var r=document.createElement("div");r.className="item";r.style.cursor="default";r.style.setProperty("--h",t.hue);
-    r.innerHTML='<span class="cat"></span><span class="when"></span><span class="body"><span class="ttl"></span><span class="meta"></span></span><span></span>';
-    r.querySelector(".when").textContent=fmt(s);r.querySelector(".ttl").textContent=b.activity;
+    var r=document.createElement("div");r.className="stop"+(i?"":" first")+(i===list.length-1?" last":"");
+    r.style.setProperty("--h",t.hue);r.style.setProperty("--d",i*45+"ms");r.style.setProperty("--d2",i*45+100+"ms");
+    r.innerHTML='<span class="when"></span><span class="line" aria-hidden="true"><i class="node"></i></span><span class="body"><span class="ttl"><span></span></span><span class="meta"></span></span>';
+    r.querySelector(".when").textContent=fmt(s);r.querySelector(".ttl>span").textContent=b.activity;
     r.querySelector(".meta").textContent=t.name+" · "+fmt(s)+"–"+fmt(s+b.mins);
     wl.appendChild(r);
   });
@@ -2381,7 +2494,7 @@ function show(name){
   for(var i=0;i<bs.length;i++)bs[i].setAttribute("aria-pressed",bs[i].getAttribute("data-view")===name?"true":"false");
   el("lens").style.setProperty("--i",ORDER.indexOf(name));
   el("view-title").textContent=VIEWS[name];
-  if(name==="today")renderToday();if(name==="week")renderWeek();if(name==="climb")renderClimb();
+  if(name==="today")renderToday(true);if(name==="week")renderWeek();if(name==="climb")renderClimb();
   if(name==="edit"){renderEditList();renderBackupStatus();warmPhotos();}
   if(name==="solat"){renderSolat();refreshTimes();}
   window.scrollTo(0,0);
@@ -2396,7 +2509,7 @@ resetEdit();el("c-date").value=key(new Date());syncTypeScale();
 (function(){var rs=document.documentElement.style;rs.transition="none";paintSky();
   requestAnimationFrame(function(){requestAnimationFrame(function(){rs.transition="";});});})();
 pdb().then(function(){el("c-photo-field").classList.remove("hide");el("c-photo-note").textContent=PHOTO_NOTE;},function(){});
-renderToday();renderBackupStatus();setTimeout(warmPhotos,1500);
+renderToday(true);renderBackupStatus();setTimeout(warmPhotos,1500);
 var standalone=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
 if(!standalone&&!load("sb.installDismissed",false))el("install").classList.remove("hide");
 el("install-x").addEventListener("click",function(){el("install").classList.add("hide");save("sb.installDismissed",true);});

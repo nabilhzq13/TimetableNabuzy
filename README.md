@@ -46,8 +46,9 @@ there** — only the app's code does. The schedule you tick off stays on the pho
 - **Today** — three rings up top: today's blocks, this week's training minutes,
   and climbing sessions against your four a week. Below them, the block you're in
   with a live ring counting down. **Start focus** turns the screen into a big
-  countdown that keeps the phone awake on the desk. Tap a block to tick it, or
-  swipe it right. A long swipe left opens that block in the editor; save, cancel
+  countdown that keeps the phone awake on the desk. Then the day itself, as one
+  line with a stop for each block. It fills up to now, with a dot at the exact
+  minute. Tap a block to tick it, or swipe it right. A long swipe left opens that block in the editor; save, cancel
   or delete and you're back on Today. Tick the last one of the day and see what
   happens.
 - **The sky** behind everything follows the real time of day — dawn, day, golden
