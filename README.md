@@ -13,6 +13,7 @@ e-Solat, once a year, and that request carries only the zone code.
 | `index.html` | The whole app — layout, logic, your default schedule |
 | `manifest.webmanifest` | Name, icon and colours for the home-screen app |
 | `sw.js` | The offline cache |
+| `fonts/inter-latin.woff2` | Inter, the app's typeface, kept here so it works offline (licence in `fonts/OFL.txt`) |
 | `icon-180.png` | Home-screen icon (iOS) |
 | `icon-192.png`, `icon-512.png` | Icons for everything else |
 

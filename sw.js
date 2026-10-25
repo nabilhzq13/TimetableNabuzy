@@ -1,9 +1,10 @@
 /* Break — offline cache.
    Bump CACHE when you change any file, so phones pick the new version up. */
-var CACHE = "break-v26";
+var CACHE = "break-v27";
 var FILES = [
   "./",
   "./index.html",
+  "./fonts/inter-latin.woff2",
   "./manifest.webmanifest",
   "./icon-180.png",
   "./icon-192.png",
