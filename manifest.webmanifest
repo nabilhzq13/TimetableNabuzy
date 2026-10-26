@@ -1,7 +1,7 @@
 {
   "name": "Break",
   "short_name": "Break",
-  "description": "Offline daily schedule, climbing log and prayer tracker. All data stays on this device.",
+  "description": "Offline daily schedule, climbing log and prayer tracker. Your data lives on this device, with an optional backup to your own Supabase.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

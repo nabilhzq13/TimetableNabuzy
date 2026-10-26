@@ -143,14 +143,29 @@ the next time Break syncs, a new phone downloads them, and deleting a session
 removes its photos there too. At about 200 KB a photo, the free plan's 1 GB
 holds roughly 5,000.
 
-**Signing in.** It's an email and a password; nothing is emailed. (**Confirm
-email** is switched off in the project under **Authentication → Sign In /
-Providers**, because free projects can't change what Supabase's emails say.)
-The first time, open **Schedule → Sync**, enter your email and a password of 6
-or more characters, and tap **Create account**. That phone uploads everything.
-On any other phone, tap **Sign in** instead. On a phone that hasn't synced with
-your account before, signing in replaces what's on it with your synced copy.
-**Sign out** only stops syncing; everything stays on the phone.
+**Signing in.** Open **Schedule → Sync** and tap **Continue with GitHub**. You
+sign in to GitHub and approve **Break** once, and it comes straight back to the
+app, signed in. That works inside the home-screen app; Google isn't offered
+because it refuses sign-in inside home-screen apps on the iPhone.
+
+Or use an email and a password; nothing is emailed. (**Confirm email** is
+switched off in the project under **Authentication → Sign In / Providers**,
+because free projects can't change what Supabase's emails say.) The first time,
+enter your email and a password of 6 or more characters and tap **Create
+account**; on other phones tap **Sign in**. If your GitHub account uses the same
+email, both ways land in the same account.
+
+The first phone you sign in on uploads everything. On a phone that hasn't synced
+with your account before, signing in replaces what's on it with your synced
+copy, unless the synced copy is empty or just the default schedule. **Sign out**
+only stops syncing; everything stays on the phone.
+
+**How GitHub sign-in is wired.** A GitHub OAuth app called **Break** (GitHub →
+Settings → Developer settings → OAuth Apps) sends sign-ins to
+`https://rddznoqnnnqlkmkgiwuj.supabase.co/auth/v1/callback`. Its client ID and
+secret are in the project under **Authentication → Sign In / Providers →
+GitHub**, and **Authentication → URL Configuration** sends people back to
+`https://nabilhzq13.github.io/TimetableNabuzy/`.
 
 Once your account exists, you can turn off **Allow new users to sign up** on the
 same settings page so nobody else can make one. Their rows would be walled off

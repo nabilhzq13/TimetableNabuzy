@@ -207,6 +207,7 @@
   .btn.prominent{background:var(--tint);color:var(--tint-ink);box-shadow:var(--rim-lit),0 8px 20px -8px rgba(11,102,228,.7)}
   .btn.danger{background:rgba(194,65,12,.1);color:var(--flag-text)}
   .btn.glassbtn{background:rgba(255,255,255,.6)}
+  .btn svg{width:1.15em;height:1.15em;fill:currentColor;flex:0 0 auto}
   .btn:disabled{opacity:.45;cursor:not-allowed}
   .btns{display:flex;flex-wrap:wrap;gap:var(--s2)}
 
@@ -1054,6 +1055,10 @@
       <p class="b-status" id="sync-status" aria-live="polite">Off. Everything is on this phone only.</p>
       <div id="sync-out">
         <p class="note" style="margin-bottom:var(--s3)">Sign in to keep a copy of your schedule, ticks, climbing log, photos and prayers in your Supabase, so a lost or reset phone gets it all back. Break still works with no signal and catches up once it's back.</p>
+        <div class="btns">
+          <button type="button" class="btn" id="sync-github"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>Continue with GitHub</button>
+        </div>
+        <p class="note" style="margin:var(--s3) 0">Or with an email and password:</p>
         <form id="sync-form" novalidate>
           <div><label for="sync-email">Email</label><input type="email" id="sync-email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false"></div>
           <div><label for="sync-pass">Password</label><input type="password" id="sync-pass" autocomplete="current-password"></div>
@@ -2589,6 +2594,12 @@ function saveSync(){try{localStorage.setItem(K.sync,JSON.stringify(sm));}catch(e
 function changed(n){if(!sm||!sm.at)return;sm.at[n]=Math.max(Date.now(),(sm.at[n]||0)+1);saveSync();
   if(sm.s){clearTimeout(pushTimer);pushTimer=setTimeout(syncNow,1500);}}
 function piece(n){return n==="blocks"?blocks:n==="done"?done:n==="climbs"?climbs:n==="solat"?plog:n==="solatSet"?pset:qold;}
+// Nothing worth keeping: an empty log, no settings, or the schedule Break starts with.
+function blank(n,v){
+  if(v==null)return true;
+  if(n==="blocks")return JSON.stringify(v)===JSON.stringify(DEFAULTS);
+  return Array.isArray(v)?!v.length:typeof v==="object"&&!Object.keys(v).length;
+}
 // A newer copy from the cloud replaces this phone's. It goes straight to
 // storage, so it isn't taken for a change made here.
 function adopt(n,v){
@@ -2631,11 +2642,15 @@ function syncNow(){
 function pull(){
   return sbFetch("/rest/v1/docs?select=key,value,updated_at",undefined,true).then(function(rows){
     // On a phone that hasn't synced with this account before, the cloud's copy
-    // wins. After that, whichever changed last.
+    // wins, unless it holds nothing (say, a first sign-in from another device
+    // that only had the default schedule) and this phone has the real thing.
+    // After that, whichever changed last.
     var first=sm.user!==sm.s.user,got={},there={};
     if(first){sm.ph={};missed={};}   // what the cloud holds was another account's
-    (rows||[]).forEach(function(r){if(!PIECES[r.key])return;var at=Date.parse(r.updated_at);there[r.key]=1;
-      if(first||at>(sm.at[r.key]||0)){if(adopt(r.key,r.value&&r.value.v))got[r.key]=1;sm.at[r.key]=at;sm.up[r.key]=at;}
+    (rows||[]).forEach(function(r){if(!PIECES[r.key])return;var at=Date.parse(r.updated_at),v=r.value&&r.value.v;there[r.key]=1;
+      var take=first?!(blank(r.key,v)&&!blank(r.key,piece(r.key))):at>(sm.at[r.key]||0);
+      if(take){if(adopt(r.key,v))got[r.key]=1;sm.at[r.key]=at;sm.up[r.key]=at;}
+      else if(first){sm.at[r.key]=Math.max(sm.at[r.key]||0,at+1);sm.up[r.key]=at;}   // this phone's copy goes up over it
       else if(at===sm.at[r.key])sm.up[r.key]=at;});
     // Whatever the cloud doesn't have yet goes up.
     Object.keys(PIECES).forEach(function(n){if(!there[n]){sm.up[n]=0;if(!sm.at[n])sm.at[n]=Date.now();}});
@@ -2716,6 +2731,24 @@ function signIn(create){
 }
 el("sync-form").addEventListener("submit",function(e){e.preventDefault();signIn(false);});
 el("sync-new").addEventListener("click",function(){signIn(true);});
+// GitHub: Supabase sends you to GitHub and straight back to this page, with
+// the sign-in after a # in the address. On an iPhone it all happens inside the
+// home-screen app, and the address is cleaned up as soon as it's read.
+el("sync-github").addEventListener("click",function(){
+  location.href=SB_URL+"/auth/v1/authorize?provider=github&redirect_to="+encodeURIComponent(location.origin+location.pathname);
+});
+function fromRedirect(){
+  var h=location.hash.slice(1);if(!/(^|&)(access_token|error)=/.test(h))return;
+  var q={};h.split("&").forEach(function(kv){var i=kv.indexOf("=");
+    if(i>0)q[decodeURIComponent(kv.slice(0,i))]=decodeURIComponent(kv.slice(i+1).replace(/\+/g," "));});
+  history.replaceState(null,"",location.pathname+location.search);
+  show("edit");
+  if(q.error||!q.access_token){syncMsg("sync-err","GitHub sign-in didn't finish: "+(q.error_description||q.error||"no sign-in came back"));return;}
+  var p={};try{p=JSON.parse(atob(q.access_token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));}catch(e){}
+  keep({access_token:q.access_token,refresh_token:q.refresh_token,expires_in:+q.expires_in||3600,expires_at:+q.expires_at||0,
+    user:{id:p.sub,email:p.email}});
+  sm.ended=false;saveSync();announce("Signed in with GitHub. Syncing now.");
+}
 el("sync-now").addEventListener("click",syncNow);
 // Signing out only stops syncing. Everything stays on the phone, and signing
 // back in to the same account picks up where it left off.
@@ -2810,7 +2843,7 @@ resetEdit();el("c-date").value=key(new Date());syncTypeScale();
   requestAnimationFrame(function(){requestAnimationFrame(function(){rs.transition="";});});})();
 pdb().then(function(){el("c-photo-field").classList.remove("hide");el("c-photo-note").textContent=PHOTO_NOTE;},function(){});
 renderToday(true);renderBackupStatus();setTimeout(warmPhotos,1500);
-renderSync();syncNow();
+fromRedirect();renderSync();syncNow();
 var standalone=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
 if(!standalone&&!load("sb.installDismissed",false))el("install").classList.remove("hide");
 el("install-x").addEventListener("click",function(){el("install").classList.add("hide");save("sb.installDismissed",true);});
