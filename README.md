@@ -2,9 +2,12 @@
 
 An offline schedule, climbing log and prayer tracker. Once it's on your home screen
 it opens like any app, works with no signal, and keeps every tick, block and session
-**on the phone itself**. Nothing is uploaded, there is no account, and no one else
-can see it. The one thing it fetches is your zone's prayer timetable from JAKIM's
-e-Solat, once a year, and that request carries only the zone code.
+**on the phone itself**. If you sign in under **Schedule → Sync**, it also keeps a
+copy in your own Supabase database, which only your account can read, so a lost
+phone gets it all back. Photos never sync. Until you sign in, nothing is uploaded
+and there is no account. The other thing it fetches is your zone's prayer
+timetable from JAKIM's e-Solat, once a year, and that request carries only the
+zone code.
 
 ## Files
 
@@ -17,13 +20,14 @@ e-Solat, once a year, and that request carries only the zone code.
 | `icon-180.png` | Home-screen icon (iOS) |
 | `icon-192.png`, `icon-512.png` | Icons for everything else |
 
-All six files must sit in the same folder.
+They all sit in one folder, with `fonts/` as a folder inside it.
 
 ## Putting it on the phone
 
 iOS only installs a web app from a web address, so the files need somewhere to live.
 GitHub Pages is free and takes about five minutes. **Your data still never goes
-there** — only the app's code does. The schedule you tick off stays on the phone.
+there** — only the app's code does. The schedule you tick off stays on the phone
+(and in your Supabase, if you turn on Sync).
 
 1. Go to [github.com/new](https://github.com/new). Name the repository `break`,
    choose **Public**, and create it.
@@ -123,6 +127,42 @@ up now**. **Later** hides it for three days.
 
 There's still a plain-text backup under **Copy or paste a text backup instead**,
 for pasting into Notes. It leaves out photos, which would make it enormous.
+
+## Sync
+
+Break can also keep a copy of your schedule, ticks, climbing log and prayers in
+the free Supabase project called **Break**, in Singapore. The phone stays the
+main copy and works with no signal. Changes go up a moment after you make them
+whenever there's a connection, and the newest change wins. Photos stay on the
+phone and in the iCloud backup.
+
+**One-time setup.** Supabase emails a sign-in link unless its email templates
+include the code, and a link would open in Safari rather than in Break. In the
+Supabase dashboard, open the Break project, go to **Authentication → Emails**,
+and in both **Confirm signup** and **Magic link**:
+
+- Subject: `{{ .Token }} is your Break code`
+- Body:
+
+  ```html
+  <h2>Your Break code</h2>
+  <p>Enter this code in Break: <strong>{{ .Token }}</strong></p>
+  <p>It works for an hour. If you didn't ask for it, you can ignore this email.</p>
+  ```
+
+The first sign-in uses **Confirm signup**, and every one after that uses
+**Magic link**. Supabase's built-in email only sends to your Supabase account's
+own address, a couple of times an hour, so sign in with that email.
+
+**Signing in.** Open **Schedule → Sync**, enter your email, tap **Email me a
+code**, then type the code and tap **Sign in**. The first phone you sign in on
+uploads everything. On a phone that hasn't synced with your account before,
+signing in replaces what's on it with your synced copy. **Sign out** only stops
+syncing; everything stays on the phone.
+
+Supabase pauses a free project after a week with no activity. Opening Break
+keeps it awake. If it does pause, Break carries on offline until you resume
+the project from the dashboard.
 
 ## Changing the app later
 

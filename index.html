@@ -1049,6 +1049,29 @@
 
     <section class="material seccard" id="e-list"></section>
 
+    <section class="material pad" aria-labelledby="sync-h">
+      <h2 id="sync-h">Sync</h2>
+      <p class="b-status" id="sync-status" aria-live="polite">Off. Everything is on this phone only.</p>
+      <div id="sync-out">
+        <p class="note" style="margin-bottom:var(--s3)">Sign in to keep a copy of your schedule, ticks, climbing log and prayers in your Supabase database, so a lost or reset phone gets it all back. Photos stay on this phone and in your iCloud backup. Break still works with no signal and catches up once it's back.</p>
+        <form id="sync-form" novalidate>
+          <div><label for="sync-email">Email</label><input type="email" id="sync-email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"></div>
+          <div class="hide" id="sync-code-row"><label for="sync-code">Code from the email</label><input type="text" id="sync-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10"></div>
+          <p class="note hide" id="sync-note" style="margin:0"></p>
+          <p class="err hide" id="sync-err" role="alert" style="margin:0"></p>
+          <div class="btns">
+            <button type="submit" class="btn prominent" id="sync-go">Email me a code</button>
+            <button type="button" class="btn hide" id="sync-again">Send a new code</button>
+          </div>
+        </form>
+        <p class="note">On a phone that hasn't synced with your account before, signing in replaces what's on it with your synced copy.</p>
+      </div>
+      <div class="btns hide" id="sync-in">
+        <button type="button" class="btn" id="sync-now">Sync now</button>
+        <button type="button" class="btn" id="sync-off">Sign out</button>
+      </div>
+    </section>
+
     <section class="material pad" aria-labelledby="data-h">
       <h2 id="data-h">Your data</h2>
       <p class="b-status" id="b-status">No backup yet</p>
@@ -1064,7 +1087,7 @@
         <button type="button" class="btn" id="b-no">Cancel</button>
         <button type="button" class="btn danger" id="b-yes">Replace</button>
       </div>
-      <p class="note">Nothing leaves the phone unless you save or send it. The one thing the app fetches is your prayer timetable, which sends JAKIM only your zone code.</p>
+      <p class="note">Nothing leaves the phone unless you back it up, send it, or sign in to Sync above. Apart from that, the one thing the app fetches is your prayer timetable, which sends JAKIM only your zone code.</p>
       <details class="b-more">
         <summary>Copy or paste a text backup instead</summary>
         <p class="note" style="margin-top:0">Plain text for Notes or an email. It leaves out photos.</p>
@@ -1208,9 +1231,12 @@ var RULES=[
 
 // ---------- storage ----------
 var K={blocks:"sb.blocks",done:"sb.done",climbs:"sb.climbs",solat:"sb.solat",solatSet:"sb.solatSet",times:"sb.times",qold:"sb.qadhaOld",
-  lastBackup:"sb.lastBackup",snooze:"sb.backupSnooze"};
+  lastBackup:"sb.lastBackup",snooze:"sb.backupSnooze",sync:"sb.sync"};
+// What syncs, by storage key and row name. Things that belong to one phone (the
+// backup reminder, the downloaded prayer timetable, photos) stay on it.
+var SYNCED={"sb.blocks":"blocks","sb.done":"done","sb.climbs":"climbs","sb.solat":"solat","sb.solatSet":"solatSet","sb.qadhaOld":"qadhaOld"};
 function load(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
-function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));if(SYNCED[k])changed(SYNCED[k]);return true;}catch(e){return false;}}
 var blocks=load(K.blocks,null);
 if(!Array.isArray(blocks)||!blocks.length){blocks=DEFAULTS.slice();save(K.blocks,blocks);}
 var done=load(K.done,{})||{};
@@ -2543,6 +2569,125 @@ el("x-confirm-no").addEventListener("click",function(){el("x-confirm").classList
 el("x-confirm-yes").addEventListener("click",function(){blocks=DEFAULTS.slice();save(K.blocks,blocks);el("x-confirm").classList.add("hide");
   resetEdit();renderEditList();renderToday();toast("Schedule reset");});
 
+// ---------- sync ----------
+// The phone keeps the main copy. Signed in, each piece of Break (schedule,
+// ticks, climbing log, prayers) is also kept as one row in Break's Supabase
+// project, and whichever copy changed last wins. Supabase's access rules let
+// only the signed-in owner read or write a row, so the key below is the public
+// kind that apps carry. Photos stay on the phone.
+var SB_URL="https://rddznoqnnnqlkmkgiwuj.supabase.co",SB_KEY="sb_publishable_BGT-zk3Ek4mW1yE2Uju1gA_NNWbCnvC";
+var PIECES={};Object.keys(SYNCED).forEach(function(k){PIECES[SYNCED[k]]=k;});
+// at: when each piece last changed on this phone. up: the version the cloud is
+// known to hold. s: the sign-in. user: whose data this phone last synced with.
+var sm=load(K.sync,null)||{};if(!sm.at)sm.at={};if(!sm.up)sm.up={};
+var syncing=false,syncAgain=false,pushTimer=0,codeFor="";
+function saveSync(){try{localStorage.setItem(K.sync,JSON.stringify(sm));}catch(e){}}
+// Called by save(). Until this section has run, at launch, nothing counts as a
+// change: the default schedule written on a fresh phone must never beat a synced
+// one. A change always counts as newer than the copy it was made on, even when
+// that copy came from a phone whose clock runs ahead of this one.
+function changed(n){if(!sm||!sm.at)return;sm.at[n]=Math.max(Date.now(),(sm.at[n]||0)+1);saveSync();
+  if(sm.s){clearTimeout(pushTimer);pushTimer=setTimeout(syncNow,1500);}}
+function piece(n){return n==="blocks"?blocks:n==="done"?done:n==="climbs"?climbs:n==="solat"?plog:n==="solatSet"?pset:qold;}
+// A newer copy from the cloud replaces this phone's. It goes straight to
+// storage, so it isn't taken for a change made here.
+function adopt(n,v){
+  if(n==="blocks"){if(!Array.isArray(v)||!v.length)return false;blocks=v;}
+  else if(n==="done")done=v&&typeof v==="object"?v:{};
+  else if(n==="climbs")climbs=Array.isArray(v)?v:[];
+  else if(n==="solat")plog=v&&typeof v==="object"?v:{};
+  else if(n==="solatSet")pset=v||null;
+  else qold=v||null;
+  try{localStorage.setItem(PIECES[n],JSON.stringify(piece(n)));}catch(e){}
+  return true;
+}
+function sbFetch(path,body,auth){
+  var h={apikey:SB_KEY};if(body!==undefined)h["Content-Type"]="application/json";
+  if(auth)h.Authorization="Bearer "+sm.s.access;
+  return fetch(SB_URL+path,{method:body===undefined?"GET":"POST",headers:h,cache:"no-store",
+    body:body===undefined?undefined:JSON.stringify(body)}).then(function(r){return r.text().then(function(t){
+      var j=null;try{j=t?JSON.parse(t):null;}catch(e){}
+      if(!r.ok){var er=new Error(j&&(j.msg||j.message||j.error_description||j.error)||"HTTP "+r.status);er.status=r.status;throw er;}
+      return j;});});
+}
+function keep(r){var u=r.user||{},was=sm.s||{};
+  sm.s={email:u.email||was.email||"",user:u.id||was.user,access:r.access_token,refresh:r.refresh_token,
+    exp:r.expires_at?r.expires_at*1000:Date.now()+(r.expires_in||3600)*1000};saveSync();}
+// A usable access token, renewed just before it runs out. A refusal means the
+// sign-in has ended; no connection only means later.
+function fresh(){
+  if(sm.s.exp-60000>Date.now())return Promise.resolve();
+  return sbFetch("/auth/v1/token?grant_type=refresh_token",{refresh_token:sm.s.refresh}).then(keep,function(e){
+    if(e.status>=400&&e.status<500){sm.s=null;sm.ended=true;saveSync();}throw e;});
+}
+function syncNow(){
+  if(!sm.s)return;if(syncing){syncAgain=true;return;}
+  syncing=true;syncAgain=false;renderSync();
+  fresh().then(pull).then(push).then(function(){sm.last=Date.now();sm.err="";},
+    function(e){sm.err=e&&e.status?e.message:"offline";})
+  .then(function(){syncing=false;saveSync();renderSync();if(syncAgain&&sm.s)syncNow();});
+}
+function pull(){
+  return sbFetch("/rest/v1/docs?select=key,value,updated_at",undefined,true).then(function(rows){
+    // On a phone that hasn't synced with this account before, the cloud's copy
+    // wins. After that, whichever changed last.
+    var first=sm.user!==sm.s.user,got={},there={};
+    (rows||[]).forEach(function(r){if(!PIECES[r.key])return;var at=Date.parse(r.updated_at);there[r.key]=1;
+      if(first||at>(sm.at[r.key]||0)){if(adopt(r.key,r.value&&r.value.v))got[r.key]=1;sm.at[r.key]=at;sm.up[r.key]=at;}
+      else if(at===sm.at[r.key])sm.up[r.key]=at;});
+    // Whatever the cloud doesn't have yet goes up.
+    Object.keys(PIECES).forEach(function(n){if(!there[n]){sm.up[n]=0;if(!sm.at[n])sm.at[n]=Date.now();}});
+    sm.user=sm.s.user;saveSync();
+    if(Object.keys(got).length){renderToday();renderEditList();if(view==="week")renderWeek();if(view==="climb")renderClimb();
+      renderSolatAll();if(got.solatSet)refreshTimes();}
+  });
+}
+// Each newer piece goes up through put_doc, which keeps the cloud's copy if
+// that one is newer still: then it's fetched on the next pass instead.
+function push(){
+  return Object.keys(PIECES).filter(function(n){return (sm.at[n]||0)>(sm.up[n]||0);}).reduce(function(p,n){
+    return p.then(function(){var at=sm.at[n];
+      return sbFetch("/rest/v1/rpc/put_doc",{p_key:n,p_value:{v:piece(n)},p_at:new Date(at).toISOString()},true).then(function(kept){
+        if(!kept)syncAgain=true;else if(sm.at[n]===at)sm.up[n]=at;});});},Promise.resolve());
+}
+function renderSync(){
+  var on=!!sm.s;el("sync-out").classList.toggle("hide",on);el("sync-in").classList.toggle("hide",!on);
+  el("sync-status").textContent=!on?(sm.ended?"Signed out. Sign in again to keep syncing.":"Off. Everything is on this phone only.")
+    :syncing?"Syncing…":sm.err==="offline"?"Waiting for a connection. It catches up by itself."
+    :sm.err?"Couldn't sync: "+sm.err:sm.last?"Synced "+whenText(new Date(sm.last))+" · "+sm.s.email:"Signed in as "+sm.s.email;
+}
+function syncMsg(id,t){var n=el(id);n.textContent=t;n.classList.toggle("hide",!t);}
+function codeStep(on){el("sync-code-row").classList.toggle("hide",!on);el("sync-again").classList.toggle("hide",!on);
+  el("sync-go").textContent=on?"Sign in":"Email me a code";}
+function sendCode(email){
+  var go=el("sync-go");go.disabled=true;syncMsg("sync-err","");
+  return sbFetch("/auth/v1/otp",{email:email,create_user:true}).then(function(){codeFor=email;codeStep(true);
+      syncMsg("sync-note","A code is on its way to "+email+". Enter it here.");el("sync-code").focus();},
+    function(e){syncMsg("sync-err",e.status===429?"Too many codes asked for. Wait a minute, then try again."
+      :e.status?"Supabase said: "+e.message:"No connection. Try again once you're online.");})
+  .then(function(){go.disabled=false;});
+}
+el("sync-form").addEventListener("submit",function(e){e.preventDefault();
+  var email=el("sync-email").value.trim().toLowerCase(),code=el("sync-code").value.replace(/\D/g,"");
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){syncMsg("sync-err","Enter your email address.");return;}
+  if(codeFor!==email){sendCode(email);return;}
+  if(code.length<6){syncMsg("sync-err","Enter the code from the email.");return;}
+  var go=el("sync-go");go.disabled=true;syncMsg("sync-err","");
+  sbFetch("/auth/v1/verify",{type:"email",email:email,token:code}).then(function(r){
+      keep(r);sm.ended=false;saveSync();codeFor="";el("sync-code").value="";codeStep(false);syncMsg("sync-note","");
+      announce("Signed in. Syncing now.");syncNow();},
+    function(er){syncMsg("sync-err",er.status?"That code didn't work. Check it, or send a new one.":"No connection. Try again once you're online.");})
+  .then(function(){go.disabled=false;});
+});
+el("sync-again").addEventListener("click",function(){var email=el("sync-email").value.trim().toLowerCase();if(email)sendCode(email);});
+el("sync-now").addEventListener("click",syncNow);
+// Signing out only stops syncing. Everything stays on the phone, and signing
+// back in to the same account picks up where it left off.
+el("sync-off").addEventListener("click",function(){
+  var tok=sm.s&&sm.s.access;sm.s=null;sm.ended=false;saveSync();renderSync();toast("Signed out. Your data stays on this phone.");
+  // Then end the session on Supabase's side too; offline, it simply lapses.
+  if(tok)try{fetch(SB_URL+"/auth/v1/logout",{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+tok}}).catch(function(){});}catch(e){}});
+
 // ---------- navigation ----------
 var VIEWS={today:"Today",week:"Week",climb:"Climbing",solat:"Solat",edit:"Schedule"},ORDER=["today","week","climb","solat","edit"],view="today";
 var bar=document.querySelector(".tabbar"),tabs=bar.querySelectorAll("button");
@@ -2629,16 +2774,19 @@ resetEdit();el("c-date").value=key(new Date());syncTypeScale();
   requestAnimationFrame(function(){requestAnimationFrame(function(){rs.transition="";});});})();
 pdb().then(function(){el("c-photo-field").classList.remove("hide");el("c-photo-note").textContent=PHOTO_NOTE;},function(){});
 renderToday(true);renderBackupStatus();setTimeout(warmPhotos,1500);
+renderSync();syncNow();
 var standalone=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
 if(!standalone&&!load("sb.installDismissed",false))el("install").classList.remove("hide");
 el("install-x").addEventListener("click",function(){el("install").classList.add("hide");save("sb.installDismissed",true);});
 
 window.addEventListener("resize",syncTypeScale);window.addEventListener("pageshow",syncTypeScale);
 document.addEventListener("visibilitychange",function(){if(document.hidden)return;syncTypeScale();paintSky();
-  if(view==="today")renderToday();if(view==="solat")renderSolat();refreshTimes();if(focusBlock)requestWake();});
-window.addEventListener("online",refreshTimes);
+  if(view==="today")renderToday();if(view==="solat")renderSolat();refreshTimes();if(focusBlock)requestWake();syncNow();});
+window.addEventListener("online",function(){refreshTimes();syncNow();});
 setInterval(function(){if(document.hidden)return;paintSky();if(view==="today"&&!focusBlock)renderToday();if(view==="climb")renderGym();
   if(view==="solat")renderSolat();},30000);
+// While Break is open, check for changes made on another phone every few minutes.
+setInterval(function(){if(!document.hidden)syncNow();},300000);
 refreshTimes();
 
 if("serviceWorker" in navigator&&location.protocol!=="file:")
