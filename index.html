@@ -222,12 +222,12 @@
   .btns{display:flex;flex-wrap:wrap;gap:var(--s2)}
 
   /* Every tappable thing answers within 120ms. */
-  .btn,.item,.chip-btn,.dayrow button,.x,.tabbar button,.shot .open,.hero-btn{
+  .btn,.item,.chip-btn,.dayrow button,.logopen,.tabbar button,.shot .open,.hero-btn{
     transition:transform .12s ease,background-color .12s ease,opacity .12s ease,filter .12s ease;
   }
   .btn:active{transform:scale(.96)}
   .btn.prominent:active{filter:brightness(.92)}
-  .item:active,.chip-btn:active,.dayrow button:active,.x:active{background:var(--press)}
+  .item:active,.chip-btn:active,.dayrow button:active,.logopen:active{background:var(--press)}
   .tabbar button:active{transform:scale(.92)}
 
   /* ---------------- activity rings ---------------- */
@@ -323,7 +323,6 @@
     font:inherit;color:var(--ink);text-align:left;cursor:pointer;touch-action:pan-y;
     transition:transform .28s cubic-bezier(.3,1.3,.5,1),background-color .12s ease;
   }
-  div.stop{cursor:default}
   button.stop:active{background:var(--press)}
   .stop .when{font-size:var(--t-footnote);font-weight:var(--w-medium);line-height:var(--lh-tight);padding-top:.12rem;text-align:right;
     white-space:nowrap;color:var(--ink)}
@@ -543,16 +542,21 @@
   .shot .drop span{width:24px;height:24px;margin:3px 3px 0 0;border-radius:99px;background:rgba(10,10,20,.6);color:#fff;
     font-size:15px;line-height:1;display:grid;place-items:center}
 
-  .logrow{display:grid;grid-template-columns:auto 1fr auto;gap:var(--s3);align-items:start;
-    padding:var(--s3) var(--s4);border-top:1px solid var(--line)}
-  .logrow:first-child{border-top:0}
+  /* A logged session: the row opens it for editing, and its photos, below
+     it under the text, each open on their own. */
+  .logrow{border-top:1px solid var(--line)}
+  .logopen{display:grid;grid-template-columns:4.2em minmax(0,1fr) auto;gap:var(--s3);align-items:start;width:100%;
+    padding:var(--s3) var(--s4);border:0;background:none;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
   .logrow .dt{font-size:var(--t-footnote);font-weight:var(--w-semibold);color:var(--ink-2);padding-top:2px}
   .logrow .gr{font-weight:var(--w-semibold)}
   .logrow .nt{display:block;font-size:var(--t-footnote);color:var(--ink-2)}
-  .logshots{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--s2)}
+  .logrow .chev{font-size:var(--t-title3);line-height:1.1;color:var(--ink-2)}
+  .logshots{display:flex;flex-wrap:wrap;gap:6px;padding:0 var(--s4) var(--s3) calc(var(--s4) + 4.2em + var(--s3))}
+  .logshots:empty{display:none}
   .logshots .shot{width:54px;height:54px;border-radius:12px}
-  .x{width:44px;height:44px;margin:-6px -10px -6px 0;border-radius:12px;border:0;background:transparent;color:var(--ink-2);
-    font-size:var(--t-title3);cursor:pointer;display:grid;place-items:center}
+  body.big-type .logopen{grid-template-columns:minmax(0,1fr) auto;row-gap:2px}
+  body.big-type .logopen .dt{grid-column:1 / -1;padding-top:0}
+  body.big-type .logshots{padding-left:var(--s4)}
   .empty{margin:0;padding:var(--s5) var(--s4);text-align:center;color:var(--ink-2);font-size:var(--t-subhead)}
 
   /* ---------------- solat ---------------- */
@@ -836,8 +840,9 @@
         <h1 id="view-title">Today</h1>
       </div>
       <div class="hero-acts hide" id="hero-acts">
-        <button type="button" class="hero-btn" id="e-add" aria-label="Add a block"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="10.8" y="4.5" width="2.4" height="15" rx="1.2"/><rect x="4.5" y="10.8" width="15" height="2.4" rx="1.2"/></svg></button>
-        <button type="button" class="hero-btn" id="set-open" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="3.4" stroke-dasharray="3.1 3.655" transform="rotate(-10.3 12 12)"/><path fill-rule="evenodd" d="M12 4.6a7.4 7.4 0 1 1 0 14.8a7.4 7.4 0 0 1 0-14.8Zm0 4.4a3 3 0 1 0 0 6a3 3 0 0 0 0-6Z"/></svg></button>
+        <button type="button" class="hero-btn hide" id="c-add" aria-label="Log a session" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="10.8" y="4.5" width="2.4" height="15" rx="1.2"/><rect x="4.5" y="10.8" width="15" height="2.4" rx="1.2"/></svg></button>
+        <button type="button" class="hero-btn" id="e-add" aria-label="Add a block" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="10.8" y="4.5" width="2.4" height="15" rx="1.2"/><rect x="4.5" y="10.8" width="15" height="2.4" rx="1.2"/></svg></button>
+        <button type="button" class="hero-btn" id="set-open" aria-label="Settings" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="3.4" stroke-dasharray="3.1 3.655" transform="rotate(-10.3 12 12)"/><path fill-rule="evenodd" d="M12 4.6a7.4 7.4 0 1 1 0 14.8a7.4 7.4 0 0 1 0-14.8Zm0 4.4a3 3 0 1 0 0 6a3 3 0 0 0 0-6Z"/></svg></button>
       </div>
     </div>
   </header>
@@ -959,26 +964,6 @@
       <p class="muted" id="c-summary" style="margin:2px 0 0;font-size:var(--t-footnote);font-weight:var(--w-medium)"></p>
       <div id="c-chart"></div>
       <div class="pyr" id="c-pyr"></div>
-    </section>
-
-    <section class="material pad">
-      <h2 style="margin-bottom:var(--s3)">Log a session</h2>
-      <form id="c-form">
-        <div class="two">
-          <div><label for="c-date">Date</label><input type="date" id="c-date"></div>
-          <div><label for="c-grade">Best send</label><input type="text" id="c-grade" placeholder="V4 or 6b" maxlength="24" autocapitalize="characters"></div>
-        </div>
-        <div><label id="c-feel-label">How it felt</label><div class="feel" id="c-feel" role="group" aria-labelledby="c-feel-label"></div></div>
-        <div><label for="c-notes">Notes</label><textarea id="c-notes" maxlength="300" placeholder="Overhang, heel hooks. Left hand still cutting loose."></textarea></div>
-        <div id="c-photo-field" class="hide">
-          <label>Photos</label>
-          <div class="shots" id="c-shots"></div>
-          <input type="file" id="c-photo" accept="image/*" capture="environment" multiple hidden>
-          <button type="button" class="btn" id="c-photo-btn">Take a photo</button>
-          <p class="note" id="c-photo-note"></p>
-        </div>
-        <div class="btns"><button type="submit" class="btn prominent">Save session</button></div>
-      </form>
     </section>
 
     <section class="material seccard" id="c-list"></section>
@@ -1122,6 +1107,35 @@
       <button type="button" class="btn prominent" id="os-save">Save</button>
       <button type="button" class="btn" id="os-cancel">Cancel</button>
     </div>
+  </div>
+</dialog>
+
+<!-- Logging a climbing session, or editing one: the same sheet. -->
+<dialog class="sheet page" id="c-sheet" aria-labelledby="c-title">
+  <div class="sheet-in">
+    <div class="sheet-head">
+      <h2 id="c-title">Log a session</h2>
+      <button type="button" class="sheet-x" id="c-x" aria-label="Cancel"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4Z"/></svg></i></button>
+    </div>
+    <form id="c-form">
+      <div class="two">
+        <div><label for="c-date">Date</label><input type="date" id="c-date"></div>
+        <div><label for="c-grade">Best send</label><input type="text" id="c-grade" placeholder="V4 or 6b" maxlength="24" autocapitalize="characters"></div>
+      </div>
+      <div><label id="c-feel-label">How it felt</label><div class="feel" id="c-feel" role="group" aria-labelledby="c-feel-label"></div></div>
+      <div><label for="c-notes">Notes</label><textarea id="c-notes" maxlength="300" placeholder="Overhang, heel hooks. Left hand still cutting loose."></textarea></div>
+      <div id="c-photo-field" class="hide">
+        <label>Photos</label>
+        <div class="shots" id="c-shots"></div>
+        <input type="file" id="c-photo" accept="image/*" capture="environment" multiple hidden>
+        <button type="button" class="btn" id="c-photo-btn">Take a photo</button>
+        <p class="note" id="c-photo-note"></p>
+      </div>
+      <div class="btns stack">
+        <button type="submit" class="btn prominent" id="c-save">Save session</button>
+        <button type="button" class="btn danger hide" id="c-delete">Delete session</button>
+      </div>
+    </form>
   </div>
 </dialog>
 
@@ -1664,9 +1678,11 @@ function renderWeek(){
   var wl=el("w-list");wl.innerHTML="";wl.className=reduceMotion()?"":"draw";
   if(!list.length){wl.innerHTML='<p class="empty">Nothing on '+esc(LONG[weekDay])+'.</p>';}
   // The same line as Today, as a plan: no ticks, and it ends at the last stop.
+  // A tap opens the block in the editor, over Week.
   list.forEach(function(b,i){
     var t=typeOf(b.type),s=toMin(b.start);
-    var r=document.createElement("div");r.className="stop"+(i?"":" first")+(i===list.length-1?" last":"");
+    var r=document.createElement("button");r.type="button";r.className="stop"+(i?"":" first")+(i===list.length-1?" last":"");
+    r.setAttribute("aria-haspopup","dialog");r.setAttribute("data-f","k"+b.id);r.addEventListener("click",function(){openEditor(b);});
     r.style.setProperty("--h",t.hue);r.style.setProperty("--d",i*45+"ms");r.style.setProperty("--d2",i*45+100+"ms");
     r.innerHTML='<span class="when"></span><span class="line" aria-hidden="true"><i class="node"></i></span><span class="body"><span class="ttl"><span></span></span><span class="meta"></span></span>';
     r.querySelector(".when").textContent=fmt(s);r.querySelector(".ttl>span").textContent=b.activity;
@@ -1871,8 +1887,10 @@ function shotNode(id,blob,onDrop){var w=document.createElement("div");w.classNam
   if(onDrop){var x=document.createElement("button");x.type="button";x.className="drop";x.innerHTML='<span aria-hidden="true">&times;</span>';
     x.setAttribute("aria-label","Remove photo");x.addEventListener("click",function(e){e.stopPropagation();onDrop();});w.appendChild(x);}
   return w;}
+// pending: the photos in the session sheet. Ones already saved are "kept", and
+// their picture stays in use by the log until the change is saved.
 function renderPending(){var b=el("c-shots");b.innerHTML="";
-  pending.forEach(function(p){b.appendChild(shotNode(p.id,p.blob,function(){pdrop(p.id);
+  pending.forEach(function(p){b.appendChild(shotNode(p.id,p.blob,function(){if(!p.kept)pdrop(p.id);
     pending=pending.filter(function(q){return q.id!==p.id;});renderPending();}));});
   el("c-photo-btn").disabled=pending.length>=PHOTO_MAX;
   el("c-photo-btn").textContent=pending.length?"Add another":"Take a photo";}
@@ -1920,44 +1938,94 @@ function renderFeel(){
 }
 
 function renderClimb(){
-  renderGym();renderFeel();renderClimbStats();
+  renderGym();renderClimbStats();
   var box=el("c-list");box.innerHTML="";
-  if(!climbs.length){box.innerHTML='<p class="empty">Log a session after you climb. Grades, notes and photos build the picture of what is working.</p>';return;}
-  var h=document.createElement("p");h.className="sechead";h.textContent="Sessions";box.appendChild(h);
+  if(!climbs.length){box.innerHTML='<p class="empty">After you climb, tap <b>+</b> to log the session. Grades, notes and photos build the picture of what is working.</p>';return;}
+  var h=document.createElement("p");h.className="sechead";h.textContent="Sessions · tap one to edit";box.appendChild(h);
   climbs.slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date));}).forEach(function(c){
     var r=document.createElement("div");r.className="logrow";
-    r.innerHTML='<span class="dt">'+esc(c.date?dayMonth(c.date):"")+'</span><span><span class="gr">'+esc(c.grade||"Session")+
-      '</span>'+feelTag(c.feel)+(c.notes?'<span class="nt">'+esc(c.notes)+'</span>':'')+
-      '</span><button type="button" class="x" aria-label="Delete session">&times;</button>';
-    if(c.shots&&c.shots.length){var s=document.createElement("div");s.className="logshots";r.children[1].appendChild(s);
+    var o=document.createElement("button");o.type="button";o.className="logopen";o.setAttribute("aria-haspopup","dialog");o.setAttribute("data-f","c"+c.id);
+    o.innerHTML='<span class="dt">'+esc(c.date?dayMonth(c.date):"")+'</span><span><span class="gr">'+esc(c.grade||"Session")+
+      '</span>'+feelTag(c.feel)+(c.notes?'<span class="nt">'+esc(c.notes)+'</span>':'')+'</span><span class="chev" aria-hidden="true">›</span>';
+    o.addEventListener("click",function(){openClimb(c);});r.appendChild(o);
+    if(c.shots&&c.shots.length){var s=document.createElement("div");s.className="logshots";r.appendChild(s);
       c.shots.forEach(function(pid){pget(pid).then(function(b){if(b)s.appendChild(shotNode(pid,b,null));},function(){});});}
-    // One tap deletes, with an Undo. The photos stay on the phone until the
-    // Undo has gone, so taking it back brings them back too.
-    r.querySelector(".x").addEventListener("click",function(){
-      climbs=climbs.filter(function(x){return x.id!==c.id;});save(K.climbs,climbs);renderClimb();announce("Session deleted");
-      var later=setTimeout(function(){(c.shots||[]).forEach(function(pid){pdel(pid).catch(function(){});pdrop(pid);});},6500);
-      toast("Session deleted",function(){clearTimeout(later);
-        if(!climbs.some(function(x){return x.id===c.id;})){climbs=climbs.concat([c]);save(K.climbs,climbs);}
-        renderClimb();announce("Session back");});});
     box.appendChild(r);
   });
 }
+
+// ---------- the session sheet ----------
+// Logging and editing share one sheet: + logs a new session, and a tap on one
+// opens it. Its saved photos come in as "kept". Any taken out, and a deleted
+// session's photos, stay on the phone until the Undo after saving has gone,
+// so Undo brings them back too.
+var editingClimb=null,sheetGen=0,preparing=0;
+function dropPending(){pending.forEach(function(p){if(!p.kept)pdrop(p.id);});pending=[];renderPending();}
+function climbForm(c){
+  editingClimb=c?c.id:null;dropPending();sheetGen++;preparing=0;el("c-save").disabled=false;
+  el("c-title").textContent=c?"Edit session":"Log a session";el("c-save").textContent=c?"Save changes":"Save session";
+  el("c-delete").classList.toggle("hide",!c);el("c-photo-note").textContent=PHOTO_NOTE;
+  el("c-date").value=c&&c.date||key(new Date());el("c-grade").value=c&&c.grade||"";el("c-notes").value=c&&c.notes||"";
+  feel=c&&c.feel||0;renderFeel();
+  if(c&&c.shots&&c.shots.length)Promise.all(c.shots.map(function(pid){
+      return pget(pid).then(function(b){return b?{id:pid,blob:b,kept:true}:null;},function(){return null;});}))
+    .then(function(sh){if(editingClimb!==c.id)return;pending=sh.filter(Boolean).concat(pending);renderPending();});
+}
+function openClimb(c){climbForm(c||null);var d=el("c-sheet");sheetOpen(d);d.querySelector(".sheet-in").scrollTop=0;}
+function closeClimb(){sheetShut(el("c-sheet"));}
+el("c-sheet").addEventListener("close",function(){dropPending();editingClimb=null;sheetGen++;});
+el("c-sheet").addEventListener("click",function(e){if(e.target===this)closeClimb();});
+el("c-x").addEventListener("click",closeClimb);
+el("c-add").addEventListener("click",function(){openClimb(null);});
+function deleteSession(c){
+  climbs=climbs.filter(function(x){return x.id!==c.id;});save(K.climbs,climbs);keepFocus(renderClimb);announce("Session deleted");
+  var later=setTimeout(function(){(c.shots||[]).forEach(function(pid){pdel(pid).catch(function(){});pdrop(pid);});},6500);
+  toast("Session deleted",function(){clearTimeout(later);
+    if(!climbs.some(function(x){return x.id===c.id;})){climbs=climbs.concat([c]);save(K.climbs,climbs);}
+    keepFocus(renderClimb);announce("Session back");});
+}
+el("c-delete").addEventListener("click",function(){var id=editingClimb,c=climbs.filter(function(x){return x.id===id;})[0];
+  closeClimb();if(c)deleteSession(c);});
 el("c-photo-btn").addEventListener("click",function(){el("c-photo").click();});
+// Save waits while photos are still being prepared, and photos that finish
+// after the sheet has closed are let go rather than landing in the next one.
 el("c-photo").addEventListener("change",function(){var f=Array.prototype.slice.call(this.files||[]);this.value="";
-  var room=PHOTO_MAX-pending.length;if(!f.length||room<=0)return;el("c-photo-note").textContent="Preparing…";
+  var room=PHOTO_MAX-pending.length;if(!f.length||room<=0)return;
+  var gen=sheetGen;preparing++;el("c-save").disabled=true;el("c-photo-note").textContent="Preparing…";
   Promise.all(f.slice(0,room).map(function(x){return shrink(x).then(function(b){return {id:newId(),blob:b};},function(){return null;});}))
-  .then(function(sh){var bad=0;sh.forEach(function(s){s?pending.push(s):bad++;});renderPending();
+  .then(function(sh){if(gen!==sheetGen)return;preparing--;el("c-save").disabled=preparing>0;
+    var bad=0;sh.forEach(function(s){s?pending.push(s):bad++;});renderPending();
     el("c-photo-note").textContent=(bad?bad+" couldn't be read. ":"")+PHOTO_NOTE;});});
 el("c-form").addEventListener("submit",function(e){e.preventDefault();
-  var rec={id:newId(),date:el("c-date").value||key(new Date()),grade:el("c-grade").value.trim(),feel:feel,notes:el("c-notes").value.trim(),shots:[]};
-  Promise.all(pending.map(function(p){return pput(p.id,p.blob).then(function(){return p.id;},function(){return null;});}))
-  .then(function(ids){rec.shots=ids.filter(Boolean);var lost=ids.length-rec.shots.length;climbs.push(rec);save(K.climbs,climbs);
-    var prevBest=null;climbs.slice(0,-1).forEach(function(c){var v=gradeV(c.grade);if(v!==null&&(prevBest===null||v>prevBest))prevBest=v;});
-    var v=gradeV(rec.grade);
-    pending=[];renderPending();el("c-grade").value="";el("c-notes").value="";feel=0;el("c-date").value=key(new Date());
-    el("c-photo-note").textContent=lost?"Saved, but "+lost+" photo(s) could not be stored.":PHOTO_NOTE;renderClimb();
-    if(v!==null&&prevBest!==null&&v>prevBest){toast("New hardest send — V"+v);announce("New hardest send, V"+v);}
-    else toast("Session saved");});});
+  var was=editingClimb,prev=was?climbs.filter(function(c){return c.id===was;})[0]:null;
+  if(was&&!prev){closeClimb();return;}   // deleted on another phone in the meantime
+  var kept=pending.filter(function(p){return p.kept;}).map(function(p){return p.id;}),fresh=pending.filter(function(p){return !p.kept;});
+  var rec={id:was||newId(),date:el("c-date").value||key(new Date()),grade:el("c-grade").value.trim(),feel:feel,notes:el("c-notes").value.trim()};
+  el("c-save").disabled=true;
+  Promise.all(fresh.map(function(p){return pput(p.id,p.blob).then(function(){return p.id;},function(){return null;});}))
+  .then(function(ids){
+    var added=ids.filter(Boolean),lost=ids.length-added.length;rec.shots=kept.concat(added);
+    // Stored now, so their pictures carry on into the log rather than being let go.
+    pending=[];el("c-save").disabled=false;closeClimb();
+    var miss=lost?", but "+plural(lost,"photo")+" couldn't be stored":"";
+    if(!prev){
+      var prevBest=null;climbs.forEach(function(c){var v=gradeV(c.grade);if(v!==null&&(prevBest===null||v>prevBest))prevBest=v;});
+      climbs.push(rec);save(K.climbs,climbs);renderClimb();
+      var v=gradeV(rec.grade);
+      if(!lost&&v!==null&&prevBest!==null&&v>prevBest){toast("New hardest send — V"+v);announce("New hardest send, V"+v);}
+      else toast("Session saved"+miss);
+      return;
+    }
+    rec=Object.assign({},prev,rec);
+    var gone=(prev.shots||[]).filter(function(id){return kept.indexOf(id)<0;});
+    climbs=climbs.map(function(c){return c.id===rec.id?rec:c;});save(K.climbs,climbs);keepFocus(renderClimb);announce("Session updated");
+    var later=setTimeout(function(){gone.forEach(function(pid){pdel(pid).catch(function(){});pdrop(pid);});},6500);
+    toast("Session updated"+miss,function(){clearTimeout(later);
+      climbs=climbs.map(function(c){return c.id===prev.id?prev:c;});save(K.climbs,climbs);
+      added.forEach(function(pid){pdel(pid).catch(function(){});pdrop(pid);});
+      keepFocus(renderClimb);announce("Changes undone");});
+  });
+});
 
 // ---------- solat ----------
 // The five daily prayers, ticked as you pray them. Times are JAKIM's official
@@ -2483,13 +2551,15 @@ el("e-sheet").addEventListener("close",resetEdit);
 el("e-sheet").addEventListener("click",function(e){if(e.target===this)closeEditor();});
 el("e-x").addEventListener("click",closeEditor);
 el("e-add").addEventListener("click",function(){openEditor(null);});
+// Everything drawn from the blocks, redrawn when the editor changes them.
+function blocksChanged(){renderEditList();renderToday();if(view==="week")keepFocus(renderWeek);}
 function renderEditList(){var box=el("e-list");box.innerHTML="";
   var bad=blocks.filter(function(b){return clashes(b.start,b.mins,b.days,b.id).length;}).length;
   var h=document.createElement("p");h.className="sechead";
   h.innerHTML=bad?'All blocks · <span class="overlap">'+bad+' overlap</span> — tap one to fix':"All blocks · tap one to edit";
   box.appendChild(h);
   blocks.slice().sort(function(a,b){return toMin(a.start)-toMin(b.start);}).forEach(function(b){var t=typeOf(b.type);
-    var r=document.createElement("button");r.type="button";r.className="item";r.style.setProperty("--h",t.hue);
+    var r=document.createElement("button");r.type="button";r.className="item";r.style.setProperty("--h",t.hue);r.setAttribute("aria-haspopup","dialog");
     r.innerHTML='<span class="cat"></span><span class="when"></span><span class="body"><span class="ttl"></span><span class="meta"></span></span><span></span>';
     r.querySelector(".when").textContent=fmt(toMin(b.start));r.querySelector(".ttl").textContent=b.activity;
     var c=clashes(b.start,b.mins,b.days,b.id);
@@ -2503,20 +2573,20 @@ el("e-form").addEventListener("submit",function(e){e.preventDefault();
   var plan=roomPlan(d.start,d.mins,d.days,editing),before=blocks.slice();
   applyRoom(plan);
   if(editing)blocks=blocks.map(function(b){return b.id===editing?d:b;});else blocks.push(d);
-  save(K.blocks,blocks);var was=editing;closeEditor();renderEditList();renderToday();
+  save(K.blocks,blocks);var was=editing;closeEditor();blocksChanged();
   if(!plan.length){toast(was?"Block updated":"Block added");return;}
   var n=plan.length+(plan.length===1?" block":" blocks");
   announce((was?"Block updated. ":"Block added. ")+n+" changed to make room.");
   toast((was?"Saved":"Added")+" · "+n+" changed",function(){
     blocks=before;save(K.blocks,blocks);
-    renderEditList();renderToday();announce("Undone. The schedule is back as it was.");});});
+    blocksChanged();announce("Undone. The schedule is back as it was.");});});
 // Delete goes straight through, with an Undo rather than an "Are you sure?".
 el("e-delete").addEventListener("click",function(){if(!editing)return;
   var id=editing,gone=blocks.filter(function(b){return b.id===id;})[0];
-  blocks=blocks.filter(function(b){return b.id!==id;});save(K.blocks,blocks);closeEditor();renderEditList();renderToday();
+  blocks=blocks.filter(function(b){return b.id!==id;});save(K.blocks,blocks);closeEditor();blocksChanged();
   announce("Block deleted");
   toast("Block deleted",function(){if(gone&&!blocks.some(function(b){return b.id===id;})){blocks=blocks.concat([gone]);save(K.blocks,blocks);}
-    renderEditList();renderToday();announce("Block back");});});
+    blocksChanged();announce("Block back");});});
 
 // ---------- backup ----------
 // One file holding everything, photos included. It goes out through the share
@@ -2669,7 +2739,7 @@ el("x-apply").addEventListener("click",function(){var o=null,t=el("x-text").valu
 el("x-reset").addEventListener("click",function(){el("x-confirm").classList.remove("hide");el("x-confirm-no").focus();});
 el("x-confirm-no").addEventListener("click",function(){el("x-confirm").classList.add("hide");});
 el("x-confirm-yes").addEventListener("click",function(){blocks=DEFAULTS.slice();save(K.blocks,blocks);el("x-confirm").classList.add("hide");
-  resetEdit();renderEditList();renderToday();toast("Schedule reset");});
+  resetEdit();blocksChanged();toast("Schedule reset");});
 
 // ---------- sync ----------
 // The phone keeps the main copy. Signed in, each piece of Break (schedule,
@@ -2905,7 +2975,10 @@ function show(name,fromBar){
   ORDER.forEach(function(v){el("v-"+v).classList.toggle("hide",v!==name);});
   for(var i=0;i<tabs.length;i++)tabs[i].setAttribute("aria-pressed",tabs[i].getAttribute("data-view")===name?"true":"false");
   bar.style.setProperty("--i",ORDER.indexOf(name));
-  el("view-title").textContent=VIEWS[name];el("hero-acts").classList.toggle("hide",name!=="edit");
+  el("view-title").textContent=VIEWS[name];
+  // Climb's + logs a session; Schedule's adds a block, beside its Settings gear.
+  el("hero-acts").classList.toggle("hide",name!=="edit"&&name!=="climb");el("c-add").classList.toggle("hide",name!=="climb");
+  el("e-add").classList.toggle("hide",name!=="edit");el("set-open").classList.toggle("hide",name!=="edit");
   if(name==="today")renderToday(!again);if(name==="week")renderWeek();if(name==="climb")renderClimb();
   if(name==="edit")renderEditList();
   if(name==="solat"){renderSolat();refreshTimes();}

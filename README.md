@@ -19,8 +19,9 @@ zone code.
 | `fonts/inter-latin.woff2` | Inter, the app's typeface, kept here so it works offline (licence in `fonts/OFL.txt`) |
 | `icon-180.png` | Home-screen icon (iOS) |
 | `icon-192.png`, `icon-512.png` | Icons for everything else |
+| `.github/workflows/keep-supabase-awake.yml` | Keeps the Sync project from pausing (see **Sync**) |
 
-They all sit in one folder, with `fonts/` as a folder inside it.
+They all sit in one folder, with `fonts/` and `.github/` as folders inside it.
 
 ## Putting it on the phone
 
@@ -64,7 +65,8 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   keeps its place when you come back to it; tap the tab you're already on to go
   back to the top.
 - **Week** — any day of the week with the gym's hours for that day, plus a heatmap
-  of the last eight weeks showing which days you actually kept to the plan.
+  of the last eight weeks showing which days you actually kept to the plan. Tap a
+  block to open it in the editor, right there over Week.
 - **Climb** — the gym's opening hours up top, with a live badge (open, midday
   break, or closed and when it opens next) and your own session times marked
   against each day. If you move a climbing block somewhere the gym is shut, it
@@ -72,13 +74,15 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   the gym changes its hours, edit the `GYM` list in `index.html` (minutes from
   midnight, Monday first). Below that, your progression charted from your best sends (V-scale or Font, so
   6b+ and V4 land on the same scale) with a grade pyramid underneath, and a toast
-  when you beat your hardest send. Log each session: date, best send, how it felt
-  (five faces from blue Great to red Awful, which also show in the log), notes, and
-  up to four photos. **Take a photo** opens the camera; each shot is scaled down to a 1280px
-  long edge and stored on the phone, so a season of sessions stays small. With Sync
-  on they're backed up too. Tap a thumbnail to see it full screen. Deleting a
-  session deletes its photos too, from the backup as well, once the few seconds
-  of **Undo** have passed.
+  when you beat your hardest send. Tap **+** beside the title to log a session:
+  date, best send, how it felt (five faces from blue Great to red Awful, which
+  also show in the log), notes, and up to four photos. **Take a photo** opens the
+  camera; each shot is scaled down to a 1280px long edge and stored on the phone,
+  so a season of sessions stays small. With Sync on they're backed up too. Tap a
+  thumbnail in the log to see it full screen, or tap a session to change any of
+  it, add or take out photos, or delete it. Saving changes and deleting both come
+  with an **Undo**, and photos you take out are only deleted, from the backup as
+  well, once the Undo has gone.
 - **Solat** — the five daily prayers with your zone's official JAKIM times. Pick
   your zone once and the app downloads that year's timetable from e-Solat, then
   works offline. Tick a prayer when you've prayed it, here or from the row of five
@@ -187,9 +191,17 @@ If you forget the password, your data is still on the phone. Delete your user
 under **Authentication → Users**, then create the account again from the phone,
 and it uploads everything afresh.
 
-Supabase pauses a free project after a week with no activity. Opening Break
-keeps it awake. If it does pause, Break carries on offline until you resume
-the project from the dashboard.
+**Keeping it awake.** Supabase pauses a free project after a week without enough
+database activity. Opening Break keeps it awake, and for the weeks you don't,
+a GitHub Action in this repository (`.github/workflows/keep-supabase-awake.yml`)
+calls the project twice a day. It calls `keep_awake()`, a database function that
+reads no table and only returns the time, using the same public key Break carries,
+so it needs no secrets. You can see its runs under the repository's **Actions**
+tab, and **Run workflow** there runs it by hand. If the project ever does pause,
+the run fails and GitHub emails you; Break carries on offline until you resume
+the project from the dashboard. GitHub switches off scheduled runs in a public
+repository after 60 days without a commit, and emails you first; any push, or
+**Enable workflow** on the Actions tab, turns it back on.
 
 ## Clear cache
 

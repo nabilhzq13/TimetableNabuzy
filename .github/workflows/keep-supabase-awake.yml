@@ -1,0 +1,32 @@
+name: Keep Supabase awake
+
+# Supabase pauses a free project after a week without enough database
+# activity, and Break's Sync then stops until someone resumes the project in
+# the dashboard. Opening Break keeps it awake; this covers the weeks you don't.
+# Twice a day it calls keep_awake(), a database function that reads no table
+# and only returns the time. The key is the public one Break itself carries,
+# so there are no secrets here. If the project ever does pause, this run fails
+# and GitHub emails you about it.
+on:
+  schedule:
+    - cron: "17 1,13 * * *"   # 9:17am and 9:17pm in Malaysia
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call keep_awake a few times
+        env:
+          URL: https://rddznoqnnnqlkmkgiwuj.supabase.co/rest/v1/rpc/keep_awake
+          KEY: sb_publishable_BGT-zk3Ek4mW1yE2Uju1gA_NNWbCnvC
+        run: |
+          for i in 1 2 3; do
+            curl --fail --silent --show-error --max-time 30 --retry 3 --retry-delay 10 \
+              -X POST "$URL" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}'
+            echo
+            sleep 20
+          done
