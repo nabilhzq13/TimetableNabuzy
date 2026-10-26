@@ -382,6 +382,22 @@
   .draw .bead{animation:halo 3s ease-in-out var(--ph,0s) infinite,stop-in .3s ease-out var(--d2,0s) both}
   @keyframes stop-in{from{transform:scale(.4);opacity:0}}
   @keyframes line-in{from{transform:scaleY(0)}}
+  /* Free time: any stretch of 9:30am to midnight with no block. It is a stop
+     of its own, hollow, on a dashed stretch of the line, offering blocks you've
+     had at that time before. One tap adds one; Other… opens the editor set to it. */
+  .stop.gap{cursor:default}
+  .stop.gap .line::before{-webkit-mask:repeating-linear-gradient(180deg,#000 0 5px,transparent 5px 10px);
+    mask:repeating-linear-gradient(180deg,#000 0 5px,transparent 5px 10px)}
+  .stop.gap .node,.stop.gap.past .node{width:20px;height:20px;margin:-10px 0 0 -10px;background:rgba(255,255,255,.75);
+    box-shadow:none;border:2px dashed rgba(15,20,40,.34)}
+  .stop.gap .when,.stop.gap .ttl{color:var(--ink-2)}
+  /* Solid, so now's line, passing behind them, never looks like a strike-through. */
+  .ideas{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--s2)}
+  .idea{font:inherit;font-size:var(--t-footnote);font-weight:var(--w-semibold);line-height:var(--lh-tight);min-height:44px;max-width:100%;
+    padding:6px 14px;border-radius:999px;border:0;cursor:pointer;display:inline-flex;align-items:center;text-align:left;
+    color:var(--tint-text);background:#dfe9fb;transition:transform .12s ease}
+  .idea.other{color:var(--ink);background:#eceef3}
+  .idea:active{transform:scale(.96)}
 
   /* Every cell placed explicitly: a tick with only a row set gets auto-placed
      first, into the 4px edge column, on top of the time. */
@@ -842,7 +858,7 @@
     .tabbar,.lens,.rings .arc,.nowring .arc,.item,.stop,.focus-rule,.about .chev,.feel-btn .face,.feel-bar i,.sw,.sw::after{transition:none}
     .bead,.draw .node,.draw .line::before,.draw .bead,.stop.pop .node,.stop.pop .node::before,.stop.pop .node svg,
     .stop.pop .ttl>span{animation:none}
-    .btn:active,.tabbar button:active,.pchip:active,.feel-btn:active .face,.hero-btn:active{transform:none}
+    .btn:active,.tabbar button:active,.pchip:active,.feel-btn:active .face,.hero-btn:active,.idea:active{transform:none}
   }
 </style>
 </head>
@@ -1489,29 +1505,30 @@ function renderToday(intro){
 
   var box=el("t-list");box.innerHTML="";
   if(!st.list.length){box.innerHTML='<section class="material"><p class="empty">Nothing scheduled for '+esc(LONG[i])+'.</p></section>';return;}
-  var at=nowAt(st.list,m),n=0;
+  // The day's line: its blocks, and any free time between them as stops of their own.
+  var line=withGaps(st.list,i),at=nowAt(line,m),n=0;
   PARTS.forEach(function(part,pi){
     var from=pi?PARTS[pi-1].until:0;
-    var rows=st.list.filter(function(b){var s=toMin(b.start);return s>=from&&s<part.until;});
+    var rows=line.filter(function(b){var s=toMin(b.start);return s>=from&&s<part.until;});
     if(!rows.length)return;
     var card=document.createElement("section");card.className="material seccard"+(intro&&!reduceMotion()?" draw":"");
-    var ticked=rows.filter(function(b){return isDone(st.k,b.id);}).length;
+    var own=rows.filter(function(b){return !b.gap;}),ticked=own.filter(function(b){return isDone(st.k,b.id);}).length;
     card.innerHTML='<div class="railhead"><p class="label"></p><span class="count"></span></div>';
     card.querySelector(".label").textContent=part.name;
-    card.querySelector(".count").textContent=ticked+" of "+rows.length+" done";
+    card.querySelector(".count").textContent=own.length?ticked+" of "+own.length+" done":"";
     rows.forEach(function(b){
-      var j=st.list.indexOf(b),here=at&&at.i===j;
+      var j=line.indexOf(b),here=at&&at.i===j;
       if(here&&at.early)card.appendChild(nowNote(m));
-      card.appendChild(rowNode(b,st.k,b===cn.cur,m,j,at,n++));
+      card.appendChild(b.gap?gapNode(b,j,false,at,m,n++):rowNode(b,st.k,b===cn.cur,m,j,at,n++));
       if(here&&!at.early)card.appendChild(nowNote(m));
     });
     box.appendChild(card);
   });
 }
 
-// Where now sits on the day's line: in the stretch from the last block that
-// has started to the start of the next, f of the way along, or above the
-// first stop before the day begins.
+// Where now sits on the day's line: in the stretch from the last stop (a
+// block, or free time) that has started to the start of the next, f of the
+// way along, or above the first stop before the day begins.
 function nowAt(list,m){
   if(!list.length)return null;
   if(m<toMin(list[0].start))return {i:0,f:0,early:true};
@@ -1724,11 +1741,13 @@ function renderWeek(){
   el("w-gym").textContent=GYM[weekDay].length?"Gym open "+gymDayText(weekDay):"Gym closed";
   var wl=el("w-list");wl.innerHTML="";wl.className=reduceMotion()?"":"draw";
   if(!list.length){wl.innerHTML='<p class="empty">Nothing on '+esc(LONG[weekDay])+'.</p>';}
-  // The same line as Today, as a plan: no ticks, and it ends at the last stop.
-  // A tap opens the block in the editor, over Week.
-  list.forEach(function(b,i){
+  // The same line as Today, as a plan: no ticks, free time between the blocks,
+  // and it ends at the last stop. A tap opens a block in the editor, over Week.
+  var line=list.length?withGaps(list,weekDay):[];
+  line.forEach(function(b,i){
+    if(b.gap){wl.appendChild(gapNode(b,i,i===line.length-1,null,0,i));return;}
     var t=typeOf(b.type),s=toMin(b.start);
-    var r=document.createElement("button");r.type="button";r.className="stop"+(i?"":" first")+(i===list.length-1?" last":"");
+    var r=document.createElement("button");r.type="button";r.className="stop"+(i?"":" first")+(i===line.length-1?" last":"");
     r.setAttribute("aria-haspopup","dialog");r.setAttribute("data-f","k"+b.id);r.addEventListener("click",function(){openEditor(b);});
     r.style.setProperty("--h",t.hue);r.style.setProperty("--d",i*45+"ms");r.style.setProperty("--d2",i*45+100+"ms");
     r.innerHTML='<span class="when"></span><span class="line" aria-hidden="true"><i class="node"></i></span><span class="body"><span class="ttl"><span></span></span><span class="meta"></span></span>';
@@ -2634,6 +2653,89 @@ el("e-delete").addEventListener("click",function(){if(!editing)return;
   announce("Block deleted");
   toast("Block deleted",function(){if(gone&&!blocks.some(function(b){return b.id===id;})){blocks=blocks.concat([gone]);save(K.blocks,blocks);}
     blocksChanged();announce("Block back");});});
+
+// ---------- free time ----------
+// Your day runs from 9:30am, when you wake, to midnight, when the phone leaves
+// the bed. Any stretch of it of 15 minutes or more with no block is free time,
+// and shows on Today and Week as a stop of its own, offering blocks to fill it.
+var DAY_FROM=570,DAY_TO=1440,GAP_MIN=15;
+var PRAYER=/solat|salat|sembahyang|pray|subuh|zohor|zuhur|asar|maghrib|isyak|jumaat|jumu/i,CLIMB=/climb|boulder|gym/i;
+// list: one day's blocks in time order. The gaps go in among them, each with
+// a start and a length like a block's, so the line can treat them alike.
+function withGaps(list,day){
+  var out=list.slice(),at=DAY_FROM;
+  function gap(s,e){out.push({gap:true,day:day,s:s,e:e,start:hhmm(s),mins:e-s});}
+  list.forEach(function(b){var s=Math.min(toMin(b.start),DAY_TO);
+    if(s-at>=GAP_MIN)gap(at,s);
+    at=Math.max(at,toMin(b.start)+b.mins);});
+  if(DAY_TO-at>=GAP_MIN)gap(at,DAY_TO);
+  return out.sort(function(a,b){return toMin(a.start)-toMin(b.start);});
+}
+// On a climbing day, 2pm to 7pm stays clear for the climb, so nothing is offered there.
+function ideaSpan(g){
+  var s=g.s,e=g.e;
+  if(climbBlocks().some(function(b){return b.days.indexOf(g.day)!==-1;})){if(s<840)e=Math.min(e,840);else s=Math.max(s,1140);}
+  return e-s>=GAP_MIN?{s:s,e:e}:null;
+}
+// Up to two blocks you've had at that time before: the original plan for that
+// day first, then your other days, nearest in time first. Never a prayer,
+// which lives in Solat, and never climbing, which you plan around the gym. Each
+// keeps its own length and, where it fits, its own time.
+function ideasFor(g){
+  var w=ideaSpan(g),out=[],have={},seen={};
+  if(!w)return out;
+  forDay(g.day).forEach(function(b){have[b.id]=1;seen[b.activity.trim().toLowerCase()]=1;});
+  function offer(b){
+    var k=b.activity.trim().toLowerCase(),bs=toMin(b.start);
+    if(out.length>=2||have[b.id]||seen[k]||PRAYER.test(k)||CLIMB.test(k)||!(bs<w.e&&w.s<bs+b.mins))return;
+    var mins=Math.min(b.mins,w.e-w.s);
+    seen[k]=1;out.push({b:b,s:Math.max(w.s,Math.min(bs,w.e-mins)),mins:mins});
+  }
+  DEFAULTS.filter(function(b){return b.days.indexOf(g.day)!==-1;}).forEach(offer);
+  blocks.filter(function(b){return b.days.indexOf(g.day)===-1;})
+    .sort(function(a,b){return Math.abs(toMin(a.start)-w.s)-Math.abs(toMin(b.start)-w.s);}).forEach(offer);
+  return out;
+}
+// A stop for free time, on Today's line (at: where now is on it) or on Week's
+// (at null, and last when it ends the line).
+function gapNode(g,i,last,at,m,n){
+  var host=!!at&&at.i===i,ideas=ideasFor(g),f="g"+g.day+"-"+g.s+"-";
+  var row=document.createElement("div");
+  row.className="stop gap"+(i?"":" first")+(last?" last":"")+(at&&g.e<=m?" past":"")+(host?" host"+(at.early?" early":""):"");
+  row.style.setProperty("--cut",!at||at.early||i>at.i?"0%":i<at.i?"100%":"var(--at)");
+  row.style.setProperty("--d",n*45+"ms");row.style.setProperty("--d2",n*45+100+"ms");
+  row.innerHTML='<span class="when"></span><span class="line" aria-hidden="true"><i class="node"></i>'+
+    (host?'<i class="bead"><b></b></i>':"")+'</span><span class="body"><span class="ttl"></span><span class="meta"></span><span class="ideas"></span></span>';
+  row.querySelector(".when").textContent=fmt(g.s);
+  row.querySelector(".ttl").textContent="Free · "+dur(g.e-g.s);
+  row.querySelector(".meta").textContent=span(g.s,g.e)+(ideas.length?". Fill it with:":"");
+  var box=row.querySelector(".ideas");
+  ideas.forEach(function(x,k){box.appendChild(ideaBtn("+ "+x.b.activity,"Add "+x.b.activity+", "+fmt(x.s)+" to "+fmt(x.s+x.mins),
+    f+k,function(){addIdea(g,x);}));});
+  var o=ideaBtn(ideas.length?"Other…":"Add a block",(ideas.length?"Something else":"Add a block")+" for "+fmt(g.s)+" to "+fmt(g.e),
+    f+"o",function(){openEditorAt(g);});
+  o.classList.add("other");o.setAttribute("aria-haspopup","dialog");box.appendChild(o);
+  if(host){row.style.setProperty("--f",at.f.toFixed(4));
+    var bead=row.querySelector(".bead");bead.firstChild.textContent=fmt(Math.floor(m));
+    bead.style.setProperty("--ph",-(Date.now()%3000)+"ms");}
+  return row;
+}
+function ideaBtn(text,label,f,fn){var b=document.createElement("button");b.type="button";b.className="idea";b.textContent=text;
+  b.setAttribute("aria-label",label);b.setAttribute("data-f",f);b.addEventListener("click",fn);return b;}
+// One tap adds it on that day alone, inside the free time, so nothing else moves.
+function addIdea(g,x){
+  var b={id:newId(),activity:x.b.activity,type:x.b.type,start:hhmm(x.s),mins:x.mins,days:[g.day],details:x.b.details||""};
+  if(clashes(b.start,b.mins,b.days,null).length)return;
+  blocks=blocks.concat([b]);save(K.blocks,blocks);blocksChanged();
+  var r=document.querySelector('[data-f="'+(view==="week"?"k":"t")+b.id+'"]');if(r)r.focus({preventScroll:true});
+  announce(b.activity+" added, "+fmt(x.s)+" to "+fmt(x.s+x.mins)+".");
+  toast("Added "+b.activity,function(){blocks=blocks.filter(function(y){return y.id!==b.id;});save(K.blocks,blocks);
+    blocksChanged();announce("Undone. "+LONG[g.day]+" is back as it was.");});
+}
+// Other…: the editor, set to the free time, so whatever you add fits it exactly.
+function openEditorAt(g){openEditor(null);
+  el("e-start").value=hhmm(g.s);el("e-mins").value=String(Math.max(5,Math.min(720,Math.floor((g.e-g.s)/5)*5)));
+  setDays([g.day]);checkClash();}
 
 // ---------- backup ----------
 // One file holding everything, photos included. It goes out through the share

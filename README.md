@@ -59,7 +59,8 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   and climbing sessions against your four a week. Below them, the block you're in
   with a live ring counting down. **Start focus** turns the screen into a big
   countdown that keeps the phone awake on the desk. Then the day itself, as one
-  line with a stop for each block. It fills up to now, with a dot at the exact
+  line with a stop for each block and for any free time between them (see **Free
+  time** below). It fills up to now, with a dot at the exact
   minute. Tap a block to tick it, or swipe it right. A long swipe left opens that
   block's editor as a sheet over Today, so you never leave it. Tick the last one
   of the day and see what happens.
@@ -71,7 +72,8 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   back to the top.
 - **Week** — any day of the week with the gym's hours for that day, plus a heatmap
   of the last eight weeks showing which days you actually kept to the plan. Tap a
-  block to open it in the editor, right there over Week.
+  block to open it in the editor, right there over Week. Free time shows between
+  the blocks, as on Today, so you can fill any day's gaps from here.
 - **Climb** — the gym's opening hours up top, with a live badge (open, midday
   break, or closed and when it opens next) and your own session times marked
   against each day. If you move a climbing block somewhere the gym is shut, it
@@ -112,6 +114,17 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   **Undo**. **Start at …** moves your block to the next free time instead, when
   there is one. **Delete block** has an Undo too. Blocks that already overlap are
   flagged in the list; tap one to fix it.
+- **Free time** — any stretch of 15 minutes or more between 9:30am and midnight
+  with no block shows on Today and Week as a hollow stop on a dashed stretch of
+  the line, say "Free · 1.5h, 10am–11:30am". It offers up to two blocks you've
+  had at that time before: the original plan for that day first (Breakfast,
+  Chores, Lunch), then your other days, nearest in time first. Prayers are never
+  offered (they live in Solat), and neither is climbing. On a climbing day
+  nothing is offered between 2pm and 7pm, which stays clear for the climb. Tap
+  one to add it to that day alone, at its usual length and, where it fits, its
+  usual time, with an **Undo**. Whatever it leaves free stays offered. **Other…**
+  opens the editor already set to that day, start time and length. Nothing
+  changes until you tap.
 - **Settings** — the gear beside Schedule's title. Sync, **Reminders** (in the
   home-screen app), the backup file, **Clear cache**, and **Reset schedule**,
   which puts the original plan back without touching your ticks or climbing
