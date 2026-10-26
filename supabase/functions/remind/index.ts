@@ -51,6 +51,18 @@ async function db(path: string, method = "GET", body?: unknown, prefer?: string)
   return t ? JSON.parse(t) : null;
 }
 
+// Why there's no key: an empty secret, or one saved under a name that's nearly
+// right. Only names that mention VAPID are ever given, and never a value.
+function whyNoKey(): string {
+  let env: Record<string, string> = {};
+  try { env = Deno.env.toObject(); } catch { return "the function can't read its secrets"; }
+  if ("VAPID_PRIVATE_KEY" in env) return "VAPID_PRIVATE_KEY is there but empty";
+  const near = Object.keys(env).filter((k) => /vapid/i.test(k));
+  return near.length
+    ? "there's a secret called " + near.map((k) => JSON.stringify(k)).join(" and ") + ", but it has to be called exactly VAPID_PRIVATE_KEY"
+    : "there's no secret with VAPID in its name";
+}
+
 // The signing key, checked against the public half before anything is sent,
 // so a mistyped secret says so instead of failing at Apple.
 let signer: Signer | null = null;
@@ -148,7 +160,10 @@ async function timetables(zones: string[], year: number): Promise<Map<string, Ye
 // The minute's run.
 async function tick() {
   const v = await vapid();
-  if (!v) return { waiting: "for the VAPID_PRIVATE_KEY secret" };
+  if (!v) {
+    console.log("waiting:", whyNoKey());
+    return { waiting: "for the VAPID_PRIVATE_KEY secret" };
+  }
   const subs: Sub[] = (await db("push_subs?select=endpoint,user_id,p256dh,auth")).filter((s: Sub) => PUSH_HOST.test(s.endpoint));
   if (!subs.length) return { ok: true };
   const users = [...new Set(subs.map((s) => s.user_id))];
@@ -200,7 +215,7 @@ async function test(req: Request, endpoint: unknown) {
   const user = who.ok ? await who.json() : null;
   if (!user || typeof user.id !== "string") return json({ error: "Your sign-in has run out. Sign in to Sync again." }, 401);
   const v = await vapid();
-  if (!v) return json({ error: "Supabase doesn't have the VAPID_PRIVATE_KEY secret yet." }, 503);
+  if (!v) return json({ error: "Supabase can't use the push key yet: " + whyNoKey() + "." }, 503);
   const subs: Sub[] = typeof endpoint === "string" && PUSH_HOST.test(endpoint)
     ? await db(`push_subs?select=endpoint,user_id,p256dh,auth&user_id=eq.${user.id}&endpoint=eq.${encodeURIComponent(endpoint)}`)
     : [];
