@@ -136,29 +136,22 @@ main copy and works with no signal. Changes go up a moment after you make them
 whenever there's a connection, and the newest change wins. Photos stay on the
 phone and in the iCloud backup.
 
-**One-time setup.** Supabase emails a sign-in link unless its email templates
-include the code, and a link would open in Safari rather than in Break. In the
-Supabase dashboard, open the Break project, go to **Authentication → Emails**,
-and in both **Confirm signup** and **Magic link**:
+**Signing in.** It's an email and a password; nothing is emailed. (**Confirm
+email** is switched off in the project under **Authentication → Sign In /
+Providers**, because free projects can't change what Supabase's emails say.)
+The first time, open **Schedule → Sync**, enter your email and a password of 6
+or more characters, and tap **Create account**. That phone uploads everything.
+On any other phone, tap **Sign in** instead. On a phone that hasn't synced with
+your account before, signing in replaces what's on it with your synced copy.
+**Sign out** only stops syncing; everything stays on the phone.
 
-- Subject: `{{ .Token }} is your Break code`
-- Body:
+Once your account exists, you can turn off **Allow new users to sign up** on the
+same settings page so nobody else can make one. Their rows would be walled off
+from yours anyway.
 
-  ```html
-  <h2>Your Break code</h2>
-  <p>Enter this code in Break: <strong>{{ .Token }}</strong></p>
-  <p>It works for an hour. If you didn't ask for it, you can ignore this email.</p>
-  ```
-
-The first sign-in uses **Confirm signup**, and every one after that uses
-**Magic link**. Supabase's built-in email only sends to your Supabase account's
-own address, a couple of times an hour, so sign in with that email.
-
-**Signing in.** Open **Schedule → Sync**, enter your email, tap **Email me a
-code**, then type the code and tap **Sign in**. The first phone you sign in on
-uploads everything. On a phone that hasn't synced with your account before,
-signing in replaces what's on it with your synced copy. **Sign out** only stops
-syncing; everything stays on the phone.
+If you forget the password, your data is still on the phone. Delete your user
+under **Authentication → Users**, then create the account again from the phone,
+and it uploads everything afresh.
 
 Supabase pauses a free project after a week with no activity. Opening Break
 keeps it awake. If it does pause, Break carries on offline until you resume

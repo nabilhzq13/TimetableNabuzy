@@ -1055,16 +1055,15 @@
       <div id="sync-out">
         <p class="note" style="margin-bottom:var(--s3)">Sign in to keep a copy of your schedule, ticks, climbing log and prayers in your Supabase database, so a lost or reset phone gets it all back. Photos stay on this phone and in your iCloud backup. Break still works with no signal and catches up once it's back.</p>
         <form id="sync-form" novalidate>
-          <div><label for="sync-email">Email</label><input type="email" id="sync-email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"></div>
-          <div class="hide" id="sync-code-row"><label for="sync-code">Code from the email</label><input type="text" id="sync-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10"></div>
-          <p class="note hide" id="sync-note" style="margin:0"></p>
+          <div><label for="sync-email">Email</label><input type="email" id="sync-email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false"></div>
+          <div><label for="sync-pass">Password</label><input type="password" id="sync-pass" autocomplete="current-password"></div>
           <p class="err hide" id="sync-err" role="alert" style="margin:0"></p>
           <div class="btns">
-            <button type="submit" class="btn prominent" id="sync-go">Email me a code</button>
-            <button type="button" class="btn hide" id="sync-again">Send a new code</button>
+            <button type="submit" class="btn prominent" id="sync-go">Sign in</button>
+            <button type="button" class="btn" id="sync-new">Create account</button>
           </div>
         </form>
-        <p class="note">On a phone that hasn't synced with your account before, signing in replaces what's on it with your synced copy.</p>
+        <p class="note">First time? Pick a password of 6 or more characters and tap <b>Create account</b>. On a phone that hasn't synced with your account before, signing in replaces what's on it with your synced copy.</p>
       </div>
       <div class="btns hide" id="sync-in">
         <button type="button" class="btn" id="sync-now">Sync now</button>
@@ -2580,7 +2579,7 @@ var PIECES={};Object.keys(SYNCED).forEach(function(k){PIECES[SYNCED[k]]=k;});
 // at: when each piece last changed on this phone. up: the version the cloud is
 // known to hold. s: the sign-in. user: whose data this phone last synced with.
 var sm=load(K.sync,null)||{};if(!sm.at)sm.at={};if(!sm.up)sm.up={};
-var syncing=false,syncAgain=false,pushTimer=0,codeFor="";
+var syncing=false,syncAgain=false,pushTimer=0;
 function saveSync(){try{localStorage.setItem(K.sync,JSON.stringify(sm));}catch(e){}}
 // Called by save(). Until this section has run, at launch, nothing counts as a
 // change: the default schedule written on a fresh phone must never beat a synced
@@ -2607,7 +2606,8 @@ function sbFetch(path,body,auth){
   return fetch(SB_URL+path,{method:body===undefined?"GET":"POST",headers:h,cache:"no-store",
     body:body===undefined?undefined:JSON.stringify(body)}).then(function(r){return r.text().then(function(t){
       var j=null;try{j=t?JSON.parse(t):null;}catch(e){}
-      if(!r.ok){var er=new Error(j&&(j.msg||j.message||j.error_description||j.error)||"HTTP "+r.status);er.status=r.status;throw er;}
+      if(!r.ok){var er=new Error(j&&(j.msg||j.message||j.error_description||j.error)||"HTTP "+r.status);
+        er.status=r.status;er.code=j&&(j.error_code||j.code||j.error)||"";throw er;}
       return j;});});
 }
 function keep(r){var u=r.user||{},was=sm.s||{};
@@ -2657,29 +2657,27 @@ function renderSync(){
     :sm.err?"Couldn't sync: "+sm.err:sm.last?"Synced "+whenText(new Date(sm.last))+" · "+sm.s.email:"Signed in as "+sm.s.email;
 }
 function syncMsg(id,t){var n=el(id);n.textContent=t;n.classList.toggle("hide",!t);}
-function codeStep(on){el("sync-code-row").classList.toggle("hide",!on);el("sync-again").classList.toggle("hide",!on);
-  el("sync-go").textContent=on?"Sign in":"Email me a code";}
-function sendCode(email){
-  var go=el("sync-go");go.disabled=true;syncMsg("sync-err","");
-  return sbFetch("/auth/v1/otp",{email:email,create_user:true}).then(function(){codeFor=email;codeStep(true);
-      syncMsg("sync-note","A code is on its way to "+email+". Enter it here.");el("sync-code").focus();},
-    function(e){syncMsg("sync-err",e.status===429?"Too many codes asked for. Wait a minute, then try again."
-      :e.status?"Supabase said: "+e.message:"No connection. Try again once you're online.");})
-  .then(function(){go.disabled=false;});
-}
-el("sync-form").addEventListener("submit",function(e){e.preventDefault();
-  var email=el("sync-email").value.trim().toLowerCase(),code=el("sync-code").value.replace(/\D/g,"");
+// Email and password. Email confirmation is off in the Break project, so a new
+// account comes back signed in straight away and nothing waits on an email.
+function signIn(create){
+  var email=el("sync-email").value.trim().toLowerCase(),pass=el("sync-pass").value;
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){syncMsg("sync-err","Enter your email address.");return;}
-  if(codeFor!==email){sendCode(email);return;}
-  if(code.length<6){syncMsg("sync-err","Enter the code from the email.");return;}
-  var go=el("sync-go");go.disabled=true;syncMsg("sync-err","");
-  sbFetch("/auth/v1/verify",{type:"email",email:email,token:code}).then(function(r){
-      keep(r);sm.ended=false;saveSync();codeFor="";el("sync-code").value="";codeStep(false);syncMsg("sync-note","");
-      announce("Signed in. Syncing now.");syncNow();},
-    function(er){syncMsg("sync-err",er.status?"That code didn't work. Check it, or send a new one.":"No connection. Try again once you're online.");})
-  .then(function(){go.disabled=false;});
-});
-el("sync-again").addEventListener("click",function(){var email=el("sync-email").value.trim().toLowerCase();if(email)sendCode(email);});
+  if(pass.length<6){syncMsg("sync-err","The password needs at least 6 characters.");return;}
+  var go=el("sync-go"),nw=el("sync-new");go.disabled=nw.disabled=true;syncMsg("sync-err","");
+  sbFetch(create?"/auth/v1/signup":"/auth/v1/token?grant_type=password",{email:email,password:pass}).then(function(r){
+      if(!r||!r.access_token){syncMsg("sync-err","Supabase made the account but wants it confirmed by email first.");return;}
+      keep(r);sm.ended=false;saveSync();el("sync-pass").value="";
+      announce(create?"Account created. Syncing now.":"Signed in. Syncing now.");syncNow();},
+    function(e){var m=e.code+" "+e.message;
+      syncMsg("sync-err",!e.status?"No connection. Try again once you're online."
+        :e.status===429?"Too many tries. Wait a minute, then try again."
+        :/already|exists/i.test(m)?"There's already an account with that email. Tap Sign in instead."
+        :/invalid.(credentials|grant|login)/i.test(m)?"That email and password don't match. First time here? Tap Create account."
+        :"Supabase said: "+e.message);})
+  .then(function(){go.disabled=nw.disabled=false;});
+}
+el("sync-form").addEventListener("submit",function(e){e.preventDefault();signIn(false);});
+el("sync-new").addEventListener("click",function(){signIn(true);});
 el("sync-now").addEventListener("click",syncNow);
 // Signing out only stops syncing. Everything stays on the phone, and signing
 // back in to the same account picks up where it left off.
