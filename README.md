@@ -2,8 +2,8 @@
 
 An offline schedule, climbing log and prayer tracker. Once it's on your home screen
 it opens like any app, works with no signal, and keeps every tick, block and session
-**on the phone itself**. If you sign in under **Schedule → Sync**, it also keeps a
-copy in your own Supabase, photos included, which only your account can read, so
+**on the phone itself**. If you sign in to **Sync** (in Settings, the gear on
+Schedule), it also keeps a copy in your own Supabase, photos included, which only your account can read, so
 a lost phone gets it all back. Until you sign in, nothing is uploaded and there
 is no account. The other thing it fetches is your zone's prayer
 timetable from JAKIM's e-Solat, once a year, and that request carries only the
@@ -44,7 +44,8 @@ there** — only the app's code does. The schedule you tick off stays on the pho
    install to the home screen). Tap **Share**, scroll down, tap **Add to Home
    Screen**, then **Add**.
 6. Open it from the home screen. It now runs full screen with no browser bar, and
-   works in the gym basement with no signal.
+   works in the gym basement with no signal. On a weak signal it opens from the
+   phone's own copy after three seconds rather than waiting on the connection.
 
 ## Using it
 
@@ -53,13 +54,15 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   with a live ring counting down. **Start focus** turns the screen into a big
   countdown that keeps the phone awake on the desk. Then the day itself, as one
   line with a stop for each block. It fills up to now, with a dot at the exact
-  minute. Tap a block to tick it, or swipe it right. A long swipe left opens that block in the editor; save, cancel
-  or delete and you're back on Today. Tick the last one of the day and see what
-  happens.
+  minute. Tap a block to tick it, or swipe it right. A long swipe left opens that
+  block's editor as a sheet over Today, so you never leave it. Tick the last one
+  of the day and see what happens.
 - **The sky** behind everything follows the real time of day — dawn, day, golden
   hour, dusk, night.
 - **The tab bar** — tap a tab, or drag along the bar. The glass lens lifts,
-  magnifies the tabs under it, and drops onto the one you let go on.
+  magnifies the tabs under it, and drops onto the one you let go on. Each tab
+  keeps its place when you come back to it; tap the tab you're already on to go
+  back to the top.
 - **Week** — any day of the week with the gym's hours for that day, plus a heatmap
   of the last eight weeks showing which days you actually kept to the plan.
 - **Climb** — the gym's opening hours up top, with a live badge (open, midday
@@ -74,7 +77,8 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   up to four photos. **Take a photo** opens the camera; each shot is scaled down to a 1280px
   long edge and stored on the phone, so a season of sessions stays small. With Sync
   on they're backed up too. Tap a thumbnail to see it full screen. Deleting a
-  session deletes its photos too, from the backup as well.
+  session deletes its photos too, from the backup as well, once the few seconds
+  of **Undo** have passed.
 - **Solat** — the five daily prayers with your zone's official JAKIM times. Pick
   your zone once and the app downloads that year's timetable from e-Solat, then
   works offline. Tick a prayer when you've prayed it, here or from the row of five
@@ -90,15 +94,19 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   **How qadha works** sums up the rulings (Shafi'i school, from the Federal
   Territory Mufti's office) with links to each source. Until JAKIM publishes a
   new year's timetable, the app uses the same dates from last year and says so.
-- **Edit** — change the schedule. Tap any block to edit or delete it, or add new
-  ones. Two blocks can't share the same time on the same day (one ending exactly
-  when the next starts is fine). If a block overlaps others, the form lists each
-  one and what will happen to it. **Add and make room** then shortens those blocks
-  or takes them off the days you share, and the message that follows has an
+- **Schedule** — every block, in time order. Tap one to edit it, or **+** beside
+  the title to add one; the editor opens as a sheet, and **×** closes it. Two
+  blocks can't share the same time on the same day (one ending exactly when the
+  next starts is fine). If a block overlaps others, the form lists each one and
+  what will happen to it. **Add and make room** then shortens those blocks or
+  takes them off the days you share, and the message that follows has an
   **Undo**. **Start at …** moves your block to the next free time instead, when
-  there is one. Blocks that already overlap are flagged in the list; tap one to
-  fix it. **Reset schedule** puts the original plan back without touching your
-  ticks or climbing log.
+  there is one. **Delete block** has an Undo too. Blocks that already overlap are
+  flagged in the list; tap one to fix it.
+- **Settings** — the gear beside Schedule's title. Sync, the backup file, **Clear
+  cache**, and **Reset schedule**, which puts the original plan back without
+  touching your ticks or climbing log. When Sync needs you (signed out, or
+  failing for a reason other than no signal), the gear shows a red dot.
 
 ## Text size
 
@@ -112,7 +120,8 @@ labels stay put, which is what iOS itself does.
 Your data lives in Safari's storage for this app. Deleting the app, or clearing
 Safari's website data, erases it, so keep a copy in iCloud:
 
-1. Open **Schedule → Your data** and tap **Back up to iCloud**.
+1. On **Schedule**, tap the gear for **Settings**, and under **Backup file** tap
+   **Back up to iCloud**.
 2. In the share sheet, choose **Save to Files**, then **iCloud Drive** (a folder
    called Break keeps them together), and **Save**.
 
@@ -124,10 +133,12 @@ To bring it back, on this phone or a new one, tap **Restore from file** and pick
 the file. The app says what's in it and asks before it replaces anything.
 
 When your last backup is more than a week old, Today shows a reminder with **Back
-up now**. **Later** hides it for three days.
+up now**. **Later** hides it for three days. It stays away while Sync is on and
+working, since that copy keeps itself.
 
 There's still a plain-text backup under **Copy or paste a text backup instead**,
 for pasting into Notes. It leaves out photos, which would make it enormous.
+Loading one asks first, just as a file does.
 
 ## Sync
 
@@ -143,7 +154,8 @@ the next time Break syncs, a new phone downloads them, and deleting a session
 removes its photos there too. At about 200 KB a photo, the free plan's 1 GB
 holds roughly 5,000.
 
-**Signing in.** Open **Schedule → Sync** and tap **Continue with GitHub**. You
+**Signing in.** On **Schedule**, tap the gear for **Settings**, and under **Sync**
+tap **Continue with GitHub**. You
 sign in to GitHub and approve **Break** once, and it comes straight back to the
 app, signed in. That works inside the home-screen app; Google isn't offered
 because it refuses sign-in inside home-screen apps on the iPhone.
@@ -178,6 +190,16 @@ and it uploads everything afresh.
 Supabase pauses a free project after a week with no activity. Opening Break
 keeps it awake. If it does pause, Break carries on offline until you resume
 the project from the dashboard.
+
+## Clear cache
+
+Break keeps a copy of its own files (the page, the font, the icons) so it opens
+with no signal. If it ever looks out of date or acts up, open **Settings** (the
+gear on Schedule) and tap **Clear cache** under **App**. It throws that copy away,
+downloads the files again and reopens. Your schedule, ticks, climbing log,
+photos, prayers and sign-in are kept somewhere else on the phone, so they stay
+exactly as they are. It needs signal, and with none it leaves the cache alone and
+says so. **App** also shows which version the phone is running.
 
 ## Changing the app later
 

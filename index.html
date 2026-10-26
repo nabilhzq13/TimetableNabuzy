@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Break</title>
-<meta name="description" content="Offline daily schedule, climbing log and prayer tracker. All data stays on this device.">
+<meta name="description" content="Offline daily schedule, climbing log and prayer tracker. Your data lives on this device, with an optional backup to your own Supabase.">
 <meta name="theme-color" content="#0b4f8a" id="theme-color">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -19,10 +19,10 @@
      Break — Liquid Glass
 
      Follows Apple's two-layer model rather than glassing everything:
-       content layer   a living sky (colour lives here) and frosted
+       content layer   a living sky (colour lives here) and milky
                        *material* cards that keep text legible
-       functional layer real Liquid Glass — the floating tab bar, its
-                       sliding lens, and the focus controls
+       functional layer real Liquid Glass — the floating tab bar and its
+                       sliding lens
      The sky changes with the time of day, so the colour means something.
      ============================================================ */
 
@@ -154,9 +154,11 @@
   }
 
   /* ---------------- surfaces ---------------- */
+  /* No blur behind the cards: over the sky's soft gradients it changes nothing
+     you can see, and redrawing it under every card, every frame, as the sky
+     drifts, costs the phone smoothness and battery. The tab bar keeps its glass. */
   .material{
     position:relative;background:var(--material);border-radius:var(--radius);
-    -webkit-backdrop-filter:blur(30px) saturate(1.8);backdrop-filter:blur(30px) saturate(1.8);
     border:1px solid var(--material-rim);
     box-shadow:0 18px 44px -20px rgba(8,10,40,.45),inset 0 1px 0 rgba(255,255,255,.85);
     margin-bottom:var(--s4);
@@ -178,11 +180,11 @@
     -webkit-mask-composite:xor;mask-composite:exclude;
   }
   @media (prefers-reduced-transparency:reduce){
-    .material{background:#f5f6fa;-webkit-backdrop-filter:none;backdrop-filter:none}
+    .material{background:#f5f6fa}
     .glass{background:#eef0f6;-webkit-backdrop-filter:none;backdrop-filter:none}
   }
   @media (prefers-contrast:more){
-    .material{background:#fff;border-color:rgba(0,0,0,.35);-webkit-backdrop-filter:none;backdrop-filter:none}
+    .material{background:#fff;border-color:rgba(0,0,0,.35)}
     .glass{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none;outline:1px solid rgba(0,0,0,.4)}
   }
 
@@ -193,6 +195,18 @@
   h2{margin:0;font-size:var(--t-title3);font-weight:var(--w-semibold);letter-spacing:var(--tr-title);line-height:var(--lh-title)}
   .muted{color:var(--ink-2)}
   .label{margin:0;font-size:var(--t-footnote);font-weight:var(--w-semibold);color:var(--ink-2)}
+  /* Schedule's own controls, Add and Settings, sit beside its title as on iOS.
+     They wrap under it when large text leaves no room. */
+  .hero-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--s2) var(--s3)}
+  .hero-acts{display:flex;gap:var(--s2);margin-left:auto}
+  .hero-btn{position:relative;width:44px;height:44px;border:0;border-radius:999px;padding:0;cursor:pointer;
+    display:grid;place-items:center;background:rgba(255,255,255,.82);color:var(--ink);text-shadow:none;
+    box-shadow:0 6px 16px -8px rgba(8,10,40,.55)}
+  .hero-btn svg{width:22px;height:22px;fill:currentColor;display:block}
+  .hero-btn:active{transform:scale(.92)}
+  /* Sync needs you: signed out by the server, or failing for a reason that isn't just no signal. */
+  .hero-btn.alert::after{content:"";position:absolute;top:5px;right:5px;width:10px;height:10px;border-radius:50%;
+    background:#e5202e;box-shadow:0 0 0 2px #fff}
 
   /* ---------------- buttons ---------------- */
   .btn{
@@ -208,7 +222,7 @@
   .btns{display:flex;flex-wrap:wrap;gap:var(--s2)}
 
   /* Every tappable thing answers within 120ms. */
-  .btn,.item,.chip-btn,.dayrow button,.x,.tabbar button,.shot .open{
+  .btn,.item,.chip-btn,.dayrow button,.x,.tabbar button,.shot .open,.hero-btn{
     transition:transform .12s ease,background-color .12s ease,opacity .12s ease,filter .12s ease;
   }
   .btn:active{transform:scale(.96)}
@@ -394,13 +408,15 @@
     color:hsl(var(--h) var(--pill-ink-s) var(--pill-ink-l))}
 
   /* ---------------- week ---------------- */
-  .daysel{display:flex;gap:6px;overflow-x:auto;padding:2px 2px var(--s3);margin:0 -2px;scrollbar-width:none}
-  .daysel::-webkit-scrollbar{display:none}
+  /* One segmented control with every day in view: seven separate chips ran
+     past the edge, and with the scrollbar hidden nothing said Sunday was there. */
+  .daysel{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:4px;border-radius:999px;margin-bottom:var(--s3)}
   .chip-btn{
-    flex:0 0 auto;font:inherit;font-size:var(--t-footnote);font-weight:var(--w-semibold);min-height:44px;padding:0 16px;
-    border-radius:999px;border:0;color:var(--ink);cursor:pointer;
+    font:inherit;font-size:var(--t-footnote);font-weight:var(--w-semibold);min-height:44px;min-width:0;padding:0 2px;
+    border-radius:999px;border:0;background:transparent;color:var(--ink);cursor:pointer;
   }
   .chip-btn[aria-pressed="true"]{background:var(--tint);color:#fff}
+  body.big-type .daysel{grid-template-columns:repeat(4,minmax(0,1fr));border-radius:var(--radius)}
   .dayhead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);padding:var(--s4) var(--s4) var(--s2)}
   .heat-wrap{padding:var(--s4)}
   .heatgrid{display:grid;grid-template-columns:auto repeat(8,1fr);gap:5px;margin-top:var(--s3);max-width:340px}
@@ -492,10 +508,11 @@
   .feeltag{display:inline-flex;align-items:center;gap:5px;margin-left:6px;vertical-align:-3px;
     font-size:var(--t-caption);font-weight:var(--w-semibold);color:var(--txt)}
   .feeltag .face{width:18px;height:18px;box-shadow:none}
-  .dayrow{display:flex;flex-wrap:wrap;gap:6px}
-  .dayrow button{font:inherit;font-size:var(--t-caption);font-weight:var(--w-semibold);min-width:44px;min-height:44px;
-    padding:0 10px;border-radius:14px;border:1px solid rgba(15,20,40,.12);background:rgba(255,255,255,.6);
+  .dayrow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+  .dayrow button{font:inherit;font-size:var(--t-caption);font-weight:var(--w-semibold);min-width:0;min-height:44px;
+    padding:0 2px;border-radius:14px;border:1px solid rgba(15,20,40,.12);background:rgba(255,255,255,.6);
     color:var(--ink-2);cursor:pointer}
+  body.big-type .dayrow{grid-template-columns:repeat(4,minmax(0,1fr))}
   .dayrow button[aria-pressed="true"]{background:var(--tint);border-color:var(--tint);color:#fff}
   .note{margin:var(--s1) 0 0;font-size:var(--t-caption);color:var(--ink-2)}
   .err{margin:var(--s1) 0 0;font-size:var(--t-footnote);font-weight:var(--w-semibold);color:var(--flag-text)}
@@ -520,8 +537,11 @@
     box-shadow:0 6px 16px -8px rgba(8,10,40,.5)}
   .shot .open{display:block;width:100%;height:100%;padding:0;border:0;background:none;cursor:pointer}
   .shot img{width:100%;height:100%;object-fit:cover;display:block}
-  .shot .drop{position:absolute;top:3px;right:3px;width:24px;height:24px;border:0;border-radius:99px;
-    background:rgba(10,10,20,.6);color:#fff;font-size:15px;line-height:1;cursor:pointer;display:grid;place-items:center}
+  /* A 24px badge, but a 40px corner to hit. */
+  .shot .drop{position:absolute;top:0;right:0;width:40px;height:40px;border:0;padding:0;background:none;cursor:pointer;
+    display:grid;place-items:start end}
+  .shot .drop span{width:24px;height:24px;margin:3px 3px 0 0;border-radius:99px;background:rgba(10,10,20,.6);color:#fff;
+    font-size:15px;line-height:1;display:grid;place-items:center}
 
   .logrow{display:grid;grid-template-columns:auto 1fr auto;gap:var(--s3);align-items:start;
     padding:var(--s3) var(--s4);border-top:1px solid var(--line)}
@@ -531,7 +551,7 @@
   .logrow .nt{display:block;font-size:var(--t-footnote);color:var(--ink-2)}
   .logshots{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--s2)}
   .logshots .shot{width:54px;height:54px;border-radius:12px}
-  .x{width:36px;height:36px;border-radius:12px;border:0;background:transparent;color:var(--ink-2);
+  .x{width:44px;height:44px;margin:-6px -10px -6px 0;border-radius:12px;border:0;background:transparent;color:var(--ink-2);
     font-size:var(--t-title3);cursor:pointer;display:grid;place-items:center}
   .empty{margin:0;padding:var(--s5) var(--s4);text-align:center;color:var(--ink-2);font-size:var(--t-subhead)}
 
@@ -618,6 +638,26 @@
   .sheet .btns{flex-direction:column;align-items:stretch;margin-top:var(--s4)}
   .sheet .btn{min-height:50px;font-size:var(--t-callout)}
   .sheet-in{max-height:92vh;max-height:calc(100dvh - 12px);overflow-y:auto;overscroll-behavior:contain}
+  /* Page sheets, for the block editor and Settings: taller, clear of the
+     Dynamic Island, a title and close button that stay put while the sheet
+     scrolls, and ordinary buttons rather than an action sheet's stack. */
+  .sheet.page .sheet-in{padding-top:0;max-height:calc(100dvh - env(safe-area-inset-top,0px) - 8px)}
+  .sheet-head{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+    padding:var(--s4) 0 var(--s2);background:#f7f8fb}
+  .sheet .sheet-head h2{margin:0}
+  .sheet-x{flex:none;width:44px;height:44px;margin-right:-6px;padding:0;border:0;background:none;cursor:pointer;
+    display:grid;place-items:center;color:var(--ink)}
+  .sheet-x i{display:grid;place-items:center;width:34px;height:34px;border-radius:999px;background:rgba(15,20,40,.08)}
+  .sheet-x svg{width:14px;height:14px;fill:currentColor;display:block}
+  .sheet-x:active i{background:rgba(15,20,40,.16)}
+  .sheet.page .btns{flex-direction:row;align-items:center;margin-top:0}
+  .sheet.page .btn{min-height:44px;font-size:var(--t-subhead)}
+  .sheet.page .btns.stack{flex-direction:column;align-items:stretch;margin-top:var(--s2)}
+  .sheet.page .btns.stack .btn{min-height:50px;font-size:var(--t-callout)}
+  /* Settings as grouped cards, like the iOS Settings app. */
+  .set-card{margin-top:var(--s3);padding:var(--s4);border-radius:var(--radius-sm);background:#fff;box-shadow:0 1px 2px rgba(15,20,40,.08)}
+  .set-card h3{margin:0;font-size:var(--t-callout);font-weight:var(--w-semibold)}
+  .set-foot{margin:var(--s4) var(--s1) 0}
   /* Qadha from before tracking: a count per prayer, chipped away one at a time. */
   .qtext{padding:6px 0;min-width:0}
   .qrow .tag{white-space:nowrap;font-weight:var(--w-semibold)}
@@ -764,13 +804,13 @@
   .confirm.stack p{flex-basis:100%}  /* a long question gets its own line, both answers under it */
 
   .install{display:flex;gap:var(--s3);align-items:flex-start;padding:var(--s3) var(--s4);font-size:var(--t-footnote)}
-  .install button{margin-left:auto;flex:0 0 auto;width:36px;height:36px;border:0;border-radius:12px;background:transparent;
+  .install button{margin:-6px -10px -6px auto;flex:0 0 auto;width:44px;height:44px;border:0;border-radius:12px;background:transparent;
     font-size:var(--t-title3);color:var(--ink-2);cursor:pointer}
 
   /* Increase Contrast: solid buttons with a drawn edge. Last, so it beats
      every button rule above. */
   @media (prefers-contrast:more){
-    .btn:not(.prominent),.chip-btn:not([aria-pressed="true"]),.dayrow button:not([aria-pressed="true"]),.o-step{
+    .btn:not(.prominent),.chip-btn:not([aria-pressed="true"]),.dayrow button:not([aria-pressed="true"]),.o-step,.hero-btn,.sheet-x i{
       background:#fff;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.55)}
     .focus .btn.glassbtn{background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1.5px #fff}
   }
@@ -781,7 +821,7 @@
     .tabbar,.lens,.rings .arc,.nowring .arc,.item,.stop,.focus-rule,.about .chev,.feel-btn .face,.feel-bar i{transition:none}
     .bead,.draw .node,.draw .line::before,.draw .bead,.stop.pop .node,.stop.pop .node::before,.stop.pop .node svg,
     .stop.pop .ttl>span{animation:none}
-    .btn:active,.tabbar button:active,.pchip:active,.feel-btn:active .face{transform:none}
+    .btn:active,.tabbar button:active,.pchip:active,.feel-btn:active .face,.hero-btn:active{transform:none}
   }
 </style>
 </head>
@@ -790,8 +830,16 @@
 
 <div class="app">
   <header class="hero">
-    <p class="daystamp" id="today-label">Today</p>
-    <h1 id="view-title">Today</h1>
+    <div class="hero-row">
+      <div>
+        <p class="daystamp" id="today-label">Today</p>
+        <h1 id="view-title">Today</h1>
+      </div>
+      <div class="hero-acts hide" id="hero-acts">
+        <button type="button" class="hero-btn" id="e-add" aria-label="Add a block"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="10.8" y="4.5" width="2.4" height="15" rx="1.2"/><rect x="4.5" y="10.8" width="15" height="2.4" rx="1.2"/></svg></button>
+        <button type="button" class="hero-btn" id="set-open" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="3.4" stroke-dasharray="3.1 3.655" transform="rotate(-10.3 12 12)"/><path fill-rule="evenodd" d="M12 4.6a7.4 7.4 0 1 1 0 14.8a7.4 7.4 0 0 1 0-14.8Zm0 4.4a3 3 0 1 0 0 6a3 3 0 0 0 0-6Z"/></svg></button>
+      </div>
+    </div>
   </header>
 
   <!-- TODAY -->
@@ -875,7 +923,7 @@
 
   <!-- WEEK -->
   <section id="v-week" class="hide">
-    <div class="daysel" id="w-days"></div>
+    <div class="daysel material" id="w-days" role="group" aria-label="Day of the week"></div>
     <section class="material seccard">
       <div class="dayhead"><h2 id="w-title">—</h2></div>
       <p class="w-gym" id="w-gym"></p>
@@ -1009,106 +1057,9 @@
     </section>
   </section>
 
-  <!-- SCHEDULE -->
+  <!-- SCHEDULE: the blocks. Adding or editing one, and Settings, open as sheets. -->
   <section id="v-edit" class="hide">
-    <section class="material pad">
-      <h2 id="e-title" style="margin-bottom:var(--s3)">Add a block</h2>
-      <form id="e-form">
-        <div><label for="e-activity">Activity</label><input type="text" id="e-activity" required maxlength="70"></div>
-        <div><label for="e-type">Type</label><select id="e-type"></select></div>
-        <div class="two">
-          <div><label for="e-start">Start</label><input type="time" id="e-start" value="09:00" step="300" required></div>
-          <div><label for="e-mins">Minutes</label><input type="number" id="e-mins" inputmode="numeric" value="60" min="5" max="720" step="5" required></div>
-        </div>
-        <div><label id="e-days-label">Days</label><div class="dayrow" id="e-days" role="group" aria-labelledby="e-days-label"></div>
-          <p class="err hide" id="e-err" role="alert"></p>
-          <div class="clash hide" id="e-clash">
-            <p class="clash-lead" id="e-clash-lead"></p>
-            <p class="clash-sub">To make room for this one:</p>
-            <ul id="e-clash-list"></ul>
-            <button type="button" class="btn hide" id="e-clash-fix"></button>
-          </div></div>
-        <div><label for="e-details">Details</label><textarea id="e-details" maxlength="240"></textarea></div>
-        <div class="btns">
-          <button type="submit" class="btn prominent" id="e-save">Add block</button>
-          <button type="button" class="btn hide" id="e-cancel">Cancel</button>
-          <button type="button" class="btn danger hide" id="e-delete">Delete</button>
-        </div>
-        <div class="confirm hide" id="e-confirm">
-          <p>Delete this block? It won't come back.</p>
-          <button type="button" class="btn" id="e-confirm-no">Keep it</button>
-          <button type="button" class="btn danger" id="e-confirm-yes">Delete</button>
-        </div>
-      </form>
-    </section>
-
     <section class="material seccard" id="e-list"></section>
-
-    <section class="material pad" aria-labelledby="sync-h">
-      <h2 id="sync-h">Sync</h2>
-      <p class="b-status" id="sync-status" aria-live="polite">Off. Everything is on this phone only.</p>
-      <div id="sync-out">
-        <p class="note" style="margin-bottom:var(--s3)">Sign in to keep a copy of your schedule, ticks, climbing log, photos and prayers in your Supabase, so a lost or reset phone gets it all back. Break still works with no signal and catches up once it's back.</p>
-        <div class="btns">
-          <button type="button" class="btn" id="sync-github"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>Continue with GitHub</button>
-        </div>
-        <p class="note" style="margin:var(--s3) 0">Or with an email and password:</p>
-        <form id="sync-form" novalidate>
-          <div><label for="sync-email">Email</label><input type="email" id="sync-email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false"></div>
-          <div><label for="sync-pass">Password</label><input type="password" id="sync-pass" autocomplete="current-password"></div>
-          <p class="err hide" id="sync-err" role="alert" style="margin:0"></p>
-          <div class="btns">
-            <button type="submit" class="btn prominent" id="sync-go">Sign in</button>
-            <button type="button" class="btn" id="sync-new">Create account</button>
-          </div>
-        </form>
-        <p class="note">First time? Pick a password of 6 or more characters and tap <b>Create account</b>. On a phone that hasn't synced with your account before, signing in replaces what's on it with your synced copy.</p>
-      </div>
-      <div class="btns hide" id="sync-in">
-        <button type="button" class="btn" id="sync-now">Sync now</button>
-        <button type="button" class="btn" id="sync-off">Sign out</button>
-      </div>
-    </section>
-
-    <section class="material pad" aria-labelledby="data-h">
-      <h2 id="data-h">Your data</h2>
-      <p class="b-status" id="b-status">No backup yet</p>
-      <p class="note" style="margin-bottom:var(--s3)">Everything lives on this phone, so keep a copy in iCloud. Tap <b>Back up to iCloud</b>, choose <b>Save to Files</b>, then <b>iCloud Drive</b>. The file holds your schedule, ticks, climbing log with photos, and prayers. To bring it back, here or on a new phone, tap <b>Restore from file</b> and pick it.</p>
-      <div class="btns">
-        <button type="button" class="btn prominent" id="b-save">Back up to iCloud</button>
-        <button type="button" class="btn" id="b-load">Restore from file</button>
-      </div>
-      <input type="file" id="b-file" accept=".json,application/json" hidden>
-      <p class="err hide" id="b-err" role="alert"></p>
-      <div class="confirm stack hide" id="b-confirm">
-        <p id="b-summary"></p>
-        <button type="button" class="btn" id="b-no">Cancel</button>
-        <button type="button" class="btn danger" id="b-yes">Replace</button>
-      </div>
-      <p class="note">Nothing leaves the phone unless you back it up, send it, or sign in to Sync above. Apart from that, the one thing the app fetches is your prayer timetable, which sends JAKIM only your zone code.</p>
-      <details class="b-more">
-        <summary>Copy or paste a text backup instead</summary>
-        <p class="note" style="margin-top:0">Plain text for Notes or an email. It leaves out photos.</p>
-        <div class="btns" style="margin-top:var(--s2)">
-          <button type="button" class="btn" id="x-show">Show backup text</button>
-          <button type="button" class="btn" id="x-import">Paste backup text</button>
-        </div>
-        <div id="x-box" class="hide" style="margin-top:var(--s3)">
-          <textarea id="x-text" style="min-height:120px"></textarea>
-          <div class="btns" style="margin-top:var(--s2)">
-            <button type="button" class="btn" id="x-copy">Copy</button>
-            <button type="button" class="btn prominent hide" id="x-apply">Load this</button>
-          </div>
-          <p class="note" id="x-note"></p>
-        </div>
-      </details>
-      <div class="btns" style="margin-top:var(--s3)"><button type="button" class="btn danger" id="x-reset">Reset schedule</button></div>
-      <div class="confirm hide" id="x-confirm">
-        <p>Put the schedule back to the original plan? Your ticks and climbing log stay.</p>
-        <button type="button" class="btn" id="x-confirm-no">Cancel</button>
-        <button type="button" class="btn danger" id="x-confirm-yes">Reset</button>
-      </div>
-    </section>
   </section>
 </div>
 
@@ -1171,6 +1122,127 @@
       <button type="button" class="btn prominent" id="os-save">Save</button>
       <button type="button" class="btn" id="os-cancel">Cancel</button>
     </div>
+  </div>
+</dialog>
+
+<!-- The block editor, as a sheet over whatever you were looking at. -->
+<dialog class="sheet page" id="e-sheet" aria-labelledby="e-title">
+  <div class="sheet-in">
+    <div class="sheet-head">
+      <h2 id="e-title">Add a block</h2>
+      <button type="button" class="sheet-x" id="e-x" aria-label="Cancel"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4Z"/></svg></i></button>
+    </div>
+    <form id="e-form">
+      <div><label for="e-activity">Activity</label><input type="text" id="e-activity" required maxlength="70"></div>
+      <div><label for="e-type">Type</label><select id="e-type"></select></div>
+      <div class="two">
+        <div><label for="e-start">Start</label><input type="time" id="e-start" value="09:00" step="300" required></div>
+        <div><label for="e-mins">Minutes</label><input type="number" id="e-mins" inputmode="numeric" value="60" min="5" max="720" step="5" required></div>
+      </div>
+      <div><label id="e-days-label">Days</label><div class="dayrow" id="e-days" role="group" aria-labelledby="e-days-label"></div>
+        <p class="err hide" id="e-err" role="alert"></p>
+        <div class="clash hide" id="e-clash">
+          <p class="clash-lead" id="e-clash-lead"></p>
+          <p class="clash-sub">To make room for this one:</p>
+          <ul id="e-clash-list"></ul>
+          <button type="button" class="btn hide" id="e-clash-fix"></button>
+        </div></div>
+      <div><label for="e-details">Details</label><textarea id="e-details" maxlength="240"></textarea></div>
+      <div class="btns stack">
+        <button type="submit" class="btn prominent" id="e-save">Add block</button>
+        <button type="button" class="btn danger hide" id="e-delete">Delete block</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<!-- Settings: Sync, the backup file, Break's own files, and resetting the schedule. -->
+<dialog class="sheet page" id="set-sheet" aria-labelledby="set-title">
+  <div class="sheet-in">
+    <div class="sheet-head">
+      <h2 id="set-title">Settings</h2>
+      <button type="button" class="sheet-x" id="set-x" aria-label="Close"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4Z"/></svg></i></button>
+    </div>
+
+    <section class="set-card" aria-labelledby="sync-h">
+      <h3 id="sync-h">Sync</h3>
+      <p class="b-status" id="sync-status" aria-live="polite">Off. Everything is on this phone only.</p>
+      <div id="sync-out">
+        <p class="note" style="margin:0 0 var(--s3)">Keeps a copy of everything, photos included, in your own Supabase, so a lost or reset phone gets it all back. Break still works with no signal and catches up later.</p>
+        <div class="btns">
+          <button type="button" class="btn" id="sync-github"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>Continue with GitHub</button>
+        </div>
+        <p class="note" style="margin:var(--s3) 0">Or with an email and password:</p>
+        <form id="sync-form" novalidate>
+          <div><label for="sync-email">Email</label><input type="email" id="sync-email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false"></div>
+          <div><label for="sync-pass">Password</label><input type="password" id="sync-pass" autocomplete="current-password"></div>
+          <p class="err hide" id="sync-err" role="alert" style="margin:0"></p>
+          <div class="btns">
+            <button type="submit" class="btn prominent" id="sync-go">Sign in</button>
+            <button type="button" class="btn" id="sync-new">Create account</button>
+          </div>
+        </form>
+        <p class="note" style="margin-top:var(--s3)">First time? Pick a password of 6 or more characters and tap <b>Create account</b>. Signing in on a phone that hasn't synced before replaces what's on it with your synced copy.</p>
+      </div>
+      <div class="btns hide" id="sync-in">
+        <button type="button" class="btn" id="sync-now">Sync now</button>
+        <button type="button" class="btn" id="sync-off">Sign out</button>
+      </div>
+    </section>
+
+    <section class="set-card" aria-labelledby="data-h">
+      <h3 id="data-h">Backup file</h3>
+      <p class="b-status" id="b-status">No backup yet</p>
+      <p class="note" style="margin:0 0 var(--s3)">One file with everything, photos included. Tap <b>Back up to iCloud</b>, choose <b>Save to Files</b>, then <b>iCloud Drive</b>. To bring it back, here or on a new phone, tap <b>Restore from file</b>.</p>
+      <div class="btns">
+        <button type="button" class="btn prominent" id="b-save">Back up to iCloud</button>
+        <button type="button" class="btn" id="b-load">Restore from file</button>
+      </div>
+      <input type="file" id="b-file" accept=".json,application/json" hidden>
+      <p class="err hide" id="b-err" role="alert"></p>
+      <div class="confirm stack hide" id="b-confirm">
+        <p id="b-summary"></p>
+        <button type="button" class="btn" id="b-no">Cancel</button>
+        <button type="button" class="btn danger" id="b-yes">Replace</button>
+      </div>
+      <details class="b-more">
+        <summary>Copy or paste a text backup instead</summary>
+        <p class="note" style="margin-top:0">Plain text for Notes or an email. It leaves out photos.</p>
+        <div class="btns" style="margin-top:var(--s2)">
+          <button type="button" class="btn" id="x-show">Show backup text</button>
+          <button type="button" class="btn" id="x-import">Paste backup text</button>
+        </div>
+        <div id="x-box" class="hide" style="margin-top:var(--s3)">
+          <textarea id="x-text" style="min-height:120px"></textarea>
+          <div class="btns" style="margin-top:var(--s2)">
+            <button type="button" class="btn" id="x-copy">Copy</button>
+            <button type="button" class="btn prominent hide" id="x-apply">Load this</button>
+          </div>
+          <p class="note" id="x-note"></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="set-card" aria-labelledby="app-h">
+      <h3 id="app-h">App</h3>
+      <p class="b-status hide" id="app-ver"></p>
+      <p class="note" style="margin:4px 0 var(--s3)">Looks out of date, or acting up? Clear the cache and Break downloads its own files again. Your schedule, ticks, climbing log, photos, prayers and sign-in all stay.</p>
+      <div class="btns"><button type="button" class="btn" id="app-clear">Clear cache</button></div>
+      <p class="err hide" id="app-err" role="alert"></p>
+    </section>
+
+    <section class="set-card" aria-labelledby="reset-h">
+      <h3 id="reset-h">Schedule</h3>
+      <p class="note" style="margin:4px 0 var(--s3)">Put the original plan back. Your ticks and climbing log stay.</p>
+      <div class="btns"><button type="button" class="btn danger" id="x-reset">Reset schedule</button></div>
+      <div class="confirm hide" id="x-confirm">
+        <p>Replace your schedule with the original plan?</p>
+        <button type="button" class="btn" id="x-confirm-no">Cancel</button>
+        <button type="button" class="btn danger" id="x-confirm-yes">Reset</button>
+      </div>
+    </section>
+
+    <p class="note set-foot">Apart from backups you make yourself, Break sends only two things: your Sync copy while you're signed in, and your zone code to JAKIM for prayer times.</p>
   </div>
 </dialog>
 
@@ -1261,6 +1333,14 @@ function announce(t){var l=el("live");l.textContent="";setTimeout(function(){l.t
 function syncTypeScale(){var px=16;try{px=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;}catch(e){}
   document.body.classList.toggle("big-type",px>=22);}
 function minsNow(){var n=new Date();return n.getHours()*60+n.getMinutes()+n.getSeconds()/60;}
+// Rows are rebuilt on every change, so whatever had focus (VoiceOver's place,
+// or the keyboard's) moves to the row that replaces it.
+function keepFocus(fn){
+  var a=document.activeElement,f=a&&a.getAttribute&&a.getAttribute("data-f");fn();
+  if(f&&!a.isConnected){var n=document.querySelector('[data-f="'+f+'"]');if(n)n.focus({preventScroll:true});}
+}
+function sheetOpen(d){if(d.showModal){if(!d.open)d.showModal();}else d.setAttribute("open","");}
+function sheetShut(d){if(d.close){if(d.open)d.close();}else d.removeAttribute("open");}
 
 function dayStats(d){
   d=d||new Date();
@@ -1392,7 +1472,7 @@ function rowNode(b,k,isNow,m,i,at,n){
   var row=document.createElement("button");row.type="button";
   row.className="stop"+(i?"":" first")+(isD?" done":"")+(isNow?" now":"")+(e<=m?" past":"")+
     (host?" host"+(at.early?" early":""):"")+(b.id===popId?" pop":"");
-  row.setAttribute("aria-pressed",isD?"true":"false");
+  row.setAttribute("aria-pressed",isD?"true":"false");row.setAttribute("data-f","t"+b.id);
   row.style.setProperty("--h",t.hue);
   row.style.setProperty("--cut",!at||at.early||i>at.i?"0%":i<at.i?"100%":"var(--at)");
   row.style.setProperty("--d",n*45+"ms");row.style.setProperty("--d2",n*45+100+"ms");
@@ -1411,7 +1491,7 @@ function rowNode(b,k,isNow,m,i,at,n){
   row.title=b.activity+(b.details?" — "+b.details:"");
   function act(){tick(k,b.id);}
   row.addEventListener("click",function(){if(row._swiped)return;act();});
-  attachSwipe(wrap,row,act,function(){editBlock(b);});
+  attachSwipe(wrap,row,act,function(){openEditor(b);});
   wrap.appendChild(row);
   return wrap;
 }
@@ -1422,7 +1502,7 @@ function tick(k,id){
   var before=dayStats().frac;
   toggle(k,id);
   popId=isDone(k,id)?id:null;   // the stop just ticked fills, draws its check and strikes its title
-  renderToday();popId=null;
+  keepFocus(renderToday);popId=null;
   var after=dayStats().frac;
   if(before<1&&after>=1&&k===key(new Date()))celebrate();
 }
@@ -1544,10 +1624,11 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!el("focus"
 
 // ---------- celebration ----------
 function toast(text,undo){
-  var t=document.createElement("div");t.className="toast glass";t.textContent=text;
+  var t=document.createElement("div");t.className="toast glass";t.setAttribute("role","status");t.textContent=text;
   if(undo){var u=document.createElement("button");u.type="button";u.className="toast-undo";u.innerHTML="<span>Undo</span>";
     u.addEventListener("click",function(){t.remove();undo();});t.appendChild(u);}
-  document.body.appendChild(t);setTimeout(function(){t.remove();},undo?6000:2400);
+  // Over an open sheet it has to live inside it, or the sheet's backdrop covers it.
+  (document.querySelector("dialog[open]")||document.body).appendChild(t);setTimeout(function(){t.remove();},undo?6000:2400);
 }
 function celebrate(){
   announce("Day complete. Every block is ticked.");toast("Day complete — every block ticked");
@@ -1574,9 +1655,9 @@ var weekDay=dayIdx(new Date());
 function renderWeek(){
   var box=el("w-days");box.innerHTML="";
   DAYS.forEach(function(n,i){var b=document.createElement("button");b.type="button";
-    b.className="chip-btn material";b.style.marginBottom="0";b.textContent=n;
+    b.className="chip-btn";b.textContent=n;b.setAttribute("aria-label",LONG[i]);b.setAttribute("data-f","w"+i);
     b.setAttribute("aria-pressed",i===weekDay?"true":"false");
-    b.addEventListener("click",function(){weekDay=i;renderWeek();});box.appendChild(b);});
+    b.addEventListener("click",function(){weekDay=i;keepFocus(renderWeek);});box.appendChild(b);});
   var list=forDay(weekDay);
   el("w-title").textContent=LONG[weekDay];
   el("w-gym").textContent=GYM[weekDay].length?"Gym open "+gymDayText(weekDay):"Gym closed";
@@ -1746,8 +1827,8 @@ function renderClimbStats(){
   var line=last.map(function(p,i){return (i?"L":"M")+X(i).toFixed(1)+" "+Y(p.v).toFixed(1);}).join(" ");
   if(last.length>1)svg+='<path class="area" d="'+line+" L"+X(last.length-1).toFixed(1)+" "+Y(0)+" L"+X(0).toFixed(1)+" "+Y(0)+' Z"/><path class="line" d="'+line+'"/>';
   last.forEach(function(p,i){svg+='<circle class="pt'+(p.v===best?" best":"")+'" cx="'+X(i).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="4.5"/>';});
-  svg+='<text class="axis" x="'+pl+'" y="'+(H-4)+'">'+last[0].d.slice(5)+'</text>';
-  if(last.length>1)svg+='<text class="axis" x="'+(W-pr)+'" y="'+(H-4)+'" text-anchor="end">'+last[last.length-1].d.slice(5)+'</text>';
+  svg+='<text class="axis" x="'+pl+'" y="'+(H-4)+'">'+esc(dayMonth(last[0].d))+'</text>';
+  if(last.length>1)svg+='<text class="axis" x="'+(W-pr)+'" y="'+(H-4)+'" text-anchor="end">'+esc(dayMonth(last[last.length-1].d))+'</text>';
   chart.innerHTML=svg+'</svg>';
   var counts={};pts.forEach(function(p){counts[p.v]=(counts[p.v]||0)+1;});
   var gs=Object.keys(counts).map(Number).sort(function(a,b){return b-a;}),mx=Math.max.apply(null,gs.map(function(g){return counts[g];}));
@@ -1787,7 +1868,7 @@ function shotNode(id,blob,onDrop){var w=document.createElement("div");w.classNam
   var o=document.createElement("button");o.type="button";o.className="open";o.setAttribute("aria-label","View photo");
   var i=document.createElement("img");i.alt="";i.src=purl(id,blob);o.appendChild(i);
   o.addEventListener("click",function(){viewer(i.src);});w.appendChild(o);
-  if(onDrop){var x=document.createElement("button");x.type="button";x.className="drop";x.innerHTML="&times;";
+  if(onDrop){var x=document.createElement("button");x.type="button";x.className="drop";x.innerHTML='<span aria-hidden="true">&times;</span>';
     x.setAttribute("aria-label","Remove photo");x.addEventListener("click",function(e){e.stopPropagation();onDrop();});w.appendChild(x);}
   return w;}
 function renderPending(){var b=el("c-shots");b.innerHTML="";
@@ -1845,13 +1926,19 @@ function renderClimb(){
   var h=document.createElement("p");h.className="sechead";h.textContent="Sessions";box.appendChild(h);
   climbs.slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date));}).forEach(function(c){
     var r=document.createElement("div");r.className="logrow";
-    r.innerHTML='<span class="dt">'+esc(String(c.date||"").slice(5))+'</span><span><span class="gr">'+esc(c.grade||"Session")+
+    r.innerHTML='<span class="dt">'+esc(c.date?dayMonth(c.date):"")+'</span><span><span class="gr">'+esc(c.grade||"Session")+
       '</span>'+feelTag(c.feel)+(c.notes?'<span class="nt">'+esc(c.notes)+'</span>':'')+
       '</span><button type="button" class="x" aria-label="Delete session">&times;</button>';
     if(c.shots&&c.shots.length){var s=document.createElement("div");s.className="logshots";r.children[1].appendChild(s);
       c.shots.forEach(function(pid){pget(pid).then(function(b){if(b)s.appendChild(shotNode(pid,b,null));},function(){});});}
-    r.querySelector(".x").addEventListener("click",function(){(c.shots||[]).forEach(function(pid){pdel(pid).catch(function(){});pdrop(pid);});
-      climbs=climbs.filter(function(x){return x.id!==c.id;});save(K.climbs,climbs);renderClimb();});
+    // One tap deletes, with an Undo. The photos stay on the phone until the
+    // Undo has gone, so taking it back brings them back too.
+    r.querySelector(".x").addEventListener("click",function(){
+      climbs=climbs.filter(function(x){return x.id!==c.id;});save(K.climbs,climbs);renderClimb();announce("Session deleted");
+      var later=setTimeout(function(){(c.shots||[]).forEach(function(pid){pdel(pid).catch(function(){});pdrop(pid);});},6500);
+      toast("Session deleted",function(){clearTimeout(later);
+        if(!climbs.some(function(x){return x.id===c.id;})){climbs=climbs.concat([c]);save(K.climbs,climbs);}
+        renderClimb();announce("Session back");});});
     box.appendChild(r);
   });
 }
@@ -2024,6 +2111,9 @@ function left(ms){var m=Math.max(1,Math.ceil(ms/60000)),h=Math.floor(m/60);retur
 function longDate(d){return LONG[dayIdx(d)]+" "+d.getDate()+" "+MONTHS[d.getMonth()];}
 function shortDate(d){return DAYS[dayIdx(d)]+" "+d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3);}
 function fromKey(k){var p=String(k).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+// "23 Oct", with the year once it isn't this one.
+function dayMonth(k){var d=fromKey(k);if(isNaN(d))return "";
+  return d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3)+(d.getFullYear()!==new Date().getFullYear()?" "+d.getFullYear():"");}
 function allFive(k){var o=plog[k]||{};return PRAYERS.every(function(p){return o[p.id]==="on"||isMade(o[p.id]);});}
 
 // Inside its time, or before it (jamak taqdim), a tap is a plain tick. Once
@@ -2032,7 +2122,7 @@ function pTap(d,i){
   var now=new Date(),W=windows(d),w=W&&W.w[i],k=key(d),p=PRAYERS[i],r=pRec(k,p.id);
   if((!w||now<w[1])&&(!r||r==="on")){
     var was=allFive(k);setRec(k,p.id,r?null:"on");
-    announce(p.name+(r?" unticked":" ticked"));renderSolatAll();
+    announce(p.name+(r?" unticked":" ticked"));keepFocus(renderSolatAll);
     if(!was&&allFive(k))toast("All five prayers ticked");
     return;
   }
@@ -2049,11 +2139,10 @@ function openSheet(d,i){
   el("ps-x").classList.toggle("hide",r==="x");
   el("ps-clear").classList.toggle("hide",!r);
   el("ps-clear").textContent=!ended?"Clear":r==="on"?"Untick, it counts as qadha":isMade(r)?"Not made up yet":"Not excused";
-  var dlg=el("p-sheet");
-  if(dlg.showModal){if(!dlg.open)dlg.showModal();}else dlg.setAttribute("open","");
+  var dlg=el("p-sheet");sheetOpen(dlg);
   var first=dlg.querySelector(".btns .btn:not(.hide)");if(first)first.focus();
 }
-function closeSheet(){var dlg=el("p-sheet");if(dlg.close){if(dlg.open)dlg.close();}else dlg.removeAttribute("open");}
+function closeSheet(){sheetShut(el("p-sheet"));}
 function sheetSet(v,msg){
   if(!sheetAt)return;
   var k=key(sheetAt.d),id=PRAYERS[sheetAt.i].id,prev=pRec(k,id)||null;
@@ -2130,9 +2219,9 @@ function openOld(){
   el("os-since").textContent=shortDate(fromKey(pset.since));
   PRAYERS.forEach(function(p){el("os-"+p.id).value=oldLeft(p.id);});
   el("os-n").value="";el("os-estnote").textContent=EST_NOTE;oldTotalNote();
-  var dlg=el("o-sheet");if(dlg.showModal){if(!dlg.open)dlg.showModal();}else dlg.setAttribute("open","");
+  sheetOpen(el("o-sheet"));
 }
-function closeOld(){var dlg=el("o-sheet");if(dlg.close){if(dlg.open)dlg.close();}else dlg.removeAttribute("open");}
+function closeOld(){sheetShut(el("o-sheet"));}
 el("os-add").addEventListener("click",function(){
   var days=whole(el("os-n").value)*(+el("os-unit").value||1),note=el("os-estnote");
   if(!days){note.textContent="Enter how long first.";el("os-n").focus();return;}
@@ -2167,7 +2256,7 @@ function renderSolatMini(){
   var now=new Date(),pn=prayerNow(now),box=el("sm-chips");box.innerHTML="";
   PRAYERS.forEach(function(p,i){
     var s=pState(pn.d,i,now,pn.W),w=pn.W&&pn.W.w[i];
-    var b=document.createElement("button");b.type="button";b.className="pchip "+s;
+    var b=document.createElement("button");b.type="button";b.className="pchip "+s;b.setAttribute("data-f","p"+i);
     b.innerHTML="<b></b><span></span>";b.firstChild.textContent=p.name;b.lastChild.textContent=chipWord(s,w,now);
     b.setAttribute("aria-label",stateSay(p,s,w,now));
     b.setAttribute("aria-pressed",s==="on"||s==="made"?"true":"false");
@@ -2183,7 +2272,7 @@ function prayerRow(d,i,now,W){
   var p=PRAYERS[i],s=pState(d,i,now,W),w=W&&W.w[i],r=pRec(key(d),p.id),ok=s==="on"||s==="made";
   var row=document.createElement("button");row.type="button";
   row.className="item "+s+(ok?" done":"")+(s==="before"?" past":"");
-  row.style.setProperty("--h",p.h);row.setAttribute("aria-pressed",ok?"true":"false");
+  row.style.setProperty("--h",p.h);row.setAttribute("aria-pressed",ok?"true":"false");row.setAttribute("data-f","r"+i);
   row.innerHTML='<span class="cat"></span><span class="when"></span><span class="body"><span class="ttl"></span><span class="meta"></span></span><span class="tick" aria-hidden="true">✓</span>';
   row.querySelector(".when").textContent=w?clock(w[0]):"";
   row.querySelector(".ttl").textContent=p.name;
@@ -2286,7 +2375,7 @@ el("sz-get").addEventListener("click",function(){
 });
 
 // ---------- schedule ----------
-var picked=[],editing=null,editReturn=null;
+var picked=[],editing=null;
 (function(){var s=el("e-type");TYPES.forEach(function(t){var o=document.createElement("option");o.value=t.id;o.textContent=t.name;s.appendChild(o);});
   var box=el("e-days");DAYS.forEach(function(n,i){var b=document.createElement("button");b.type="button";b.textContent=n;b.setAttribute("aria-pressed","false");
     b.addEventListener("click",function(){var at=picked.indexOf(i);if(at===-1)picked.push(i);else picked.splice(at,1);
@@ -2379,16 +2468,21 @@ function checkClash(){
 
 function resetEdit(){editing=null;el("e-title").textContent="Add a block";
   el("e-activity").value="";el("e-type").value="study";el("e-start").value="09:00";el("e-mins").value="60";el("e-details").value="";
-  setDays([]);el("e-cancel").classList.add("hide");el("e-delete").classList.add("hide");el("e-confirm").classList.add("hide");showErr("");
+  setDays([]);el("e-delete").classList.add("hide");showErr("");
   checkClash();}
 function startEdit(b){editing=b.id;el("e-title").textContent="Edit block";
   el("e-activity").value=b.activity;el("e-type").value=b.type;el("e-start").value=b.start;el("e-mins").value=String(b.mins);
-  el("e-details").value=b.details||"";setDays(b.days);el("e-cancel").classList.remove("hide");el("e-delete").classList.remove("hide");
-  el("e-confirm").classList.add("hide");showErr("");checkClash();window.scrollTo({top:0,behavior:reduceMotion()?"auto":"smooth"});}
-// A long swipe left on Today lands here, and saving, cancelling or deleting
-// goes back to Today rather than leaving you in Schedule.
-function editBlock(b){show("edit");startEdit(b);editReturn="today";announce("Editing "+b.activity);}
-function backFromEdit(){if(editReturn){var v=editReturn;editReturn=null;show(v);}}
+  el("e-details").value=b.details||"";setDays(b.days);el("e-delete").classList.remove("hide");showErr("");checkClash();}
+// The editor is a sheet over whatever you were looking at, so a long swipe
+// left on Today edits that block without leaving Today. Closing it, however
+// it's closed, clears the form for next time.
+function openEditor(b){if(b)startEdit(b);else resetEdit();
+  var d=el("e-sheet");sheetOpen(d);d.querySelector(".sheet-in").scrollTop=0;if(b)announce("Editing "+b.activity);}
+function closeEditor(){sheetShut(el("e-sheet"));}
+el("e-sheet").addEventListener("close",resetEdit);
+el("e-sheet").addEventListener("click",function(e){if(e.target===this)closeEditor();});
+el("e-x").addEventListener("click",closeEditor);
+el("e-add").addEventListener("click",function(){openEditor(null);});
 function renderEditList(){var box=el("e-list");box.innerHTML="";
   var bad=blocks.filter(function(b){return clashes(b.start,b.mins,b.days,b.id).length;}).length;
   var h=document.createElement("p");h.className="sechead";
@@ -2401,7 +2495,7 @@ function renderEditList(){var box=el("e-list");box.innerHTML="";
     var c=clashes(b.start,b.mins,b.days,b.id);
     r.querySelector(".meta").innerHTML='<span class="chip" style="--h:'+t.hue+'">'+esc(t.name)+'</span>'+esc(b.days.map(function(d){return DAYS[d];}).join(" "))+
       (c.length?' · <span class="overlap">Overlaps '+esc(c[0].b.activity)+(c.length>1?" +"+(c.length-1):"")+'</span>':"");
-    r.addEventListener("click",function(){startEdit(b);});box.appendChild(r);});}
+    r.addEventListener("click",function(){openEditor(b);});box.appendChild(r);});}
 el("e-form").addEventListener("submit",function(e){e.preventDefault();
   if(!picked.length){showErr("Pick at least one day for this block.");return;}
   var d={id:editing||newId(),activity:el("e-activity").value.trim()||"Untitled",type:el("e-type").value,start:el("e-start").value||"09:00",
@@ -2409,19 +2503,20 @@ el("e-form").addEventListener("submit",function(e){e.preventDefault();
   var plan=roomPlan(d.start,d.mins,d.days,editing),before=blocks.slice();
   applyRoom(plan);
   if(editing)blocks=blocks.map(function(b){return b.id===editing?d:b;});else blocks.push(d);
-  save(K.blocks,blocks);var was=editing;resetEdit();renderEditList();renderToday();backFromEdit();
+  save(K.blocks,blocks);var was=editing;closeEditor();renderEditList();renderToday();
   if(!plan.length){toast(was?"Block updated":"Block added");return;}
   var n=plan.length+(plan.length===1?" block":" blocks");
   announce((was?"Block updated. ":"Block added. ")+n+" changed to make room.");
   toast((was?"Saved":"Added")+" · "+n+" changed",function(){
     blocks=before;save(K.blocks,blocks);
-    if(editing&&!blocks.some(function(b){return b.id===editing;}))resetEdit();else checkClash();
     renderEditList();renderToday();announce("Undone. The schedule is back as it was.");});});
-el("e-cancel").addEventListener("click",function(){resetEdit();backFromEdit();});
-el("e-delete").addEventListener("click",function(){if(!editing)return;el("e-confirm").classList.remove("hide");el("e-confirm-no").focus();});
-el("e-confirm-no").addEventListener("click",function(){el("e-confirm").classList.add("hide");});
-el("e-confirm-yes").addEventListener("click",function(){if(!editing)return;blocks=blocks.filter(function(b){return b.id!==editing;});
-  save(K.blocks,blocks);resetEdit();renderEditList();renderToday();backFromEdit();toast("Block deleted");});
+// Delete goes straight through, with an Undo rather than an "Are you sure?".
+el("e-delete").addEventListener("click",function(){if(!editing)return;
+  var id=editing,gone=blocks.filter(function(b){return b.id===id;})[0];
+  blocks=blocks.filter(function(b){return b.id!==id;});save(K.blocks,blocks);closeEditor();renderEditList();renderToday();
+  announce("Block deleted");
+  toast("Block deleted",function(){if(gone&&!blocks.some(function(b){return b.id===id;})){blocks=blocks.concat([gone]);save(K.blocks,blocks);}
+    renderEditList();renderToday();announce("Block back");});});
 
 // ---------- backup ----------
 // One file holding everything, photos included. It goes out through the share
@@ -2519,9 +2614,12 @@ function renderBackupStatus(){
   el("b-status").textContent=lastBackup?"Last backup "+whenText(new Date(lastBackup.at))+
     (lastBackup.size?" · "+sizeText(lastBackup.size):"")+(lastBackup.photos?" · "+plural(lastBackup.photos,"photo"):""):"No backup yet";
 }
+// A week without a backup and Today asks for one, but not while Sync is on
+// and working: that copy keeps itself.
 function renderBackupNudge(){
   var now=Date.now(),days=lastBackup?Math.floor((now-lastBackup.at)/DAY):0;
-  var show=(!lastBackup||days>=NUDGE_DAYS)&&now>=(load(K.snooze,0)||0);
+  var synced=!!(sm&&sm.s&&sm.last&&now-sm.last<NUDGE_DAYS*DAY);
+  var show=!synced&&(!lastBackup||days>=NUDGE_DAYS)&&now>=(load(K.snooze,0)||0);
   el("b-remind").classList.toggle("hide",!show);if(!show)return;
   el("br-text").textContent=lastBackup?"Your last backup was "+plural(days,"day")+" ago. Save a fresh copy to iCloud.":
     "Nothing is backed up yet. Save a copy to iCloud so a lost or reset phone doesn't take it all with it.";
@@ -2534,10 +2632,16 @@ el("b-load").addEventListener("click",function(){el("b-err").classList.add("hide
 el("b-file").addEventListener("change",function(){
   var f=this.files&&this.files[0];this.value="";if(!f)return;
   (f.text?f.text():new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=function(){rej(r.error);};r.readAsText(f);}))
-  .then(function(t){var o=JSON.parse(t);if(!isBackup(o))throw new Error("not a backup");
-    restoreFrom={o:o,size:f.size};el("b-summary").textContent=restoreSummary(o);el("b-confirm").classList.remove("hide");el("b-no").focus();})
+  .then(function(t){var o=JSON.parse(t);if(!isBackup(o))throw new Error("not a backup");askRestore(o,f.size,el("b-err"));})
   .catch(function(){var e=el("b-err");e.textContent="That file isn't a Break backup.";e.classList.remove("hide");});
 });
+// A backup replaces everything, so it always asks first, just under whatever
+// brought it in: a file, or pasted text.
+function askRestore(o,size,after){
+  restoreFrom={o:o,size:size};el("b-summary").textContent=restoreSummary(o);
+  var c=el("b-confirm");if(c.previousElementSibling!==after)after.insertAdjacentElement("afterend",c);
+  c.classList.remove("hide");el("b-no").focus();
+}
 el("b-no").addEventListener("click",function(){restoreFrom=null;el("b-confirm").classList.add("hide");});
 el("b-yes").addEventListener("click",function(){
   var r=restoreFrom;if(!r)return;restoreFrom=null;el("b-confirm").classList.add("hide");
@@ -2559,9 +2663,9 @@ el("x-import").addEventListener("click",function(){el("x-box").classList.remove(
 el("x-copy").addEventListener("click",function(){var t=el("x-text");t.select();t.setSelectionRange(0,999999);
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t.value).then(function(){el("x-note").textContent="Copied.";},
     function(){el("x-note").textContent="Selected — use Copy from the menu.";});else el("x-note").textContent="Selected — use Copy from the menu.";});
-el("x-apply").addEventListener("click",function(){var o=null;try{o=JSON.parse(el("x-text").value);}catch(e){}
+el("x-apply").addEventListener("click",function(){var o=null,t=el("x-text").value;try{o=JSON.parse(t);}catch(e){}
   if(!isBackup(o)){el("x-note").textContent="That doesn't look like a backup from this app.";return;}
-  applyBackup(o).then(function(){el("x-note").textContent="Restored.";});});
+  el("x-note").textContent="";askRestore(o,t.length,el("x-note"));});
 el("x-reset").addEventListener("click",function(){el("x-confirm").classList.remove("hide");el("x-confirm-no").focus();});
 el("x-confirm-no").addEventListener("click",function(){el("x-confirm").classList.add("hide");});
 el("x-confirm-yes").addEventListener("click",function(){blocks=DEFAULTS.slice();save(K.blocks,blocks);el("x-confirm").classList.add("hide");
@@ -2631,7 +2735,7 @@ function syncNow(){
   syncing=true;syncAgain=false;renderSync();
   fresh().then(pull).then(push).then(syncPhotos).then(function(){sm.last=Date.now();sm.err="";},
     function(e){sm.err=e&&e.status?e.message:"offline";})
-  .then(function(){syncing=false;photoLeft=0;saveSync();renderSync();if(syncAgain&&sm.s)syncNow();});
+  .then(function(){syncing=false;photoLeft=0;saveSync();renderSync();renderBackupNudge();if(syncAgain&&sm.s)syncNow();});
 }
 function pull(){
   return sbFetch("/rest/v1/docs?select=key,value,updated_at",undefined,true).then(function(rows){
@@ -2702,6 +2806,9 @@ function renderSync(){
     :sm.err?"Couldn't sync: "+sm.err
     :sm.last?"Synced "+whenText(new Date(sm.last))+" · "+sm.s.email+(sm.pfail?" · "+plural(sm.pfail,"photo")+" couldn't upload":"")
     :"Signed in as "+sm.s.email;
+  // Settings lives behind a gear now, so the gear says when Sync needs you.
+  var need=!!(sm.ended||on&&sm.err&&sm.err!=="offline"),g=el("set-open");
+  g.classList.toggle("alert",need);g.setAttribute("aria-label",need?"Settings, Sync needs you":"Settings");
 }
 function syncMsg(id,t){var n=el(id);n.textContent=t;n.classList.toggle("hide",!t);}
 // Email and password. Email confirmation is off in the Break project, so a new
@@ -2737,7 +2844,7 @@ function fromRedirect(){
   function dec(s){s=decodeURIComponent(s.replace(/\+/g," "));try{if(/%[0-9a-f]{2}/i.test(s))s=decodeURIComponent(s);}catch(e){}return s;}
   var q={};h.split("&").forEach(function(kv){var i=kv.indexOf("=");if(i>0)q[dec(kv.slice(0,i))]=dec(kv.slice(i+1));});
   history.replaceState(null,"",location.pathname+location.search);
-  show("edit");
+  show("edit");openSettings();
   if(q.error||!q.access_token){syncMsg("sync-err","GitHub sign-in didn't finish: "+(q.error_description||q.error||"no sign-in came back"));return;}
   var p={};try{p=JSON.parse(atob(q.access_token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));}catch(e){}
   keep({access_token:q.access_token,refresh_token:q.refresh_token,expires_in:+q.expires_in||3600,expires_at:+q.expires_at||0,
@@ -2752,24 +2859,63 @@ el("sync-off").addEventListener("click",function(){
   // Then end the session on Supabase's side too; offline, it simply lapses.
   if(tok)try{fetch(SB_URL+"/auth/v1/logout",{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+tok}}).catch(function(){});}catch(e){}});
 
+// ---------- settings ----------
+// Sync, the backup file, Break's own files and resetting the schedule, in a
+// sheet behind the gear on Schedule.
+function openSettings(){renderSync();renderBackupStatus();renderAppInfo();warmPhotos();
+  var d=el("set-sheet");sheetOpen(d);d.querySelector(".sheet-in").scrollTop=0;}
+el("set-open").addEventListener("click",openSettings);
+el("set-x").addEventListener("click",function(){sheetShut(el("set-sheet"));});
+el("set-sheet").addEventListener("click",function(e){if(e.target===this)sheetShut(this);});
+
+// Clear cache throws away the copy of Break's own files that lets it open with
+// no signal, and downloads them again. Nothing you've saved is in it: the
+// schedule, ticks, climbing log, photos, prayers and sign-in live elsewhere on
+// the phone and stay as they are. With no signal it refuses, since Break would
+// have nothing to open with until the signal came back.
+function appCaches(){return window.caches?caches.keys().then(function(k){return k.filter(function(n){return n.indexOf("break-")===0;});}):Promise.resolve([]);}
+function renderAppInfo(){
+  appCaches().then(function(k){var v=k.map(function(n){return n.replace(/^break-v?/,"");}).pop(),p=el("app-ver");
+    p.textContent=v?"Version "+v:"";p.classList.toggle("hide",!v);},function(){});
+}
+function appMsg(t){var n=el("app-err");n.textContent=t;n.classList.toggle("hide",!t);}
+el("app-clear").addEventListener("click",function(){
+  var btn=this;
+  if(navigator.onLine===false){appMsg("You're offline. Break needs signal to download its files again, so the cache stays for now.");return;}
+  btn.disabled=true;btn.textContent="Clearing…";appMsg("");
+  var ctl=window.AbortController?new AbortController():null,timer=setTimeout(function(){if(ctl)ctl.abort();},15000);
+  // First, that GitHub answers at all. A HEAD request goes past the offline copy.
+  fetch("./",{method:"HEAD",cache:"no-store",signal:ctl?ctl.signal:undefined})
+  .then(function(r){clearTimeout(timer);if(!r.ok)throw new Error("HTTP "+r.status);})
+  .then(appCaches).then(function(k){return Promise.all(k.map(function(n){return caches.delete(n);}));})
+  .then(function(){return navigator.serviceWorker&&navigator.serviceWorker.getRegistration();})
+  .then(function(reg){return reg&&reg.unregister();})
+  .then(function(){try{sessionStorage.setItem("break.cleared","1");}catch(e){}location.reload();},
+    function(){clearTimeout(timer);btn.disabled=false;btn.textContent="Clear cache";
+      appMsg("Couldn't reach GitHub, so nothing was cleared. Try again with a better signal.");});
+});
+
 // ---------- navigation ----------
-var VIEWS={today:"Today",week:"Week",climb:"Climbing",solat:"Solat",edit:"Schedule"},ORDER=["today","week","climb","solat","edit"],view="today";
+var VIEWS={today:"Today",week:"Week",climb:"Climbing",solat:"Solat",edit:"Schedule"},ORDER=["today","week","climb","solat","edit"],view="today",scrolls={};
 var bar=document.querySelector(".tabbar"),tabs=bar.querySelectorAll("button");
-function show(name){
-  view=name;if(name!=="edit")editReturn=null;
+// Each tab keeps its place when you come back to it, as on iOS, and tapping the
+// tab you're already on goes back to the top.
+function show(name,fromBar){
+  var again=name===view;scrolls[view]=window.scrollY;view=name;
   ORDER.forEach(function(v){el("v-"+v).classList.toggle("hide",v!==name);});
   for(var i=0;i<tabs.length;i++)tabs[i].setAttribute("aria-pressed",tabs[i].getAttribute("data-view")===name?"true":"false");
   bar.style.setProperty("--i",ORDER.indexOf(name));
-  el("view-title").textContent=VIEWS[name];
-  if(name==="today")renderToday(true);if(name==="week")renderWeek();if(name==="climb")renderClimb();
-  if(name==="edit"){renderEditList();renderBackupStatus();warmPhotos();}
+  el("view-title").textContent=VIEWS[name];el("hero-acts").classList.toggle("hide",name!=="edit");
+  if(name==="today")renderToday(!again);if(name==="week")renderWeek();if(name==="climb")renderClimb();
+  if(name==="edit")renderEditList();
   if(name==="solat"){renderSolat();refreshTimes();}
-  window.scrollTo(0,0);
+  if(fromBar&&again)window.scrollTo({top:0,behavior:reduceMotion()?"auto":"smooth"});
+  else window.scrollTo(0,fromBar&&scrolls[name]||0);
 }
 Array.prototype.forEach.call(tabs,function(b){
   b.addEventListener("click",function(){
     if(performance.now()-dropped<500)return;   // the drag that just ended has already chosen
-    var v=b.getAttribute("data-view");if(v!==view)hop(ORDER.indexOf(v));show(v);});});
+    var v=b.getAttribute("data-view");if(v!==view)hop(ORDER.indexOf(v));show(v,true);});});
 
 // ---------- the lens ----------
 // Like iOS 26's tab bar, the lens can be dragged as well as tapped. Pressed or
@@ -2826,7 +2972,7 @@ function drop(e){
   cancelAnimationFrame(g.raf);dropped=performance.now();bar.classList.remove("dragging");
   var i=e.type==="pointercancel"?ORDER.indexOf(view):Math.round(g.cur);
   magOn(i);settle();
-  if(ORDER[i]!==view)show(ORDER[i]);else bar.style.setProperty("--i",i);
+  if(ORDER[i]!==view)show(ORDER[i],true);else bar.style.setProperty("--i",i);
 }
 window.addEventListener("pointerup",drop);window.addEventListener("pointercancel",drop);
 
@@ -2839,16 +2985,19 @@ resetEdit();el("c-date").value=key(new Date());syncTypeScale();
 pdb().then(function(){el("c-photo-field").classList.remove("hide");el("c-photo-note").textContent=PHOTO_NOTE;},function(){});
 renderToday(true);renderBackupStatus();setTimeout(warmPhotos,1500);
 fromRedirect();renderSync();syncNow();
+try{if(sessionStorage.getItem("break.cleared")){sessionStorage.removeItem("break.cleared");toast("Cache cleared. Break is up to date.");}}catch(e){}
 var standalone=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
 if(!standalone&&!load("sb.installDismissed",false))el("install").classList.remove("hide");
 el("install-x").addEventListener("click",function(){el("install").classList.add("hide");save("sb.installDismissed",true);});
 
 window.addEventListener("resize",syncTypeScale);window.addEventListener("pageshow",syncTypeScale);
 document.addEventListener("visibilitychange",function(){if(document.hidden)return;syncTypeScale();paintSky();
-  if(view==="today")renderToday();if(view==="solat")renderSolat();refreshTimes();if(focusBlock)requestWake();syncNow();});
+  if(view==="today")keepFocus(renderToday);if(view==="solat")keepFocus(renderSolat);refreshTimes();if(focusBlock)requestWake();syncNow();});
 window.addEventListener("online",function(){refreshTimes();syncNow();});
-setInterval(function(){if(document.hidden)return;paintSky();if(view==="today"&&!focusBlock)renderToday();if(view==="climb")renderGym();
-  if(view==="solat")renderSolat();},30000);
+// The half-minute refresh waits for a row that's under a finger mid-swipe.
+setInterval(function(){if(document.hidden)return;paintSky();
+  if(view==="today"&&!focusBlock&&!document.querySelector(".swiping"))keepFocus(renderToday);if(view==="climb")renderGym();
+  if(view==="solat")keepFocus(renderSolat);},30000);
 // While Break is open, check for changes made on another phone every few minutes.
 setInterval(function(){if(!document.hidden)syncNow();},300000);
 refreshTimes();

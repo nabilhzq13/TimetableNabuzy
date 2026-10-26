@@ -1,6 +1,6 @@
 /* Break — offline cache.
    Bump CACHE when you change any file, so phones pick the new version up. */
-var CACHE = "break-v34";
+var CACHE = "break-v35";
 var FILES = [
   "./",
   "./index.html",
@@ -13,16 +13,20 @@ var FILES = [
 
 self.addEventListener("install", function (ev) {
   ev.waitUntil(
-    caches.open(CACHE).then(function (c) { return c.addAll(FILES); })
-      .then(function () { return self.skipWaiting(); })
+    caches.open(CACHE).then(function (c) {
+      // Straight from the network, not the browser's own cache, so a new
+      // version never goes out with an older copy of one of its files.
+      return c.addAll(FILES.map(function (f) { return new Request(f, { cache: "reload" }); }));
+    }).then(function () { return self.skipWaiting(); })
   );
 });
 
 self.addEventListener("activate", function (ev) {
   ev.waitUntil(
     caches.keys().then(function (keys) {
+      // Only Break's own: other projects on the same github.io address keep theirs.
       return Promise.all(keys.map(function (k) {
-        return k === CACHE ? null : caches.delete(k);
+        return k !== CACHE && k.indexOf("break-") === 0 ? caches.delete(k) : null;
       }));
     }).then(function () { return self.clients.claim(); })
   );
@@ -34,19 +38,35 @@ self.addEventListener("fetch", function (ev) {
   // The prayer timetable comes from JAKIM; the app stores it itself.
   if (new URL(req.url).origin !== self.location.origin) return;
 
-  // Navigations: try the network, fall back to the cached shell when offline.
+  // Navigations: the network first, so a new version shows up straight away.
+  // On a weak signal the cached copy opens after three seconds rather than
+  // waiting on a connection that may never answer. Only a good answer is kept,
+  // so an error page can never become the copy that opens offline.
   if (req.mode === "navigate") {
-    ev.respondWith(
-      fetch(req).then(function (res) {
+    var net = fetch(req).then(function (res) {
+      if (res.ok) {
         var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put("./index.html", copy); });
-        return res;
-      }).catch(function () {
-        return caches.match("./index.html").then(function (hit) {
-          return hit || caches.match("./");
-        });
-      })
-    );
+        ev.waitUntil(caches.open(CACHE).then(function (c) { return c.put("./index.html", copy); }));
+      }
+      return res;
+    });
+    ev.waitUntil(net.catch(function () {}));
+    ev.respondWith(new Promise(function (resolve) {
+      var sent = false;
+      function send(res) { if (res && !sent) { sent = true; resolve(res); } }
+      function shell() {
+        return caches.match("./index.html").then(function (hit) { return hit || caches.match("./"); });
+      }
+      var slow = setTimeout(function () { shell().then(send); }, 3000);
+      net.then(function (res) {
+        clearTimeout(slow);
+        if (res.ok) send(res);
+        else shell().then(function (hit) { send(hit || res); });
+      }, function () {
+        clearTimeout(slow);
+        shell().then(function (hit) { send(hit || Response.error()); });
+      });
+    }));
     return;
   }
 
