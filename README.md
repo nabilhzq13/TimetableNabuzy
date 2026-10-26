@@ -3,9 +3,9 @@
 An offline schedule, climbing log and prayer tracker. Once it's on your home screen
 it opens like any app, works with no signal, and keeps every tick, block and session
 **on the phone itself**. If you sign in under **Schedule → Sync**, it also keeps a
-copy in your own Supabase database, which only your account can read, so a lost
-phone gets it all back. Photos never sync. Until you sign in, nothing is uploaded
-and there is no account. The other thing it fetches is your zone's prayer
+copy in your own Supabase, photos included, which only your account can read, so
+a lost phone gets it all back. Until you sign in, nothing is uploaded and there
+is no account. The other thing it fetches is your zone's prayer
 timetable from JAKIM's e-Solat, once a year, and that request carries only the
 zone code.
 
@@ -72,8 +72,9 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   when you beat your hardest send. Log each session: date, best send, how it felt
   (five faces from blue Great to red Awful, which also show in the log), notes, and
   up to four photos. **Take a photo** opens the camera; each shot is scaled down to a 1280px
-  long edge and stored on the phone, so a season of sessions stays small. Tap a
-  thumbnail to see it full screen. Deleting a session deletes its photos too.
+  long edge and stored on the phone, so a season of sessions stays small. With Sync
+  on they're backed up too. Tap a thumbnail to see it full screen. Deleting a
+  session deletes its photos too, from the backup as well.
 - **Solat** — the five daily prayers with your zone's official JAKIM times. Pick
   your zone once and the app downloads that year's timetable from e-Solat, then
   works offline. Tick a prayer when you've prayed it, here or from the row of five
@@ -130,11 +131,17 @@ for pasting into Notes. It leaves out photos, which would make it enormous.
 
 ## Sync
 
-Break can also keep a copy of your schedule, ticks, climbing log and prayers in
-the free Supabase project called **Break**, in Singapore. The phone stays the
-main copy and works with no signal. Changes go up a moment after you make them
-whenever there's a connection, and the newest change wins. Photos stay on the
-phone and in the iCloud backup.
+Break can also keep a copy of your schedule, ticks, climbing log, photos and
+prayers in the free Supabase project called **Break**, in Singapore. The phone
+stays the main copy and works with no signal. Changes go up a moment after you
+make them whenever there's a connection, and the newest change wins. This is the
+backup that runs by itself; the iCloud file above is a copy you make by hand.
+
+Photos go to the project's private **photos** bucket (under **Storage** in the
+dashboard), one file per photo in a folder for your account. New photos go up
+the next time Break syncs, a new phone downloads them, and deleting a session
+removes its photos there too. At about 200 KB a photo, the free plan's 1 GB
+holds roughly 5,000.
 
 **Signing in.** It's an email and a password; nothing is emailed. (**Confirm
 email** is switched off in the project under **Authentication → Sign In /

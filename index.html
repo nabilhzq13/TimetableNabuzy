@@ -1053,7 +1053,7 @@
       <h2 id="sync-h">Sync</h2>
       <p class="b-status" id="sync-status" aria-live="polite">Off. Everything is on this phone only.</p>
       <div id="sync-out">
-        <p class="note" style="margin-bottom:var(--s3)">Sign in to keep a copy of your schedule, ticks, climbing log and prayers in your Supabase database, so a lost or reset phone gets it all back. Photos stay on this phone and in your iCloud backup. Break still works with no signal and catches up once it's back.</p>
+        <p class="note" style="margin-bottom:var(--s3)">Sign in to keep a copy of your schedule, ticks, climbing log, photos and prayers in your Supabase, so a lost or reset phone gets it all back. Break still works with no signal and catches up once it's back.</p>
         <form id="sync-form" novalidate>
           <div><label for="sync-email">Email</label><input type="email" id="sync-email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false"></div>
           <div><label for="sync-pass">Password</label><input type="password" id="sync-pass" autocomplete="current-password"></div>
@@ -1759,7 +1759,7 @@ function renderClimbStats(){
 }
 
 // photos (IndexedDB) — same store as before, so existing photos carry over
-var PHOTO_MAX=4,PHOTO_NOTE="Up to 4 per session. They stay on this phone.";
+var PHOTO_MAX=4,PHOTO_NOTE="Up to 4 per session. With Sync on, they're backed up too.";
 var dbp=null,urls={},pending=[];
 function pdb(){if(dbp)return dbp;dbp=new Promise(function(res,rej){try{
   if(!window.indexedDB){rej(new Error("no idb"));return;}var r=indexedDB.open("break-photos",1);
@@ -2571,15 +2571,16 @@ el("x-confirm-yes").addEventListener("click",function(){blocks=DEFAULTS.slice();
 // ---------- sync ----------
 // The phone keeps the main copy. Signed in, each piece of Break (schedule,
 // ticks, climbing log, prayers) is also kept as one row in Break's Supabase
-// project, and whichever copy changed last wins. Supabase's access rules let
-// only the signed-in owner read or write a row, so the key below is the public
-// kind that apps carry. Photos stay on the phone.
+// project, and whichever copy changed last wins. Photos go to its private
+// "photos" bucket. Supabase's access rules let only the signed-in owner read or
+// write a row or a photo, so the key below is the public kind that apps carry.
 var SB_URL="https://rddznoqnnnqlkmkgiwuj.supabase.co",SB_KEY="sb_publishable_BGT-zk3Ek4mW1yE2Uju1gA_NNWbCnvC";
 var PIECES={};Object.keys(SYNCED).forEach(function(k){PIECES[SYNCED[k]]=k;});
 // at: when each piece last changed on this phone. up: the version the cloud is
-// known to hold. s: the sign-in. user: whose data this phone last synced with.
-var sm=load(K.sync,null)||{};if(!sm.at)sm.at={};if(!sm.up)sm.up={};
-var syncing=false,syncAgain=false,pushTimer=0;
+// known to hold. ph: the photos the cloud has. s: the sign-in. user: whose data
+// this phone last synced with.
+var sm=load(K.sync,null)||{};if(!sm.at)sm.at={};if(!sm.up)sm.up={};if(!sm.ph)sm.ph={};
+var syncing=false,syncAgain=false,pushTimer=0,photoLeft=0,missed={};
 function saveSync(){try{localStorage.setItem(K.sync,JSON.stringify(sm));}catch(e){}}
 // Called by save(). Until this section has run, at launch, nothing counts as a
 // change: the default schedule written on a fresh phone must never beat a synced
@@ -2623,15 +2624,16 @@ function fresh(){
 function syncNow(){
   if(!sm.s)return;if(syncing){syncAgain=true;return;}
   syncing=true;syncAgain=false;renderSync();
-  fresh().then(pull).then(push).then(function(){sm.last=Date.now();sm.err="";},
+  fresh().then(pull).then(push).then(syncPhotos).then(function(){sm.last=Date.now();sm.err="";},
     function(e){sm.err=e&&e.status?e.message:"offline";})
-  .then(function(){syncing=false;saveSync();renderSync();if(syncAgain&&sm.s)syncNow();});
+  .then(function(){syncing=false;photoLeft=0;saveSync();renderSync();if(syncAgain&&sm.s)syncNow();});
 }
 function pull(){
   return sbFetch("/rest/v1/docs?select=key,value,updated_at",undefined,true).then(function(rows){
     // On a phone that hasn't synced with this account before, the cloud's copy
     // wins. After that, whichever changed last.
     var first=sm.user!==sm.s.user,got={},there={};
+    if(first){sm.ph={};missed={};}   // what the cloud holds was another account's
     (rows||[]).forEach(function(r){if(!PIECES[r.key])return;var at=Date.parse(r.updated_at);there[r.key]=1;
       if(first||at>(sm.at[r.key]||0)){if(adopt(r.key,r.value&&r.value.v))got[r.key]=1;sm.at[r.key]=at;sm.up[r.key]=at;}
       else if(at===sm.at[r.key])sm.up[r.key]=at;});
@@ -2650,11 +2652,47 @@ function push(){
       return sbFetch("/rest/v1/rpc/put_doc",{p_key:n,p_value:{v:piece(n)},p_at:new Date(at).toISOString()},true).then(function(kept){
         if(!kept)syncAgain=true;else if(sm.at[n]===at)sm.up[n]=at;});});},Promise.resolve());
 }
+// Photos: each one is <user id>/<photo id>.jpg in the private "photos" bucket.
+// Ones the cloud lacks go up, ones this phone lacks come down, and ones no
+// session uses any more are removed. One at a time, so a big first upload
+// doesn't swamp a weak connection, and each finished photo is remembered.
+function store(method,path,body,type){
+  var h={apikey:SB_KEY,Authorization:"Bearer "+sm.s.access};if(type)h["Content-Type"]=type;
+  return fetch(SB_URL+"/storage/v1/object"+path,{method:method,headers:h,body:body,cache:"no-store"});
+}
+function syncPhotos(){
+  var uid=sm.s.user,ids=photoIds(),failed=0,got=false;
+  return ptx("readonly",function(s){return s.getAllKeys();}).then(function(k){return k||[];},function(){return [];}).then(function(keys){
+    var here={};keys.forEach(function(k){here[k]=1;});
+    var up=ids.filter(function(id){return here[id]&&!sm.ph[id];}),
+        down=ids.filter(function(id){return !here[id]&&!missed[id];}),
+        gone=Object.keys(sm.ph).filter(function(id){return ids.indexOf(id)<0;}),chain=Promise.resolve();
+    photoLeft=up.length+down.length;renderSync();
+    function done(){photoLeft--;renderSync();}
+    up.forEach(function(id){chain=chain.then(function(){return pget(id).then(function(b){if(!b)return;
+      return store("POST","/photos/"+uid+"/"+id+".jpg",b,b.type||"image/jpeg").then(function(r){
+        // Already there counts as there: an upload that was cut off may have landed.
+        return r.ok?"":r.text();}).then(function(t){if(t===""||/duplicate|already exists/i.test(t)){sm.ph[id]=1;saveSync();}else failed++;});
+    }).then(done);});});
+    down.forEach(function(id){chain=chain.then(function(){return store("GET","/authenticated/photos/"+uid+"/"+id+".jpg").then(function(r){
+      if(!r.ok){missed[id]=1;return;}   // in neither place; not asked for again until the app restarts
+      return r.blob().then(function(b){return pput(id,b);}).then(function(){sm.ph[id]=1;got=true;saveSync();});
+    }).then(done);});});
+    return chain.then(function(){
+      if(!gone.length)return;
+      return store("DELETE","/photos",JSON.stringify({prefixes:gone.map(function(id){return uid+"/"+id+".jpg";})}),"application/json")
+        .then(function(r){if(r.ok){gone.forEach(function(id){delete sm.ph[id];});saveSync();}});
+    }).then(function(){sm.pfail=failed;if(got&&view==="climb")renderClimb();});
+  });
+}
 function renderSync(){
   var on=!!sm.s;el("sync-out").classList.toggle("hide",on);el("sync-in").classList.toggle("hide",!on);
   el("sync-status").textContent=!on?(sm.ended?"Signed out. Sign in again to keep syncing.":"Off. Everything is on this phone only.")
-    :syncing?"Syncing…":sm.err==="offline"?"Waiting for a connection. It catches up by itself."
-    :sm.err?"Couldn't sync: "+sm.err:sm.last?"Synced "+whenText(new Date(sm.last))+" · "+sm.s.email:"Signed in as "+sm.s.email;
+    :syncing?(photoLeft>0?"Syncing photos, "+photoLeft+" to go…":"Syncing…")
+    :sm.err==="offline"?"Waiting for a connection. It catches up by itself."
+    :sm.err?"Couldn't sync: "+sm.err
+    :sm.last?"Synced "+whenText(new Date(sm.last))+" · "+sm.s.email+(sm.pfail?" · "+plural(sm.pfail,"photo")+" couldn't upload":"")
+    :"Signed in as "+sm.s.email;
 }
 function syncMsg(id,t){var n=el(id);n.textContent=t;n.classList.toggle("hide",!t);}
 // Email and password. Email confirmation is off in the Break project, so a new
