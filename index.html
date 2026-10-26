@@ -2739,8 +2739,9 @@ el("sync-github").addEventListener("click",function(){
 });
 function fromRedirect(){
   var h=location.hash.slice(1);if(!/(^|&)(access_token|error)=/.test(h))return;
-  var q={};h.split("&").forEach(function(kv){var i=kv.indexOf("=");
-    if(i>0)q[decodeURIComponent(kv.slice(0,i))]=decodeURIComponent(kv.slice(i+1).replace(/\+/g," "));});
+  // Supabase encodes its error text twice, so it's undone twice.
+  function dec(s){s=decodeURIComponent(s.replace(/\+/g," "));try{if(/%[0-9a-f]{2}/i.test(s))s=decodeURIComponent(s);}catch(e){}return s;}
+  var q={};h.split("&").forEach(function(kv){var i=kv.indexOf("=");if(i>0)q[dec(kv.slice(0,i))]=dec(kv.slice(i+1));});
   history.replaceState(null,"",location.pathname+location.search);
   show("edit");
   if(q.error||!q.access_token){syncMsg("sync-err","GitHub sign-in didn't finish: "+(q.error_description||q.error||"no sign-in came back"));return;}
