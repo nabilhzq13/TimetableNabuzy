@@ -662,6 +662,22 @@
   .set-card{margin-top:var(--s3);padding:var(--s4);border-radius:var(--radius-sm);background:#fff;box-shadow:0 1px 2px rgba(15,20,40,.08)}
   .set-card h3{margin:0;font-size:var(--t-callout);font-weight:var(--w-semibold)}
   .set-foot{margin:var(--s4) var(--s1) 0}
+  /* Reminders: a switch for each kind, as in the iOS Settings app. The whole
+     row is the switch's label, so a tap anywhere on it flips it. */
+  .sw-row{display:flex;align-items:center;gap:var(--s3);min-height:52px;margin:0;padding:6px 0;cursor:pointer;
+    font-size:var(--t-subhead);font-weight:var(--w-semibold);color:var(--ink)}
+  .sw-row>span{flex:1;min-width:0}
+  .sw-row small{display:block;margin-top:1px;font-size:var(--t-footnote);font-weight:var(--w-regular);line-height:var(--lh-tight);color:var(--ink-2)}
+  .sw-row+.sw-row,.rem-sub{border-top:1px solid var(--line)}
+  .sw{-webkit-appearance:none;appearance:none;flex:none;position:relative;width:51px;min-width:51px;height:31px;margin:0;padding:0;
+    border:0;border-radius:99px;background:rgba(15,20,40,.14);cursor:pointer;transition:background-color .2s ease}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;
+    box-shadow:0 3px 8px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.16);transition:transform .22s cubic-bezier(.3,1.3,.5,1)}
+  .sw:checked{background:var(--tint)}
+  .sw:checked::after{transform:translateX(20px)}
+  .rem-pick{margin-top:var(--s2)}
+  .rem-sub{margin-top:var(--s3)}
+  #rem-opts{margin-bottom:var(--s3)}
   /* Qadha from before tracking: a count per prayer, chipped away one at a time. */
   .qtext{padding:6px 0;min-width:0}
   .qrow .tag{white-space:nowrap;font-weight:var(--w-semibold)}
@@ -817,12 +833,13 @@
     .btn:not(.prominent),.chip-btn:not([aria-pressed="true"]),.dayrow button:not([aria-pressed="true"]),.o-step,.hero-btn,.sheet-x i{
       background:#fff;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.55)}
     .focus .btn.glassbtn{background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1.5px #fff}
+    .sw:not(:checked){box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.55)}
   }
 
   @media (prefers-reduced-motion:reduce){
     .blob,.focus,.toast,.sheet[open] .sheet-in{animation:none}
     :root{transition:none}
-    .tabbar,.lens,.rings .arc,.nowring .arc,.item,.stop,.focus-rule,.about .chev,.feel-btn .face,.feel-bar i{transition:none}
+    .tabbar,.lens,.rings .arc,.nowring .arc,.item,.stop,.focus-rule,.about .chev,.feel-btn .face,.feel-bar i,.sw,.sw::after{transition:none}
     .bead,.draw .node,.draw .line::before,.draw .bead,.stop.pop .node,.stop.pop .node::before,.stop.pop .node svg,
     .stop.pop .ttl>span{animation:none}
     .btn:active,.tabbar button:active,.pchip:active,.feel-btn:active .face,.hero-btn:active{transform:none}
@@ -1204,6 +1221,34 @@
       </div>
     </section>
 
+    <!-- Only in the home-screen app: it's the one place iOS lets a web app have push. -->
+    <section class="set-card hide" id="rem-card" aria-labelledby="rem-h">
+      <h3 id="rem-h">Reminders</h3>
+      <p class="b-status" id="rem-status" aria-live="polite">Off on this phone.</p>
+      <p class="note" id="rem-note" style="margin:0 0 var(--s3)">Prayer times and the start of each block, on your lock screen even while Break is closed. Your Supabase sends them, so Sync needs to be on.</p>
+      <div id="rem-opts" class="hide">
+        <label class="sw-row"><span>Prayer times<small>When each prayer's time starts, from JAKIM</small></span><input type="checkbox" class="sw" role="switch" id="rem-pray"></label>
+        <label class="sw-row"><span>Before a prayer runs out<small>30 minutes before its time ends, if it isn't ticked</small></span><input type="checkbox" class="sw" role="switch" id="rem-late"></label>
+        <label class="sw-row"><span>Block starts<small>Not for a block you've already ticked</small></span><input type="checkbox" class="sw" role="switch" id="rem-blocks"></label>
+        <div class="two rem-pick">
+          <div><label for="rem-plead">Prayer times come</label><select id="rem-plead"><option value="0">When it starts</option><option value="5">5 min before</option><option value="10">10 min before</option><option value="15">15 min before</option></select></div>
+          <div><label for="rem-blead">Blocks come</label><select id="rem-blead"><option value="0">When it starts</option><option value="5">5 min before</option><option value="10">10 min before</option><option value="15">15 min before</option><option value="30">30 min before</option></select></div>
+        </div>
+        <div class="two rem-pick">
+          <div><label for="rem-qfrom">Quiet from</label><input type="time" id="rem-qfrom" step="300"></div>
+          <div><label for="rem-qto">Until</label><input type="time" id="rem-qto" step="300"></div>
+        </div>
+        <p class="note" style="margin:var(--s2) 0 0">Nothing comes in quiet hours. Something that starts after they end still gets its reminder, the minute they end. The same time twice means no quiet hours.</p>
+        <label class="sw-row rem-sub"><span>Let Subuh through<small>Subuh's reminders come even in quiet hours</small></span><input type="checkbox" class="sw" role="switch" id="rem-subuh"></label>
+      </div>
+      <div class="btns">
+        <button type="button" class="btn prominent" id="rem-on">Turn on reminders</button>
+        <button type="button" class="btn hide" id="rem-test">Send a test</button>
+        <button type="button" class="btn hide" id="rem-off">Turn off</button>
+      </div>
+      <p class="err hide" id="rem-err" role="alert"></p>
+    </section>
+
     <section class="set-card" aria-labelledby="data-h">
       <h3 id="data-h">Backup file</h3>
       <p class="b-status" id="b-status">No backup yet</p>
@@ -1256,7 +1301,7 @@
       </div>
     </section>
 
-    <p class="note set-foot">Apart from backups you make yourself, Break sends only two things: your Sync copy while you're signed in, and your zone code to JAKIM for prayer times.</p>
+    <p class="note set-foot">Apart from backups you make yourself, Break sends only three things: your Sync copy while you're signed in, this phone's push address while reminders are on, and your zone code to JAKIM for prayer times.</p>
   </div>
 </dialog>
 
@@ -1315,10 +1360,12 @@ var RULES=[
 
 // ---------- storage ----------
 var K={blocks:"sb.blocks",done:"sb.done",climbs:"sb.climbs",solat:"sb.solat",solatSet:"sb.solatSet",times:"sb.times",qold:"sb.qadhaOld",
-  lastBackup:"sb.lastBackup",snooze:"sb.backupSnooze",sync:"sb.sync"};
+  lastBackup:"sb.lastBackup",snooze:"sb.backupSnooze",sync:"sb.sync",remind:"sb.remind",push:"sb.push"};
 // What syncs, by storage key and row name. Things that belong to one phone (the
-// backup reminder, the downloaded prayer timetable, photos) stay on it.
-var SYNCED={"sb.blocks":"blocks","sb.done":"done","sb.climbs":"climbs","sb.solat":"solat","sb.solatSet":"solatSet","sb.qadhaOld":"qadhaOld"};
+// backup reminder, the downloaded prayer timetable, photos, its push sign-up)
+// stay on it.
+var SYNCED={"sb.blocks":"blocks","sb.done":"done","sb.climbs":"climbs","sb.solat":"solat","sb.solatSet":"solatSet","sb.qadhaOld":"qadhaOld",
+  "sb.remind":"reminders"};
 function load(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));if(SYNCED[k])changed(SYNCED[k]);return true;}catch(e){return false;}}
 var blocks=load(K.blocks,null);
@@ -2761,7 +2808,7 @@ function saveSync(){try{localStorage.setItem(K.sync,JSON.stringify(sm));}catch(e
 // that copy came from a phone whose clock runs ahead of this one.
 function changed(n){if(!sm||!sm.at)return;sm.at[n]=Math.max(Date.now(),(sm.at[n]||0)+1);saveSync();
   if(sm.s){clearTimeout(pushTimer);pushTimer=setTimeout(syncNow,1500);}}
-function piece(n){return n==="blocks"?blocks:n==="done"?done:n==="climbs"?climbs:n==="solat"?plog:n==="solatSet"?pset:qold;}
+function piece(n){return n==="blocks"?blocks:n==="done"?done:n==="climbs"?climbs:n==="solat"?plog:n==="solatSet"?pset:n==="reminders"?rprefs:qold;}
 // Nothing worth keeping: an empty log, no settings, or the schedule Break starts with.
 function blank(n,v){
   if(v==null)return true;
@@ -2776,6 +2823,7 @@ function adopt(n,v){
   else if(n==="climbs")climbs=Array.isArray(v)?v:[];
   else if(n==="solat")plog=v&&typeof v==="object"?v:{};
   else if(n==="solatSet")pset=v||null;
+  else if(n==="reminders")rprefs=v&&typeof v==="object"?v:null;
   else qold=v||null;
   try{localStorage.setItem(PIECES[n],JSON.stringify(piece(n)));}catch(e){}
   return true;
@@ -2794,11 +2842,15 @@ function keep(r){var u=r.user||{},was=sm.s||{};
   sm.s={email:u.email||was.email||"",user:u.id||was.user,access:r.access_token,refresh:r.refresh_token,
     exp:r.expires_at?r.expires_at*1000:Date.now()+(r.expires_in||3600)*1000};saveSync();}
 // A usable access token, renewed just before it runs out. A refusal means the
-// sign-in has ended; no connection only means later.
+// sign-in has ended; no connection only means later. One renewal at a time,
+// since Sync and Reminders can both ask at once and a second renewal could
+// spend the same refresh token.
+var renewing=null;
 function fresh(){
   if(sm.s.exp-60000>Date.now())return Promise.resolve();
-  return sbFetch("/auth/v1/token?grant_type=refresh_token",{refresh_token:sm.s.refresh}).then(keep,function(e){
-    if(e.status>=400&&e.status<500){sm.s=null;sm.ended=true;saveSync();}throw e;});
+  return renewing||(renewing=sbFetch("/auth/v1/token?grant_type=refresh_token",{refresh_token:sm.s.refresh}).then(keep,function(e){
+    if(e.status>=400&&e.status<500){sm.s=null;sm.ended=true;saveSync();}throw e;})
+    .then(function(){renewing=null;},function(e){renewing=null;throw e;}));
 }
 function syncNow(){
   if(!sm.s)return;if(syncing){syncAgain=true;return;}
@@ -2824,7 +2876,7 @@ function pull(){
     Object.keys(PIECES).forEach(function(n){if(!there[n]){sm.up[n]=0;if(!sm.at[n])sm.at[n]=Date.now();}});
     sm.user=sm.s.user;saveSync();
     if(Object.keys(got).length){renderToday();renderEditList();if(view==="week")renderWeek();if(view==="climb")renderClimb();
-      renderSolatAll();if(got.solatSet)refreshTimes();}
+      renderSolatAll();if(got.solatSet)refreshTimes();if(got.reminders)renderRemind();}
   });
 }
 // Each newer piece goes up through put_doc, which keeps the cloud's copy if
@@ -2923,16 +2975,18 @@ function fromRedirect(){
 }
 el("sync-now").addEventListener("click",syncNow);
 // Signing out only stops syncing. Everything stays on the phone, and signing
-// back in to the same account picks up where it left off.
+// back in to the same account picks up where it left off. This phone's
+// reminders stop too, since they come from the account's synced copy.
 el("sync-off").addEventListener("click",function(){
-  var tok=sm.s&&sm.s.access;sm.s=null;sm.ended=false;saveSync();renderSync();toast("Signed out. Your data stays on this phone.");
+  var tok=sm.s&&sm.s.access,stop=rpush?stopPush(tok):Promise.resolve();
+  sm.s=null;sm.ended=false;saveSync();renderSync();renderRemind();toast("Signed out. Your data stays on this phone.");
   // Then end the session on Supabase's side too; offline, it simply lapses.
-  if(tok)try{fetch(SB_URL+"/auth/v1/logout",{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+tok}}).catch(function(){});}catch(e){}});
+  if(tok)stop.then(function(){fetch(SB_URL+"/auth/v1/logout",{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+tok}}).catch(function(){});});});
 
 // ---------- settings ----------
 // Sync, the backup file, Break's own files and resetting the schedule, in a
 // sheet behind the gear on Schedule.
-function openSettings(){renderSync();renderBackupStatus();renderAppInfo();warmPhotos();
+function openSettings(){renderSync();renderRemind();remStatus();renderBackupStatus();renderAppInfo();warmPhotos();
   var d=el("set-sheet");sheetOpen(d);d.querySelector(".sheet-in").scrollTop=0;}
 el("set-open").addEventListener("click",openSettings);
 el("set-x").addEventListener("click",function(){sheetShut(el("set-sheet"));});
@@ -2964,6 +3018,127 @@ el("app-clear").addEventListener("click",function(){
     function(){clearTimeout(timer);btn.disabled=false;btn.textContent="Clear cache";
       appMsg("Couldn't reach GitHub, so nothing was cleared. Try again with a better signal.");});
 });
+
+// ---------- reminders ----------
+// Prayer times and block starts as notifications, sent by Break's Supabase
+// while Break itself is closed. iOS gives push only to a home-screen web app,
+// and only asks for permission from a tap, so the card shows only there and
+// its button asks before it does anything else. This phone's push address goes
+// to Supabase through put_push_sub; the choices sync like the rest of Break, as
+// "reminders"; and every minute the remind Edge Function (supabase/ in this
+// repository) sends what's due, from the synced schedule and ticks and JAKIM's
+// times for your zone. VAPID is the public half of the key that signs them.
+// The private half is a secret in the Supabase project, never here.
+var VAPID="BDbgGnNlv6P9DmYmiShMn_8Q7aPANCO8lp4XFjClg_0Nsd8LZBgltBYhV6EfMveTmKxl6Ii1k5zC5Z3ItyFk6HM";
+var RDEF={pray:true,late:true,blocks:true,plead:0,blead:10,qfrom:0,qto:600,subuh:false};
+// rprefs: the synced choices, null until first set. rpush: this phone's
+// sign-up, {ep: its push address, at: when Supabase last took it, ok: when a
+// reminder last got through, err: why the last one didn't}.
+var rprefs=load(K.remind,null),rpush=load(K.push,null),rbusy=false;
+function rp(){var o={};Object.keys(RDEF).forEach(function(k){o[k]=rprefs&&typeof rprefs[k]===typeof RDEF[k]?rprefs[k]:RDEF[k];});return o;}
+function homeApp(){return navigator.standalone===true||!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);}
+function canPush(){return "serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;}
+function hhmm(m){return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");}
+function remMsg(t){syncMsg("rem-err",t);}
+function keepPush(v){rpush=v;try{if(v)localStorage.setItem(K.push,JSON.stringify(v));else localStorage.removeItem(K.push);}catch(e){}}
+// The service worker. A tap gets a plain answer after ten seconds rather
+// than a button that never comes back.
+function swReady(wait){var r=navigator.serviceWorker.ready;return !wait?r:Promise.race([r,new Promise(function(y,no){
+  setTimeout(function(){no(new Error("Break's offline files aren't ready yet. Wait a moment, then try again."));},wait);})]);}
+function subscribe(reg){var s=atob(VAPID.replace(/-/g,"+").replace(/_/g,"/")),k=new Uint8Array(s.length);
+  for(var i=0;i<s.length;i++)k[i]=s.charCodeAt(i);
+  return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:k});}
+// Supabase takes this phone's push address, as its signed-in owner's.
+function saveSub(s){var j=s.toJSON(),k=j.keys||{},was=rpush&&rpush.ep===j.endpoint?rpush:{};
+  return fresh().then(function(){return sbFetch("/rest/v1/rpc/put_push_sub",{p_endpoint:j.endpoint,p_p256dh:k.p256dh,p_auth:k.auth},true);})
+    .then(function(){keepPush({ep:j.endpoint,at:Date.now(),ok:was.ok||0,err:was.err||""});});}
+function renderRemind(){
+  var home=homeApp();el("rem-card").classList.toggle("hide",!home);if(!home)return;
+  var on=!!rpush,perm=window.Notification?Notification.permission:"default",p=rp();
+  el("rem-status").textContent=!canPush()?"This iPhone can't get reminders from Break. It needs iOS 16.4 or later."
+    :perm==="denied"?"Notifications are off for Break. Turn them on in the Settings app, under Notifications, then Break."
+    :!on?(sm.s?"Off on this phone.":"Sign in to Sync above first. Your reminders come from your Supabase.")
+    :!sm.s?"On, from your last sign-in. Sign in again to change them."
+    :rpush.err?"On, but the last one didn't get through: "+rpush.err
+    :rpush.ok?"On · the last one came "+whenText(new Date(rpush.ok)):"On for this phone.";
+  el("rem-note").classList.toggle("hide",on);el("rem-opts").classList.toggle("hide",!on);
+  el("rem-on").classList.toggle("hide",on);el("rem-test").classList.toggle("hide",!on);el("rem-off").classList.toggle("hide",!on);
+  el("rem-on").disabled=rbusy||!canPush()||!sm.s||perm==="denied";
+  el("rem-test").disabled=rbusy||!sm.s;el("rem-off").disabled=rbusy;
+  ["pray","late","blocks","subuh"].forEach(function(k){el("rem-"+k).checked=p[k];});
+  el("rem-plead").value=String(p.plead);el("rem-blead").value=String(p.blead);
+  el("rem-qfrom").value=hhmm(p.qfrom);el("rem-qto").value=hhmm(p.qto);
+}
+el("rem-on").addEventListener("click",function(){
+  if(rbusy||!sm.s||!canPush())return;
+  // Straight from the tap, before anything else: iOS only asks from one.
+  var ask=Notification.permission==="granted"?"granted":Notification.requestPermission();
+  rbusy=true;remMsg("");renderRemind();
+  Promise.resolve(ask).then(function(perm){if(perm!=="granted")throw new Error(perm);return swReady(10000);})
+  .then(function(reg){return reg.pushManager.getSubscription().then(function(s){return s||subscribe(reg);});})
+  .then(saveSub).then(function(){
+    if(!rprefs){rprefs=rp();save(K.remind,rprefs);}   // so Supabase has the choices from the start
+    announce("Reminders are on.");toast("Reminders are on");},
+  function(e){var m=e&&e.message||"";
+    remMsg(m==="denied"?"Notifications are off for Break. Turn them on in the Settings app, under Notifications, then Break, and try again."
+      :m==="default"?"Break needs your OK to send notifications. Tap Turn on reminders again and choose Allow."
+      :e.name==="TypeError"?"No connection. Try again once you're online."
+      :"Couldn't turn reminders on: "+m);})
+  .then(function(){rbusy=false;renderRemind();});
+});
+el("rem-test").addEventListener("click",function(){
+  if(rbusy||!rpush||!sm.s)return;
+  var ep=rpush.ep;rbusy=true;remMsg("");renderRemind();
+  fresh().then(function(){return sbFetch("/functions/v1/remind",{test:true,endpoint:ep},true);})
+  .then(function(){toast("Test sent. It should arrive in a few seconds.");},
+    function(e){remMsg(e.status?e.message:"No connection. Try again once you're online.");})
+  .then(function(){rbusy=false;renderRemind();remStatus();});
+});
+// Off: Supabase forgets this phone, then the phone drops its push address.
+// Offline the second is enough. The push service refuses that address from
+// then on, and Supabase forgets it the next time it tries.
+function stopPush(tok){
+  var ep=rpush&&rpush.ep;keepPush(null);
+  var drop=tok&&ep?fetch(SB_URL+"/rest/v1/rpc/drop_push_sub",{method:"POST",
+    headers:{apikey:SB_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify({p_endpoint:ep})}):Promise.resolve();
+  return drop.catch(function(){}).then(function(){if(!canPush())return;
+    return swReady(10000).then(function(reg){return reg.pushManager.getSubscription();}).then(function(s){return s&&s.unsubscribe();});
+  }).catch(function(){});
+}
+el("rem-off").addEventListener("click",function(){
+  if(rbusy)return;rbusy=true;remMsg("");renderRemind();
+  (sm.s?fresh().then(function(){return sm.s&&sm.s.access;},function(){return null;}):Promise.resolve(null)).then(stopPush)
+  .then(function(){rbusy=false;renderRemind();toast("Reminders are off on this phone");});
+});
+function setPref(k,v){rprefs=rp();rprefs[k]=v;save(K.remind,rprefs);}
+["pray","late","blocks","subuh"].forEach(function(k){el("rem-"+k).addEventListener("change",function(){setPref(k,this.checked);});});
+["plead","blead"].forEach(function(k){el("rem-"+k).addEventListener("change",function(){setPref(k,+this.value);});});
+["qfrom","qto"].forEach(function(k){el("rem-"+k).addEventListener("change",function(){
+  if(/^\d\d:\d\d/.test(this.value))setPref(k,toMin(this.value));else renderRemind();});});
+// What Supabase last heard for this phone: when a reminder last got through,
+// or why one didn't. If it has forgotten the phone, the phone signs up again.
+function remStatus(){
+  if(!rpush||!sm.s)return;
+  var ep=rpush.ep;
+  fresh().then(function(){return sbFetch("/rest/v1/push_subs?select=ok_at,err&endpoint=eq."+encodeURIComponent(ep),undefined,true);})
+  .then(function(rows){if(!rpush||rpush.ep!==ep)return;
+    if(!rows||!rows.length){checkPush(true);return;}
+    keepPush({ep:ep,at:rpush.at,ok:rows[0].ok_at?Date.parse(rows[0].ok_at):0,err:rows[0].err||""});renderRemind();},function(){});
+}
+// At launch, this phone's push address is checked. After Clear cache it has
+// none, and makes a new one, since the permission stays; if it can't, the card
+// says reminders are off. A new address, or one Supabase last took over a day
+// ago, is saved again.
+function checkPush(force){
+  if(!rpush||!sm.s||!canPush())return;
+  swReady(0).then(function(reg){return reg.pushManager.getSubscription().then(function(s){
+    return s||(Notification.permission==="granted"?subscribe(reg).catch(function(){return null;}):null);});})
+  .then(function(s){
+    if(!rpush)return;
+    if(!s){keepPush(null);renderRemind();return;}
+    if(force||s.endpoint!==rpush.ep||Date.now()-(rpush.at||0)>864e5)return saveSub(s).then(renderRemind);})
+  .catch(function(){});
+}
 
 // ---------- navigation ----------
 var VIEWS={today:"Today",week:"Week",climb:"Climbing",solat:"Solat",edit:"Schedule"},ORDER=["today","week","climb","solat","edit"],view="today",scrolls={};
@@ -3057,7 +3232,13 @@ resetEdit();el("c-date").value=key(new Date());syncTypeScale();
   requestAnimationFrame(function(){requestAnimationFrame(function(){rs.transition="";});});})();
 pdb().then(function(){el("c-photo-field").classList.remove("hide");el("c-photo-note").textContent=PHOTO_NOTE;},function(){});
 renderToday(true);renderBackupStatus();setTimeout(warmPhotos,1500);
-fromRedirect();renderSync();syncNow();
+fromRedirect();renderSync();syncNow();checkPush(false);
+// A tapped reminder opens Break on its tab, Solat for a prayer and Today for a
+// block: in the address if Break wasn't running, as a message if it was.
+function toTab(t){if(VIEWS[t]&&t!==view)show(t);}
+(function(){var m=/[?&]tab=(\w+)/.exec(location.search);
+  if(m){history.replaceState(null,"",location.pathname+location.hash);toTab(m[1]);}})();
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",function(e){if(e.data&&e.data.tab)toTab(e.data.tab);});
 try{if(sessionStorage.getItem("break.cleared")){sessionStorage.removeItem("break.cleared");toast("Cache cleared. Break is up to date.");}}catch(e){}
 var standalone=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
 if(!standalone&&!load("sb.installDismissed",false))el("install").classList.remove("hide");

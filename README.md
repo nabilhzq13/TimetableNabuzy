@@ -7,7 +7,8 @@ Schedule), it also keeps a copy in your own Supabase, photos included, which onl
 a lost phone gets it all back. Until you sign in, nothing is uploaded and there
 is no account. The other thing it fetches is your zone's prayer
 timetable from JAKIM's e-Solat, once a year, and that request carries only the
-zone code.
+zone code. With Sync on, it can also send you **reminders** for prayer times and
+blocks, even while it's closed (see **Reminders**).
 
 ## Files
 
@@ -15,13 +16,17 @@ zone code.
 | --- | --- |
 | `index.html` | The whole app — layout, logic, your default schedule |
 | `manifest.webmanifest` | Name, icon and colours for the home-screen app |
-| `sw.js` | The offline cache |
+| `sw.js` | The offline cache, and what shows a reminder and opens Break when you tap it |
 | `fonts/inter-latin.woff2` | Inter, the app's typeface, kept here so it works offline (licence in `fonts/OFL.txt`) |
 | `icon-180.png` | Home-screen icon (iOS) |
 | `icon-192.png`, `icon-512.png` | Icons for everything else |
 | `.github/workflows/keep-supabase-awake.yml` | Keeps the Sync project from pausing (see **Sync**) |
+| `supabase/functions/remind/` | The Edge Function that sends reminders (see **Reminders**) |
+| `supabase/reminders.sql` | The tables and schedule it uses, as applied to the project |
 
-They all sit in one folder, with `fonts/` and `.github/` as folders inside it.
+They all sit in one folder, with `fonts/`, `.github/` and `supabase/` as folders
+inside it. The phone only needs the first six; `supabase/` runs in your Supabase
+project and is kept here as the record.
 
 ## Putting it on the phone
 
@@ -107,10 +112,11 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   **Undo**. **Start at …** moves your block to the next free time instead, when
   there is one. **Delete block** has an Undo too. Blocks that already overlap are
   flagged in the list; tap one to fix it.
-- **Settings** — the gear beside Schedule's title. Sync, the backup file, **Clear
-  cache**, and **Reset schedule**, which puts the original plan back without
-  touching your ticks or climbing log. When Sync needs you (signed out, or
-  failing for a reason other than no signal), the gear shows a red dot.
+- **Settings** — the gear beside Schedule's title. Sync, **Reminders** (in the
+  home-screen app), the backup file, **Clear cache**, and **Reset schedule**,
+  which puts the original plan back without touching your ticks or climbing
+  log. When Sync needs you (signed out, or failing for a reason other than no
+  signal), the gear shows a red dot.
 
 ## Text size
 
@@ -202,6 +208,70 @@ the run fails and GitHub emails you; Break carries on offline until you resume
 the project from the dashboard. GitHub switches off scheduled runs in a public
 repository after 60 days without a commit, and emails you first; any push, or
 **Enable workflow** on the Actions tab, turns it back on.
+
+## Reminders
+
+Break can put three kinds of reminder on your lock screen, even while it's
+closed:
+
+- **Prayer times** — when each prayer's time starts, from JAKIM's timetable for
+  the zone you picked on Solat. Tapping one opens Solat.
+- **Before a prayer runs out** — 30 minutes before a prayer's time ends, but only
+  if you haven't ticked it, so it stays off the qadha list.
+- **Block starts** — before each block on your schedule, 10 minutes ahead unless
+  you change it. A block you've already ticked gets none. Tapping one opens
+  Today.
+
+**Turning them on.** They only work in the home-screen app, on iOS 16.4 or
+later, and with Sync signed in, because your Supabase is what sends them. On
+**Schedule**, tap the gear for **Settings**, then under **Reminders** tap **Turn
+on reminders** and **Allow**. **Send a test** checks that one reaches this
+phone. Prayer times come when they start and blocks 10 minutes early; both can be
+changed there, along with which kinds you get. The choices sync, so every phone
+signed in to your account uses the same ones.
+
+**Quiet hours** run from 12am to 10am: the phone leaves the bed at midnight, and
+there's no phone for the first 30 minutes after you wake at 9:30. Nothing comes
+in quiet hours, so the 9:30 Wake up block gets no reminder. Something that
+starts after they end still gets its reminder, the minute they end, so Friday's
+10am climb pings at 10:00 instead of 9:50. Subuh (about 5:50am) stays quiet
+unless you switch on **Let Subuh through**. Setting both times the same means no
+quiet hours.
+
+**Turn off** stops them on that phone. **Sign out** does too, since they come
+from your synced copy. After **Clear cache** the phone signs itself up again on
+the next launch; if it can't, the card says **Off**, and **Turn on reminders**
+fixes it. If iOS has notifications for Break switched off, the card says so:
+turn them back on in the Settings app, under **Notifications → Break**.
+
+**How it works.** Every minute, a `pg_cron` job called `break-reminders` asks
+the project's `remind` Edge Function to send whatever is due. It reads each
+phone with reminders on (`push_subs`), your synced schedule, ticks, choices and
+zone (`docs`), and JAKIM's timetable, which it downloads from e-Solat once a year
+per zone and keeps in `prayer_times`. Each reminder goes once (`push_sent`
+remembers what went out for three days). They go out as standard Web Push,
+through Apple's push service, signed with a VAPID key pair. The public half is in
+`index.html` and in the function. The private half lives only in the
+project's **Edge Functions → Secrets** as `VAPID_PRIVATE_KEY`, pasted there by
+hand; it's never in the page or this repository. All of this is on the free
+plan: about 45,000 runs a month, against 500,000 included.
+
+The function's source is `supabase/functions/remind` (`lib.ts` works out what's
+due and does the encryption and signing; `index.ts` talks to the database and
+the push service), and `supabase/reminders.sql` is the record of the tables and
+schedule. To change the function, edit it there and deploy it again with JWT
+verification off, since it checks sign-ins itself:
+
+```bash
+supabase functions deploy remind --project-ref rddznoqnnnqlkmkgiwuj --no-verify-jwt
+```
+
+If something stops arriving, **Settings → Reminders** shows when the last one
+got through or what Apple said about the last one that didn't, and the project's
+**Edge Functions → remind → Logs** shows each send. A new key pair (say the
+private half leaked) means a new public key in `index.html` (`VAPID`) and in
+`index.ts` (`VAPID_PUBLIC`), the new private half in the secret, a redeploy, a
+bump of `sw.js`, and **Turn off** then **Turn on reminders** on each phone.
 
 ## Clear cache
 

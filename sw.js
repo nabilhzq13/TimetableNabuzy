@@ -1,6 +1,6 @@
-/* Break — offline cache.
+/* Break — offline cache, and the reminders Supabase pushes.
    Bump CACHE when you change any file, so phones pick the new version up. */
-var CACHE = "break-v36";
+var CACHE = "break-v37";
 var FILES = [
   "./",
   "./index.html",
@@ -82,4 +82,36 @@ self.addEventListener("fetch", function (ev) {
       });
     })
   );
+});
+
+// Reminders, sent by Break's Supabase (supabase/functions/remind). Each one is
+// shown straight away, since iOS takes push away from a web app that gets one
+// without showing it.
+self.addEventListener("push", function (ev) {
+  var d = {};
+  try { d = ev.data ? ev.data.json() : {}; } catch (e) { d = { body: ev.data ? ev.data.text() : "" }; }
+  ev.waitUntil(self.registration.showNotification(d.title || "Break", {
+    body: d.body || "",
+    tag: d.tag || undefined,
+    icon: "icon-192.png",
+    data: { tab: d.tab === "solat" ? "solat" : "today" }
+  }));
+});
+
+// A tapped reminder opens Break on its tab: Solat for a prayer, Today for a
+// block. If Break is already open it switches there; if not, it opens on it.
+self.addEventListener("notificationclick", function (ev) {
+  var tab = ev.notification.data && ev.notification.data.tab || "today",
+      url = new URL("./?tab=" + tab, self.registration.scope).href;
+  ev.notification.close();
+  ev.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (list) {
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      if (c.url.indexOf(self.registration.scope) === 0 && "focus" in c) {
+        c.postMessage({ tab: tab });
+        return c.focus().catch(function () { return self.clients.openWindow(url); });
+      }
+    }
+    return self.clients.openWindow(url);
+  }));
 });
