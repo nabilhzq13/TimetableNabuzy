@@ -1,6 +1,6 @@
 /* Break — offline cache, and the reminders Supabase pushes.
    Bump CACHE when you change any file, so phones pick the new version up. */
-var CACHE = "break-v41";
+var CACHE = "break-v42";
 var FILES = [
   "./",
   "./index.html",
@@ -39,11 +39,13 @@ self.addEventListener("fetch", function (ev) {
   if (new URL(req.url).origin !== self.location.origin) return;
 
   // Navigations: the network first, so a new version shows up straight away.
+  // GitHub Pages lets the browser reuse its copy for ten minutes, so this asks
+  // the server every time (a quick "not modified" when nothing changed).
   // On a weak signal the cached copy opens after three seconds rather than
   // waiting on a connection that may never answer. Only a good answer is kept,
   // so an error page can never become the copy that opens offline.
   if (req.mode === "navigate") {
-    var net = fetch(req).then(function (res) {
+    var net = fetch(req.url, { cache: "no-cache", credentials: "same-origin" }).then(function (res) {
       if (res.ok) {
         var copy = res.clone();
         ev.waitUntil(caches.open(CACHE).then(function (c) { return c.put("./index.html", copy); }));
