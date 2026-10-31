@@ -834,14 +834,16 @@
     border-top:1px solid var(--line);background:none;font:inherit;font-size:var(--t-subhead);font-weight:var(--w-semibold);color:var(--tint-text);cursor:pointer}
   .due-more .chev{transition:transform var(--t-move) var(--ease-spring)}
   .due-more[aria-expanded="true"] .chev{transform:rotate(90deg)}
-  .due-empty{padding:var(--s5) var(--s4);text-align:center}
+  .due-empty{padding:var(--s4);text-align:center}
   .due-empty h2{margin:var(--s2) 0 var(--s1)}
   .due-empty p{margin:0 auto var(--s4);max-width:30ch;font-size:var(--t-subhead);color:var(--ink-2)}
   .due-empty .btns{justify-content:center}
-  .due-adds{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s2)}
-  .due-adds .btn{padding:0 14px}
-  .due-adds .btn i{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;color:#fff;background:hsl(var(--kh) 70% 50%)}
-  .due-adds .btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+  /* All three on one line: on a narrower phone the labels shrink a touch
+     rather than leave Quiz on a line of its own. */
+  .due-adds{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;container-type:inline-size}
+  .due-adds .btn{padding:0 12px;gap:6px;font-size:max(12px,min(var(--t-subhead),4.3cqi))}
+  .due-adds .btn i{width:18px;height:18px;border-radius:6px;display:grid;place-items:center;color:#fff;background:hsl(var(--kh) 70% 50%)}
+  .due-adds .btn svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
   /* What's next: the soonest exam, quiz or deadline, counting down. The bar
      fills over its last fortnight, so it shows how close it is at a glance. */
   .next-card{padding:var(--s4);overflow:hidden}
