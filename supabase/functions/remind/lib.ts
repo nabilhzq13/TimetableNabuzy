@@ -151,7 +151,10 @@ export const LATE = 30;
 
 // Everything that comes due in the `span` minutes up to and including `now`.
 // A run that comes a minute or two late still sends; index.ts makes sure
-// nothing goes twice. Anything already ticked is left alone.
+// nothing goes twice. Anything already ticked is left alone. Each kind has a
+// topic, so a phone that was offline gets only the latest of each; Apple reads
+// a topic as base64url, so its length is never one more than a multiple of
+// four (it refused "block").
 export function due(now: number, a: Account, span = 3): Note[] {
   const out: Note[] = [], p = a.prefs, today = Math.floor(now / 1440);
   const take = (n: Omit<Note, "at" | "ttl">, at: number | null, until: number) => {
@@ -166,7 +169,7 @@ export function due(now: number, a: Account, span = 3): Note[] {
       if ((a.done[dk] || []).indexOf(b.id) >= 0) continue;
       const start = day * 1440 + s, end = start + (+b.mins || 0), left = start - now;
       take({
-        key: `b:${dk}:${b.id}:${b.start}`, tab: "today", topic: "block",
+        key: `b:${dk}:${b.id}:${b.start}`, tab: "today", topic: "blocks",
         title: left > 0 ? `${b.activity} in ${left} min` : `${b.activity} starts now`,
         body: fmt(start) + "–" + fmt(end) + (b.details ? ". " + String(b.details).slice(0, 160) : ""),
       }, placed(p, start - p.blead, start, false), start + 10);
@@ -210,7 +213,7 @@ export function due(now: number, a: Account, span = 3): Note[] {
       // A week or three days out, it says which day.
       const on = lead >= 4320 ? `${dayText(at)}, ${fmt(at)}` : `at ${fmt(at)}`;
       take({
-        key: `d:${t.id}:${t.due}:${l.key}`, tab: "due", topic: "due",
+        key: `d:${t.id}:${t.due}:${l.key}`, tab: "due", topic: "deadline",
         title: test ? `${kind} ${l.when}: ${what}` : `${what} is due ${l.when}`,
         body: test ? `${course}Starts ${on}.` : `${course}Due ${on}.${lead >= 1440 ? " Still to hand in." : ""}`,
       }, early(p, at - lead, at), at);
