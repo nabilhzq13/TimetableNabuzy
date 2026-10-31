@@ -282,12 +282,13 @@ phone. Prayer times come when they start and blocks 10 minutes early; both can b
 changed there, along with which kinds you get. The choices sync, so every phone
 signed in to your account uses the same ones.
 
-**Quiet hours** run from 12am to 9:30am, as you've set them: the phone leaves
-the bed at midnight. Nothing comes in quiet hours. Something that starts after
-they end still gets its reminder, the minute they end. A deadline's reminder that
-falls in them comes when they end, if that's still before the deadline, so a
-week's notice of a 9am exam arrives at 9:30. The hour-before one for that exam,
-at 8am, would only come after it starts, so it doesn't come. Subuh (about 5:50am)
+**Quiet hours** run from 12am to 7am, as you've set them: the phone leaves the
+bed at midnight, and an early class still gets its reminder. Nothing comes in
+quiet hours. Something that starts after they end still gets its reminder, the
+minute they end. A deadline's reminder that falls in them comes when they end,
+if that's still before the deadline, so the day-before reminder for an
+assignment due at 2am arrives at 7am. The hour-before one for a 7am exam, at
+6am, would only come once it starts, so it doesn't come. Subuh (about 5:50am)
 stays quiet unless you switch on **Let Subuh through**. Setting both times the
 same means no quiet hours.
 
