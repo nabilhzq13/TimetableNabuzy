@@ -75,17 +75,21 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   glides in from the side of its tab, so you keep your bearings. Each tab
   keeps its place when you come back to it; tap the tab you're already on to go
   back to the top.
-- **Week** — the whole week as one timetable, the way a class timetable is
-  printed: a column a day, Monday first, with today's highlighted, and the hours
-  down the side from your earliest block to your latest. Each block sits at its
-  time, as tall as it runs, in its type's colour; classes are solid, so they stand
-  out. The day names stay at the top while you scroll, and a red line marks now in
-  today's column. Tap a block to open it in the editor, right there over Week. Tap
-  empty space to add one there: it starts on the half hour you tapped and runs an
-  hour, or up to the next block. **+** beside the title adds one on today. Below
-  the table, **Classes** lists every class with its days, times, kind and room, by
-  its first day of the week; tap one to change it, or **Add a class**. Last comes a
-  heatmap of the last eight weeks showing which days you actually kept to the plan.
+- **Week** — the whole week as one timetable: days across, Monday first, and the
+  hours down the side from your earliest block to your latest. A phone shows three
+  days at a time, each wide enough for whole words, and you swipe sideways for the
+  rest; a wider screen shows up to seven. It opens on today. Each block sits at
+  its time, as tall as it runs, in its type's colour, with its name and, where
+  there's room, when it runs; a block too short for both shows the whole name.
+  Classes are solid, so they stand out, and show their room. The day names stay at
+  the top while you scroll and slide along with the days; today's is highlighted,
+  and a red line marks now. Tap a block to open it in the editor, right there over
+  Week. Tap empty space to add one there: it starts on the half hour you tapped
+  and runs an hour, or up to the next block. **+** beside the title adds one on
+  today. Below the table, **Classes** lists every class with its days, times, kind
+  and room, by its first day of the week; tap one to change it, or **Add a
+  class**. Last comes a heatmap of the last eight weeks showing which days you
+  actually kept to the plan.
 - **Climb** — the gym's opening hours up top, with a live badge (open, midday
   break, or closed and when it opens next) and your own session times marked
   against each day. If you move a climbing block somewhere the gym is shut, it

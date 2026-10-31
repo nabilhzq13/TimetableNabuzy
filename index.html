@@ -450,35 +450,41 @@
     color:hsl(var(--h) var(--pill-ink-s) var(--pill-ink-l))}
 
   /* ---------------- week ---------------- */
-  /* The week as one timetable, the way a class timetable is printed: a column
-     a day, Monday first, the hours down the side, each block as tall as it
-     runs. The day names stay in view while the hours scroll under them. */
-  .tt{padding:0 4px var(--s3) 0}
-  /* On a phone the table reaches into the margins, so six letters fit across a day. */
-  @media (max-width:480px){.tt{margin-left:-8px;margin-right:-8px}}
-  .tt-head,.tt-body{display:grid;grid-template-columns:calc(var(--t-caption2) * 2.9) repeat(7,minmax(0,1fr))}
-  .tt-head{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;margin-right:-4px;padding:var(--s3) 4px var(--s2) 0;
+  /* The week as one timetable: days across, Monday first, the hours down the
+     side, each block as tall as it runs. A phone has room for three days at a
+     time, each wide enough for whole words; the rest are a swipe away, and a
+     wider screen shows more. The day names stay in view while the page
+     scrolls, and slide along with the days. */
+  .tt{padding:0 0 var(--s3)}
+  .tt-head,.tt-main{display:grid;grid-template-columns:38px minmax(0,1fr)}
+  .tt-head{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;padding-top:var(--s2);
     background:rgba(247,248,251,.97);border-radius:var(--radius) var(--radius) 0 0;border-bottom:1px solid var(--line)}
-  .tt-head b{justify-self:center;min-width:2.4em;padding:3px 0;border-radius:999px;text-align:center;
-    font-size:var(--t-caption);font-weight:var(--w-semibold);color:var(--ink-2)}
-  .tt-head b.today{background:var(--tint);color:#fff}
-  .tt-body{position:relative;margin-top:var(--s2)}
-  .tt-hours{position:relative}
-  .tt-hours span{position:absolute;right:4px;transform:translateY(-50%);white-space:nowrap;
+  .tt-hs{overflow:hidden}
+  .tt-hrow,.tt-cols{display:flex;width:max-content}
+  .tt-hrow b{flex:none;width:var(--cw);height:36px;display:grid;place-items:center;
+    font-size:var(--t-footnote);font-weight:var(--w-semibold);color:var(--ink-2)}
+  .tt-hrow b em{font-style:normal;padding:3px 11px;border-radius:999px}
+  .tt-hrow b.today em{background:var(--tint);color:#fff}
+  .tt-main{margin-top:var(--s2)}
+  .tt-gut{position:relative}
+  .tt-gut span{position:absolute;right:6px;transform:translateY(-50%);white-space:nowrap;
     font-size:var(--t-caption2);font-weight:var(--w-medium);color:var(--ink-2)}
-  .tt-col{position:relative;border-left:1px solid var(--line);cursor:pointer;
+  .tt-scroll{overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}
+  .tt-scroll::-webkit-scrollbar{display:none}
+  .tt-col{flex:none;position:relative;width:var(--cw);scroll-snap-align:start;border-left:1px solid var(--line);cursor:pointer;
     background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% var(--hr)}
-  .tt-col.today{background-color:rgba(11,102,228,.06)}
-  .tt-b{position:absolute;left:1px;right:0;z-index:1;display:block;margin:0;padding:2px 1px 2px 4px;overflow:hidden;
-    border:0;border-radius:6px;font:inherit;text-align:left;cursor:pointer;
-    background:hsl(var(--h) var(--pill-s) var(--pill-l));color:hsl(var(--h) var(--pill-ink-s) var(--pill-ink-l));
-    box-shadow:inset 3px 0 0 hsl(var(--h) var(--cat-s) var(--cat-l))}
-  .tt-b b,.tt-b i{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--n,1);overflow:hidden;
-    font-size:var(--t-caption2);line-height:1.2;letter-spacing:-.01em;-webkit-hyphens:auto;hyphens:auto;overflow-wrap:anywhere}
-  .tt-b i{font-style:normal;font-weight:var(--w-medium);opacity:.9}
+  .tt-col.today{background-color:rgba(11,102,228,.05)}
+  .tt-b{position:absolute;left:3px;right:3px;z-index:1;display:block;margin:0;padding:5px 7px;overflow:hidden;
+    border:0;border-radius:9px;font:inherit;text-align:left;cursor:pointer;
+    background:hsl(var(--h) 70% 88%);color:hsl(var(--h) 45% 22%)}
+  .tt-b b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--n,1);overflow:hidden;
+    font-size:var(--t-caption);font-weight:var(--w-semibold);line-height:1.22;-webkit-hyphens:auto;hyphens:auto;overflow-wrap:anywhere}
+  .tt-b i{display:block;margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-style:normal;
+    font-size:var(--t-caption2);font-weight:var(--w-medium);color:hsl(var(--h) 35% 32%)}
   /* Classes are what the week is built around, so they're solid, not pastel. */
-  .tt-b.cls{background:hsl(var(--h) 58% 47%);color:#fff;box-shadow:none;padding-left:3px}
-  .tt-b:active{filter:brightness(.94)}
+  .tt-b.cls{background:hsl(var(--h) 58% 47%);color:#fff}
+  .tt-b.cls i{color:rgba(255,255,255,.88)}
+  .tt-b:active{filter:brightness(.95)}
   /* Now, as a line across today's column, as in Calendar. */
   .tt-now{position:absolute;left:-1px;right:0;z-index:2;height:2px;margin-top:-1px;background:#ff2d55;pointer-events:none}
   .tt-now::before{content:"";position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:#ff2d55}
@@ -1151,11 +1157,13 @@
 
   <!-- WEEK -->
   <section id="v-week" class="hide">
-    <!-- The week as one timetable: a column a day, the hours down the side. -->
-    <section class="material tt" aria-labelledby="tt-h">
+    <!-- The week as one timetable: days across, the hours down the side. On a
+         phone three days fit at a time; swipe sideways for the rest. -->
+    <section class="material tt" id="tt" aria-labelledby="tt-h">
       <h2 class="sr" id="tt-h">This week's timetable</h2>
-      <div class="tt-head" id="tt-head" aria-hidden="true"></div>
-      <div class="tt-body" id="tt-body"></div>
+      <div class="tt-head" aria-hidden="true"><span></span><div class="tt-hs" id="tt-hs"><div class="tt-hrow" id="tt-hrow"></div></div></div>
+      <div class="tt-main"><div class="tt-gut" id="tt-gut" aria-hidden="true"></div>
+        <div class="tt-scroll" id="tt-scroll"><div class="tt-cols" id="tt-cols"></div></div></div>
     </section>
     <section class="material seccard" id="w-classes" aria-labelledby="wc-h">
       <div class="railhead"><p class="label" id="wc-h">Classes</p><span class="count" id="wc-count"></span></div>
@@ -2052,52 +2060,72 @@ function celebrate(){
 }
 
 // ---------- week ----------
-// The week as one timetable: a column a day, from the hour of the earliest
-// block to the hour after the latest. A tap on a block opens it in the editor,
-// over Week; a tap on empty space adds one there. + adds one on today.
-var weekDay=dayIdx(new Date());
+// The week as one timetable: days across, from the hour of the earliest block
+// down to the hour after the latest. Three days fit on a phone, more on a
+// wider screen, and the rest are a swipe away. A tap on a block opens it in the
+// editor, over Week; a tap on empty space adds one there. + adds one on today.
+// ttFirst: the day at the left edge, kept while you're away; today to begin with.
+var weekDay=dayIdx(new Date()),ttFirst=null;
 function renderWeek(){
   weekDay=dayIdx(new Date());
   var from=1440,to=0;
   blocks.forEach(function(b){var s=toMin(b.start);from=Math.min(from,s);to=Math.max(to,s+b.mins);});
   if(from>=to){from=480;to=1080;}
   from=Math.floor(from/60)*60;to=Math.ceil(to/60)*60;
-  // An hour is a little over three lines of text tall, so it grows with Larger Text.
-  var rem=parseFloat(getComputedStyle(document.documentElement).fontSize)||16,hr=Math.round(rem*3.3),lh=rem*.65*1.2;
-  var head=el("tt-head"),body=el("tt-body");
-  head.innerHTML="<span></span>"+DAYS.map(function(n,i){return "<b"+(i===weekDay?' class="today"':"")+">"+n+"</b>";}).join("");
-  body.innerHTML="";body.style.height=(to-from)/60*hr+"px";body.style.setProperty("--hr",hr+"px");
-  body._r={from:from,to:to,hr:hr};
-  var hours=document.createElement("div");hours.className="tt-hours";hours.setAttribute("aria-hidden","true");
-  for(var h=from;h<to;h+=60){var l=document.createElement("span");l.style.top=(h-from)/60*hr+"px";l.textContent=fmt(h);hours.appendChild(l);}
-  body.appendChild(hours);
+  // An hour is about four lines of text tall, so it grows with Larger Text.
+  var rem=parseFloat(getComputedStyle(document.documentElement).fontSize)||16,hr=Math.round(rem*3.8),lh=rem*.71*1.22,lt=rem*.65*1.3;
+  var sc=el("tt-scroll"),w=sc.clientWidth||300,fit=Math.max(3,Math.min(7,Math.floor(w/104))),cw=w/fit;
+  el("tt").style.setProperty("--cw",cw+"px");
+  // To know how many lines a name wants across a block's width.
+  var pen=document.createElement("canvas").getContext("2d"),inner=cw-20;
+  pen.font="600 "+rem*.71+"px "+getComputedStyle(document.body).fontFamily;
+  el("tt-hrow").innerHTML=DAYS.map(function(n,i){return "<b"+(i===weekDay?' class="today"':"")+"><em>"+n+"</em></b>";}).join("");
+  var gut=el("tt-gut");gut.innerHTML="";gut.style.height=(to-from)/60*hr+"px";
+  for(var h=from;h<to;h+=60){var l=document.createElement("span");l.style.top=(h-from)/60*hr+"px";l.textContent=fmt(h);gut.appendChild(l);}
+  var cols=el("tt-cols");cols.innerHTML="";cols.style.setProperty("--hr",hr+"px");cols._r={from:from,to:to,hr:hr};
   DAYS.forEach(function(n,d){
-    var col=document.createElement("div");col.className="tt-col"+(d===weekDay?" today":"");
+    var col=document.createElement("div");col.className="tt-col"+(d===weekDay?" today":"");col.style.height=(to-from)/60*hr+"px";
     col.setAttribute("role","group");col.setAttribute("aria-label",LONG[d]);
     forDay(d).forEach(function(b){
-      var s=toMin(b.start),px=b.mins/60*hr-2,x=document.createElement("button");x.type="button";x.className="tt-b"+(b.type==="class"?" cls":"");
-      x.style.top=(s-from)/60*hr+1+"px";x.style.height=px+"px";x.style.setProperty("--h",typeOf(b.type).hue);
+      var s=toMin(b.start),e=s+b.mins,px=b.mins/60*hr-3,x=document.createElement("button");x.type="button";x.className="tt-b"+(b.type==="class"?" cls":"");
+      x.style.top=(s-from)/60*hr+1.5+"px";x.style.height=px+"px";x.style.setProperty("--h",typeOf(b.type).hue);
       x.setAttribute("aria-haspopup","dialog");x.setAttribute("data-f","k"+b.id);
-      x.setAttribute("aria-label",LONG[d]+", "+fmt(s)+" to "+fmt(s+b.mins)+", "+b.activity+(b.type==="class"?", "+kindLine(b):""));
-      // As many lines of its name as it has room for; a class keeps one for its room.
-      var lines=Math.max(1,Math.floor((px-4)/lh)),room=b.type==="class"&&b.room&&lines>1;
-      x.innerHTML="<b></b>"+(room?"<i></i>":"");
-      x.firstChild.textContent=b.activity;x.firstChild.style.setProperty("--n",room?lines-1:lines);
-      if(room)x.lastChild.textContent=b.room;
+      x.setAttribute("aria-label",LONG[d]+", "+fmt(s)+" to "+fmt(e)+", "+b.activity+(b.type==="class"?", "+kindLine(b):""));
+      // Its name first, then (for a class) where, then when it runs. A line
+      // under the name only goes in while the name keeps up to two lines of its
+      // own, so a short block shows the whole of its name before its time.
+      var meta=(b.type==="class"&&b.room?[b.room]:[]).concat([spanShort(s,e)]);
+      var want=Math.min(2,Math.max(1,Math.ceil(pen.measureText(b.activity).width/inner)));
+      while(meta.length&&(px<36||Math.floor((px-10-meta.length*lt)/lh)<want))meta.pop();
+      var lines=Math.max(1,Math.floor((px-10-meta.length*lt)/lh));
+      x.innerHTML="<b></b>"+meta.map(function(){return "<i></i>";}).join("");
+      x.firstChild.textContent=b.activity;x.firstChild.style.setProperty("--n",lines);
+      meta.forEach(function(t,k){x.children[k+1].textContent=t;});
       x.addEventListener("click",function(){openEditor(b);});
       col.appendChild(x);
     });
     if(d===weekDay){var now=document.createElement("i");now.className="tt-now";now.id="tt-now";col.appendChild(now);}
     col.addEventListener("click",function(e){if(e.target===col)slotAt(d,from+e.offsetY/hr*60);});
-    body.appendChild(col);
+    cols.appendChild(col);
   });
+  if(ttFirst===null)ttFirst=weekDay;
+  sc.scrollLeft=Math.min(ttFirst*cw,sc.scrollWidth-sc.clientWidth);
+  el("tt-hs").scrollLeft=sc.scrollLeft;
   placeNow();
   renderClasses();
   renderHeat();
 }
+// "10:30–12:30pm": a span for a narrow space, saying am or pm once when both ends share it.
+function spanShort(s,e){var a=fmt(s),b=fmt(e);return (a.slice(-2)===b.slice(-2)?a.slice(0,-2):a)+"–"+b;}
+// The day names slide along with the days, and the day at the left edge is
+// kept for next time, and for a turn of the phone.
+el("tt-scroll").addEventListener("scroll",function(){var sc=this,cw=parseFloat(el("tt").style.getPropertyValue("--cw"))||1;
+  el("tt-hs").scrollLeft=sc.scrollLeft;ttFirst=Math.round(sc.scrollLeft/cw);},{passive:true});
+var ttFit=0;
+window.addEventListener("resize",function(){if(view!=="week")return;cancelAnimationFrame(ttFit);ttFit=requestAnimationFrame(function(){keepFocus(renderWeek);});});
 // Now's line on today's column, moved along by the half-minute refresh.
 function placeNow(){
-  var n=el("tt-now"),r=el("tt-body")._r,m=minsNow();if(!n||!r)return;
+  var n=el("tt-now"),r=el("tt-cols")._r,m=minsNow();if(!n||!r)return;
   n.classList.toggle("hide",m<r.from||m>r.to);n.style.top=(m-r.from)/60*r.hr+"px";
 }
 // Empty space, tapped: the editor, set to start there on the half hour and run
