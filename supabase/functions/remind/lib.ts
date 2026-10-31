@@ -126,7 +126,13 @@ export function timesFor(years: Years, day: number): number[] | null {
 }
 
 // ---------- what's due ----------
-export type Block = { id: string; activity: string; start: string; mins: number; days: number[]; details?: string };
+// A class is a block whose type is "class", with a room and a kind if it has them.
+export type Block = {
+  id: string; activity: string; type?: string; start: string; mins: number; days: number[]; details?: string;
+  room?: string; lesson?: string;
+};
+// A class's kind, the way Break says it.
+const LESSONS: Record<string, string> = { lecture: "Lecture", tutorial: "Tutorial", lab: "Lab" };
 // An assignment, exam or quiz from Due; done is when it was ticked off, or 0.
 export type Task = { id: string; kind?: string; title?: string; course?: string; due?: string; done?: number };
 export type Account = {
@@ -168,10 +174,13 @@ export function due(now: number, a: Account, span = 3): Note[] {
       if (s === null || !Array.isArray(b.days) || b.days.indexOf(weekday(day)) < 0) continue;
       if ((a.done[dk] || []).indexOf(b.id) >= 0) continue;
       const start = day * 1440 + s, end = start + (+b.mins || 0), left = start - now;
+      // A class says what kind it is and where: "8am–10am · Lab · Makmal 2".
+      const where = b.type === "class"
+        ? [LESSONS[String(b.lesson)] || "Class", b.room ? String(b.room).slice(0, 40) : ""].filter(Boolean).join(" · ") : "";
       take({
         key: `b:${dk}:${b.id}:${b.start}`, tab: "today", topic: "blocks",
         title: left > 0 ? `${b.activity} in ${left} min` : `${b.activity} starts now`,
-        body: fmt(start) + "–" + fmt(end) + (b.details ? ". " + String(b.details).slice(0, 160) : ""),
+        body: fmt(start) + "–" + fmt(end) + (where ? " · " + where : "") + (b.details ? ". " + String(b.details).slice(0, 160) : ""),
       }, placed(p, start - p.blead, start, false), start + 10);
     }
     const t = a.times(day);

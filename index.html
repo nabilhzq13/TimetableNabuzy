@@ -103,7 +103,7 @@
 
     /* Category colours: one hue each, a 3px edge on rows and a pill in lists. */
     --h-study:266; --h-work:172; --h-move:138; --h-rest:198;
-    --h-social:44; --h-chores:352; --h-travel:24;
+    --h-social:44; --h-chores:352; --h-travel:24; --h-class:226;
     --cat-s:62%; --cat-l:56%;
     --pill-s:64%; --pill-l:84%; --pill-ink-s:42%; --pill-ink-l:24%;
 
@@ -338,6 +338,10 @@
      check and strikes the title, after 21st.dev's Task Checkbox. */
   .railhead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s2);padding:var(--s4) var(--s4) var(--s1)}
   .railhead .count{font-size:var(--t-footnote);font-weight:var(--w-medium);color:var(--ink-2);white-space:nowrap}
+  /* Week's classes: each with its days, times, kind and room, a tap from its editor. */
+  .clist .item{grid-template-columns:4px minmax(0,1fr)}
+  .wc-empty{margin:0;padding:var(--s1) var(--s4) 0;font-size:var(--t-subhead);color:var(--ink-2)}
+  .wc-add{padding:var(--s3) var(--s4) var(--s4)}
   .stop{
     --ny:calc(12px + .62rem);   /* the stop's centre, level with the title's first line */
     --rail:rgba(15,20,40,.13);
@@ -552,6 +556,9 @@
     color:var(--ink-2);cursor:pointer}
   body.big-type .dayrow{grid-template-columns:repeat(4,minmax(0,1fr))}
   .dayrow button[aria-pressed="true"]{background:var(--tint);border-color:var(--tint);color:#fff}
+  /* A class's kind: one of three, or none. */
+  .dayrow.lessons{grid-template-columns:repeat(3,minmax(0,1fr))}
+  body.big-type .dayrow.lessons{grid-template-columns:1fr}
   .note{margin:var(--s1) 0 0;font-size:var(--t-caption);color:var(--ink-2)}
   .err{margin:var(--s1) 0 0;font-size:var(--t-footnote);font-weight:var(--w-semibold);color:var(--flag-text)}
   /* A clash lists what is in the way and what making room does to each.
@@ -792,6 +799,7 @@
   .seg-sheet{grid-template-columns:repeat(3,minmax(0,1fr));background:rgba(15,20,40,.06);margin:0}
   .seg-sheet .seg-thumb{background:#fff;box-shadow:0 3px 10px -3px rgba(8,10,40,.3)}
   .seg-sheet>button[aria-pressed="true"]{color:var(--ink)}
+  #e-kind{grid-template-columns:repeat(2,minmax(0,1fr))}
 
   /* ---------------- due: assignments, exams and quizzes ---------------- */
   /* Each kind wears its own colour and shape: a page for an assignment, a cap
@@ -1124,6 +1132,12 @@
       <p class="w-gym" id="w-gym"></p>
       <div id="w-list"></div>
     </section>
+    <section class="material seccard" id="w-classes" aria-labelledby="wc-h">
+      <div class="railhead"><p class="label" id="wc-h">Classes</p><span class="count" id="wc-count"></span></div>
+      <p class="wc-empty" id="wc-empty">Add each class once, with its days, time and room. It shows on Today and Week like any block.</p>
+      <div class="clist" id="wc-list"></div>
+      <div class="btns wc-add"><button type="button" class="btn" id="wc-add" aria-haspopup="dialog">Add a class</button></div>
+    </section>
     <section class="material heat-wrap" aria-labelledby="heat-h">
       <p class="label" id="heat-h">Last 8 weeks</p>
       <h2 id="heat-sum" style="margin-top:4px">—</h2>
@@ -1355,8 +1369,21 @@
       <button type="button" class="sheet-x" id="e-x" aria-label="Cancel"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4Z"/></svg></i></button>
     </div>
     <form id="e-form">
-      <div><label for="e-activity">Activity</label><input type="text" id="e-activity" required maxlength="70"></div>
-      <div><label for="e-type">Type</label><select id="e-type"></select></div>
+      <!-- A block, or a class: a class has a kind and a room in place of a type. -->
+      <div class="seg seg-sheet" id="e-kind" role="group" aria-label="Adding">
+        <span class="seg-thumb" aria-hidden="true"></span>
+        <button type="button" data-k="block" aria-pressed="true">Block</button>
+        <button type="button" data-k="class" aria-pressed="false">Class</button>
+      </div>
+      <div><label for="e-activity" id="e-activity-l">Activity</label><input type="text" id="e-activity" required maxlength="70"></div>
+      <div id="e-type-row"><label for="e-type">Type</label><select id="e-type"></select></div>
+      <div class="hide" id="e-lesson-row"><label id="e-lesson-l">Kind</label>
+        <div class="dayrow lessons" id="e-lesson" role="group" aria-labelledby="e-lesson-l">
+          <button type="button" data-l="lecture" aria-pressed="false">Lecture</button>
+          <button type="button" data-l="tutorial" aria-pressed="false">Tutorial</button>
+          <button type="button" data-l="lab" aria-pressed="false">Lab</button>
+        </div></div>
+      <div class="hide" id="e-room-row"><label for="e-room">Room</label><input type="text" id="e-room" maxlength="40" autocomplete="off" placeholder="Optional"></div>
       <div><div class="two">
         <div><label for="e-start">Start</label><input type="time" id="e-start" value="09:00" step="300" required></div>
         <div><label for="e-stop">Stop</label><input type="time" id="e-stop" value="10:00" step="300" required></div>
@@ -1493,7 +1520,7 @@
 
     <section class="set-card" aria-labelledby="reset-h">
       <h3 id="reset-h">Schedule</h3>
-      <p class="note" style="margin:4px 0 var(--s3)">Put the original plan back. Your ticks and climbing log stay.</p>
+      <p class="note" style="margin:4px 0 var(--s3)">Put the original plan back, in place of your blocks and classes. Your ticks and climbing log stay.</p>
       <div class="btns"><button type="button" class="btn danger" id="x-reset">Reset schedule</button></div>
       <div class="confirm hide" id="x-confirm">
         <p>Replace your schedule with the original plan?</p>
@@ -1522,9 +1549,12 @@ var TYPES=[
   {id:"social",name:"Social",hue:"var(--h-social)"},
   {id:"chores",name:"Errands",hue:"var(--h-chores)"},
   {id:"travel",name:"Travel",hue:"var(--h-travel)"},
-  {id:"work",name:"Work",hue:"var(--h-work)"}
+  {id:"work",name:"Work",hue:"var(--h-work)"},
+  {id:"class",name:"Class",hue:"var(--h-class)"}
 ];
-var HUES={study:266,work:172,move:138,rest:198,social:44,chores:352,travel:24};
+var HUES={study:266,work:172,move:138,rest:198,social:44,chores:352,travel:24,class:226};
+// A class's kind, said under its name with its room.
+var LESSONS={lecture:"Lecture",tutorial:"Tutorial",lab:"Lab"};
 
 var DEFAULTS=[
  {id:"t01",activity:"Wake up",type:"rest",start:"09:30",mins:30,days:[0,1,2,3,4,5,6],details:"Water, open the curtains, make your bed. No phone for the first 30 minutes."},
@@ -1580,6 +1610,8 @@ try{localStorage.removeItem("sb.lastBackup");localStorage.removeItem("sb.backupS
 // ---------- helpers ----------
 function el(id){return document.getElementById(id);}
 function typeOf(id){for(var i=0;i<TYPES.length;i++)if(TYPES[i].id===id)return TYPES[i];return TYPES[0];}
+// Under a block's name: its type, or for a class its kind and room.
+function kindLine(b){return b.type!=="class"?typeOf(b.type).name:[LESSONS[b.lesson]||"Class",b.room].filter(Boolean).join(" · ");}
 function toMin(s){var p=String(s||"09:00").split(":"),h=+p[0],m=+p[1];if(isNaN(h))h=9;if(isNaN(m))m=0;return Math.max(0,Math.min(1439,h*60+m));}
 function fmt(m){var h=Math.floor(m/60)%24,mm=m%60,ap=h<12?"am":"pm",h12=h%12||12;return h12+(mm?":"+(mm<10?"0"+mm:mm):"")+ap;}
 function dayIdx(d){return (d.getDay()+6)%7;}
@@ -1809,9 +1841,9 @@ function rowNode(b,k,isNow,m,i,at,n){
   row.querySelector(".when").textContent=fmt(s);
   row.querySelector(".ttl>span").textContent=b.activity;
   var meta=row.querySelector(".meta");
-  if(isNow){meta.textContent=t.name+" · until "+fmt(e)+" · ";
+  if(isNow){meta.textContent=kindLine(b)+" · until "+fmt(e)+" · ";
     var l=document.createElement("b");l.className="left";l.textContent=left((e-m)*60000)+" left";meta.appendChild(l);}
-  else meta.textContent=t.name+" · "+(host&&!at.early?fmt(s)+"–"+fmt(e):dur(b.mins));
+  else meta.textContent=kindLine(b)+" · "+(host&&!at.early?fmt(s)+"–"+fmt(e):dur(b.mins));
   if(host){row.style.setProperty("--f",at.f.toFixed(4));
     var bead=row.querySelector(".bead");bead.firstChild.textContent=fmt(Math.floor(m));
     // In step with the clock, so the halo doesn't restart at every refresh.
@@ -1898,7 +1930,7 @@ function renderNow(st,cn,m){
   card.classList.toggle("idle",!cn.cur);
   el("now-label").textContent=cn.cur?"Now":"Next up";
   el("now-title").textContent=show.activity;
-  el("now-when").textContent=cn.cur?fmt(s)+" – "+fmt(e):"at "+fmt(s)+" · "+dur(show.mins);
+  el("now-when").textContent=(cn.cur?fmt(s)+" – "+fmt(e):"at "+fmt(s)+" · "+dur(show.mins))+(show.type==="class"?" · "+kindLine(show):"");
   // For a climbing block, what matters is whether the gym is open when you
   // get there: right now if it's running, at its start time if it's next.
   var gw=el("now-gym"),gp=el("now-gym-pill");
@@ -2023,10 +2055,26 @@ function renderWeek(){
     r.style.setProperty("--h",t.hue);r.style.setProperty("--d",i*45+"ms");r.style.setProperty("--d2",i*45+100+"ms");
     r.innerHTML='<span class="when"></span><span class="line" aria-hidden="true"><i class="node"></i></span><span class="body"><span class="ttl"><span></span></span><span class="meta"></span></span>';
     r.querySelector(".when").textContent=fmt(s);r.querySelector(".ttl>span").textContent=b.activity;
-    r.querySelector(".meta").textContent=t.name+" · "+fmt(s)+"–"+fmt(s+b.mins);
+    r.querySelector(".meta").textContent=kindLine(b)+" · "+fmt(s)+"–"+fmt(s+b.mins);
     wl.appendChild(r);
   });
+  renderClasses();
   renderHeat();
+}
+// Week's class timetable: every class, by its first day and then its time.
+// A tap opens it in the editor; Add a class starts one on the day you're on.
+function renderClasses(){
+  var list=blocks.filter(function(b){return b.type==="class";}).sort(function(a,b){
+    return Math.min.apply(null,a.days)-Math.min.apply(null,b.days)||toMin(a.start)-toMin(b.start);});
+  var box=el("wc-list");box.innerHTML="";
+  el("wc-count").textContent=list.length?list.length+(list.length===1?" class":" classes"):"";
+  el("wc-empty").classList.toggle("hide",!!list.length);
+  list.forEach(function(b){var s=toMin(b.start),r=document.createElement("button");r.type="button";r.className="item";
+    r.style.setProperty("--h",typeOf("class").hue);r.setAttribute("aria-haspopup","dialog");r.setAttribute("data-f","wc"+b.id);
+    r.innerHTML='<span class="cat"></span><span class="body"><span class="ttl"></span><span class="meta"></span></span>';
+    r.querySelector(".ttl").textContent=b.activity;
+    r.querySelector(".meta").textContent=dayList(b.days)+" · "+span(s,s+b.mins)+" · "+kindLine(b);
+    r.addEventListener("click",function(){openEditor(b);});box.appendChild(r);});
 }
 function renderHeat(){
   var g=el("heat");g.innerHTML="";
@@ -2783,13 +2831,36 @@ el("sz-get").addEventListener("click",function(){
 });
 
 // ---------- schedule ----------
-var picked=[],editing=null;
-(function(){var s=el("e-type");TYPES.forEach(function(t){var o=document.createElement("option");o.value=t.id;o.textContent=t.name;s.appendChild(o);});
+// eKind: whether the editor holds a block or a class. A new one starts as
+// whatever you added last, so a run of classes goes in one after another.
+var picked=[],editing=null,eKind="block",lastKind="block",lesson="";
+(function(){var s=el("e-type");TYPES.forEach(function(t){if(t.id==="class")return;var o=document.createElement("option");o.value=t.id;o.textContent=t.name;s.appendChild(o);});
   var box=el("e-days");DAYS.forEach(function(n,i){var b=document.createElement("button");b.type="button";b.textContent=n;b.setAttribute("aria-pressed","false");
     b.addEventListener("click",function(){var at=picked.indexOf(i);if(at===-1)picked.push(i);else picked.splice(at,1);
       b.setAttribute("aria-pressed",at===-1?"true":"false");if(picked.length)showErr("");checkClash();});box.appendChild(b);});})();
 function setDays(d){picked=d.slice();var b=el("e-days").children;for(var i=0;i<b.length;i++)b[i].setAttribute("aria-pressed",d.indexOf(i)!==-1?"true":"false");}
 function showErr(m){var n=el("e-err");n.textContent=m;n.classList.toggle("hide",!m);}
+function noun(){return eKind==="class"?"class":"block";}
+// A class is named for itself, and takes a kind and a room in place of a type.
+function setEKind(k){
+  eKind=k==="class"?"class":"block";var c=eKind==="class";
+  Array.prototype.forEach.call(el("e-kind").querySelectorAll("button"),function(b){b.setAttribute("aria-pressed",b.getAttribute("data-k")===eKind?"true":"false");});
+  placeThumb(el("e-kind"));
+  el("e-type-row").classList.toggle("hide",c);el("e-lesson-row").classList.toggle("hide",!c);el("e-room-row").classList.toggle("hide",!c);
+  el("e-activity-l").textContent=c?"Class":"Activity";
+  el("e-activity").placeholder=c?"e.g. CSC584 Database Systems":"";
+  el("e-details").placeholder=c?"Lecturer, group, anything else":"";
+  if(!el("e-type").value)el("e-type").value="study";
+  el("e-title").textContent=(editing?"Edit ":"Add a ")+noun();
+  el("e-delete").textContent="Delete "+noun();
+  checkClash();
+}
+function setLesson(l){lesson=LESSONS[l]?l:"";
+  Array.prototype.forEach.call(el("e-lesson").querySelectorAll("button"),function(b){b.setAttribute("aria-pressed",b.getAttribute("data-l")===lesson?"true":"false");});}
+Array.prototype.forEach.call(el("e-kind").querySelectorAll("button"),function(b){b.addEventListener("click",function(){setEKind(b.getAttribute("data-k"));});});
+// Tapping the kind that's on takes it off: a class needn't have one.
+Array.prototype.forEach.call(el("e-lesson").querySelectorAll("button"),function(b){b.addEventListener("click",function(){
+  var l=b.getAttribute("data-l");setLesson(lesson===l?"":l);});});
 
 // ---------- clashes ----------
 // Two blocks clash when they share a day and their times overlap. Ending
@@ -2864,12 +2935,12 @@ var clashSig="";
 function checkClash(){
   var box=el("e-clash"),fix=el("e-clash-fix");
   var start=el("e-start").value||"09:00",mins=formMins(),ok=lenOk(mins);
-  el("e-len").textContent=!ok?(mins<5?"Make it at least 5 minutes.":"A block can run for up to 12 hours."):
+  el("e-len").textContent=!ok?(mins<5?"Make it at least 5 minutes.":"A "+noun()+" can run for up to 12 hours."):
     lenText(mins)+(toMin(start)+mins>1440?", ending the next morning":"");
   el("e-len").classList.toggle("err",!ok);
-  if(!ok){box.classList.add("hide");clashSig="";el("e-save").textContent=editing?"Save changes":"Add block";return [];}
+  if(!ok){box.classList.add("hide");clashSig="";el("e-save").textContent=editing?"Save changes":"Add "+noun();return [];}
   var plan=picked.length?roomPlan(start,mins,picked,editing):[];
-  el("e-save").textContent=plan.length?(editing?"Save and make room":"Add and make room"):(editing?"Save changes":"Add block");
+  el("e-save").textContent=plan.length?(editing?"Save and make room":"Add and make room"):(editing?"Save changes":"Add "+noun());
   if(!plan.length){box.classList.add("hide");clashSig="";return plan;}
   el("e-clash-lead").textContent="Overlaps "+plan.length+(plan.length===1?" block":" blocks");
   var lines=plan.slice(0,4).map(function(p){return "<li>"+roomLine(p)+"</li>";});
@@ -2888,49 +2959,55 @@ function checkClash(){
 }
 ["e-start","e-stop"].forEach(function(id){el(id).addEventListener("input",checkClash);el(id).addEventListener("change",checkClash);});
 
-function resetEdit(){editing=null;el("e-title").textContent="Add a block";
+function resetEdit(kind){editing=null;
   el("e-activity").value="";el("e-type").value="study";el("e-start").value="09:00";el("e-stop").value="10:00";el("e-details").value="";
-  setDays([]);el("e-delete").classList.add("hide");showErr("");editLen=60;
-  checkClash();}
-function startEdit(b){editing=b.id;el("e-title").textContent="Edit block";
-  el("e-activity").value=b.activity;el("e-type").value=b.type;el("e-start").value=b.start;
+  el("e-room").value="";setLesson("");setDays([]);el("e-delete").classList.add("hide");showErr("");editLen=60;
+  setEKind(kind||lastKind);}
+function startEdit(b){editing=b.id;
+  el("e-activity").value=b.activity;el("e-type").value=b.type==="class"?"study":b.type;el("e-start").value=b.start;
   el("e-stop").value=hhmm((toMin(b.start)+b.mins)%1440);editLen=b.mins;
-  el("e-details").value=b.details||"";setDays(b.days);el("e-delete").classList.remove("hide");showErr("");checkClash();}
+  el("e-details").value=b.details||"";el("e-room").value=b.room||"";setLesson(b.lesson);
+  setDays(b.days);el("e-delete").classList.remove("hide");showErr("");setEKind(b.type);}
 // The editor is a sheet over whatever you were looking at, so a long swipe
 // left on Today edits that block without leaving Today. Closing it, however
 // it's closed, clears the form for next time.
-function openEditor(b){if(b)startEdit(b);else resetEdit();
-  var d=el("e-sheet");sheetOpen(d);d.querySelector(".sheet-in").scrollTop=0;if(b)announce("Editing "+b.activity);}
+function openEditor(b,kind){if(b)startEdit(b);else resetEdit(kind);
+  var d=el("e-sheet");sheetOpen(d);placeThumb(el("e-kind"));d.querySelector(".sheet-in").scrollTop=0;if(b)announce("Editing "+b.activity);}
 function closeEditor(){sheetShut(el("e-sheet"));}
-el("e-sheet").addEventListener("close",resetEdit);
+el("e-sheet").addEventListener("close",function(){resetEdit();});
 el("e-sheet").addEventListener("click",function(e){if(e.target===this)closeEditor();});
 el("e-x").addEventListener("click",closeEditor);
 // Week's +: a new block, on the day you're looking at.
 el("e-add").addEventListener("click",function(){openEditor(null);setDays([weekDay]);checkClash();});
+// Week's Add a class: a new class, on the day you're looking at.
+el("wc-add").addEventListener("click",function(){openEditor(null,"class");setDays([weekDay]);checkClash();});
 // Everything drawn from the blocks, redrawn when the editor changes them.
 function blocksChanged(){renderToday();if(view==="week")keepFocus(renderWeek);}
 el("e-form").addEventListener("submit",function(e){e.preventDefault();
-  if(!picked.length){showErr("Pick at least one day for this block.");return;}
+  if(!picked.length){showErr("Pick at least one day for this "+noun()+".");return;}
   if(!lenOk(formMins())){el("e-stop").focus();return;}
-  var d={id:editing||newId(),activity:el("e-activity").value.trim()||"Untitled",type:el("e-type").value,start:el("e-start").value||"09:00",
+  var c=eKind==="class",N=c?"Class":"Block";
+  var d={id:editing||newId(),activity:el("e-activity").value.trim()||"Untitled",type:c?"class":el("e-type").value||"study",start:el("e-start").value||"09:00",
     mins:formMins(),details:el("e-details").value.trim(),days:picked.slice().sort(function(a,b){return a-b;})};
+  // A class keeps its room and its kind too, when it has them.
+  if(c){var room=el("e-room").value.trim().slice(0,40);if(room)d.room=room;if(lesson)d.lesson=lesson;}
   var plan=roomPlan(d.start,d.mins,d.days,editing),before=blocks.slice();
   applyRoom(plan);
-  if(editing)blocks=blocks.map(function(b){return b.id===editing?d:b;});else blocks.push(d);
+  if(editing)blocks=blocks.map(function(b){return b.id===editing?d:b;});else{blocks.push(d);lastKind=eKind;}
   save(K.blocks,blocks);var was=editing;closeEditor();blocksChanged();
-  if(!plan.length){toast(was?"Block updated":"Block added");return;}
+  if(!plan.length){toast(N+(was?" updated":" added"));return;}
   var n=plan.length+(plan.length===1?" block":" blocks");
-  announce((was?"Block updated. ":"Block added. ")+n+" changed to make room.");
+  announce(N+(was?" updated. ":" added. ")+n+" changed to make room.");
   toast((was?"Saved":"Added")+" · "+n+" changed",function(){
     blocks=before;save(K.blocks,blocks);
     blocksChanged();announce("Undone. The schedule is back as it was.");});});
 // Delete goes straight through, with an Undo rather than an "Are you sure?".
 el("e-delete").addEventListener("click",function(){if(!editing)return;
-  var id=editing,gone=blocks.filter(function(b){return b.id===id;})[0];
+  var id=editing,gone=blocks.filter(function(b){return b.id===id;})[0],N=gone&&gone.type==="class"?"Class":"Block";
   blocks=blocks.filter(function(b){return b.id!==id;});save(K.blocks,blocks);closeEditor();blocksChanged();
-  announce("Block deleted");
-  toast("Block deleted",function(){if(gone&&!blocks.some(function(b){return b.id===id;})){blocks=blocks.concat([gone]);save(K.blocks,blocks);}
-    blocksChanged();announce("Block back");});});
+  announce(N+" deleted");
+  toast(N+" deleted",function(){if(gone&&!blocks.some(function(b){return b.id===id;})){blocks=blocks.concat([gone]);save(K.blocks,blocks);}
+    blocksChanged();announce(N+" back");});});
 
 // ---------- free time ----------
 // Your day runs from 9:30am, when you wake, to midnight, when the phone leaves
@@ -2957,15 +3034,16 @@ function ideaSpan(g){
 }
 // Up to two blocks you've had at that time before: the original plan for that
 // day first, then your other days, nearest in time first. Never a prayer,
-// which lives in Solat, and never climbing, which you plan around the gym. Each
-// keeps its own length and, where it fits, its own time.
+// which lives in Solat, never climbing, which you plan around the gym, and
+// never a class, which keeps its own times. Each keeps its own length and,
+// where it fits, its own time.
 function ideasFor(g){
   var w=ideaSpan(g),out=[],have={},seen={};
   if(!w)return out;
   forDay(g.day).forEach(function(b){have[b.id]=1;seen[b.activity.trim().toLowerCase()]=1;});
   function offer(b){
     var k=b.activity.trim().toLowerCase(),bs=toMin(b.start);
-    if(out.length>=2||have[b.id]||seen[k]||PRAYER.test(k)||CLIMB.test(k)||!(bs<w.e&&w.s<bs+b.mins))return;
+    if(out.length>=2||have[b.id]||seen[k]||b.type==="class"||PRAYER.test(k)||CLIMB.test(k)||!(bs<w.e&&w.s<bs+b.mins))return;
     var mins=Math.min(b.mins,w.e-w.s);
     seen[k]=1;out.push({b:b,s:Math.max(w.s,Math.min(bs,w.e-mins)),mins:mins});
   }
@@ -3066,7 +3144,9 @@ function dueWhen(d){var n=calDays(new Date(),d);
 function datePhrase(t,d){return (isTest(t)?KINDS[kindOf(t)].name+" ":"Due ")+dueWhen(d);}
 function byDue(a,b){var x=dueAt(a),y=dueAt(b);return (x?+x:Infinity)-(y?+y:Infinity);}
 function kicon(k){return '<span class="kic" style="--kh:'+KINDS[k].h+'">'+KINDS[k].icon+'</span>';}
-function courses(){var s={};tasks.forEach(function(t){if(t.course)s[t.course]=1;});return Object.keys(s).sort();}
+// The Course field's suggestions: courses you've used, and your classes.
+function courses(){var s={};tasks.forEach(function(t){if(t.course)s[t.course]=1;});
+  blocks.forEach(function(b){if(b.type==="class"&&b.activity)s[b.activity.trim().slice(0,40)]=1;});return Object.keys(s).sort();}
 
 // dueFilter: "all" or one kind. freshId: just added or changed, so it flashes
 // as it settles. popTask: just ticked, so its check pops.

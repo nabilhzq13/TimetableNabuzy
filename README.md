@@ -79,7 +79,9 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   of the last eight weeks showing which days you actually kept to the plan. Tap a
   block to open it in the editor, right there over Week, or **+** beside the
   title to add one on the day you're looking at. Free time shows between the
-  blocks, as on Today, so you can fill any day's gaps from here.
+  blocks, as on Today, so you can fill any day's gaps from here. Under the day,
+  **Classes** is your class timetable: every class with its days, times, kind and
+  room, by its first day of the week. Tap one to change it, or **Add a class**.
 - **Climb** — the gym's opening hours up top, with a live badge (open, midday
   break, or closed and when it opens next) and your own session times marked
   against each day. If you move a climbing block somewhere the gym is shut, it
@@ -137,6 +139,14 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   takes them off the days you share, and the message that follows has an
   **Undo**. **Start at …** moves your block to the next free time instead, when
   there is one. **Delete block** has an Undo too.
+- **Classes** — **Block** or **Class** at the top of the editor picks what you're
+  adding; a new one starts as whatever you added last, so a whole timetable goes
+  in one class after another. A class has a name (say, CSC584 Database Systems),
+  a kind if you like (**Lecture**, **Tutorial** or **Lab**) and a room in place of
+  a type, plus its days and times like any block. It makes room the same way, it
+  shows on Today and Week with its kind and room under its name, and its reminder
+  says where: "8am–10am · Lab · Makmal 2". Free time never offers a class, and
+  Due's **Course** field suggests your class names.
 - **Free time** — any stretch of 15 minutes or more between 9:30am and midnight
   with no block shows on Today and Week as a hollow stop on a dashed stretch of
   the line, say "Free · 1.5h, 10am–11:30am". It offers up to two blocks you've
@@ -257,8 +267,8 @@ closed:
 - **Before a prayer runs out** — 30 minutes before a prayer's time ends, but only
   if you haven't ticked it, so it stays off the qadha list.
 - **Block starts** — before each block on your schedule, 10 minutes ahead unless
-  you change it. A block you've already ticked gets none. Tapping one opens
-  Today.
+  you change it. A block you've already ticked gets none. A class's says its
+  kind and room as well. Tapping one opens Today.
 - **Assignments, exams and quizzes** — a week, three days, a day and an hour
   before each one on **Due** (pick any mix of the four), and none once you've
   ticked it off: "Lab report 2 is due tomorrow", "Exam in 3 days: Calculus
