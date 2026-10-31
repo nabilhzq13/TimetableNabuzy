@@ -86,9 +86,8 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   and a red line marks now. Tap a block to open it in the editor, right there over
   Week. Tap empty space to add one there: it starts on the half hour you tapped
   and runs an hour, or up to the next block. **+** beside the title adds one on
-  today. Below the table, **Classes** lists every class with its days, times, kind
-  and room, by its first day of the week; tap one to change it, or **Add a
-  class**. Last comes a heatmap of the last eight weeks showing which days you
+  today; choose **Class** at the top of the editor to add a class. Below the
+  table comes a heatmap of the last eight weeks showing which days you
   actually kept to the plan.
 - **Climb** — the gym's opening hours up top, with a live badge (open, midday
   break, or closed and when it opens next) and your own session times marked

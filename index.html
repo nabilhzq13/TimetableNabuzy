@@ -338,10 +338,6 @@
      check and strikes the title, after 21st.dev's Task Checkbox. */
   .railhead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s2);padding:var(--s4) var(--s4) var(--s1)}
   .railhead .count{font-size:var(--t-footnote);font-weight:var(--w-medium);color:var(--ink-2);white-space:nowrap}
-  /* Week's classes: each with its days, times, kind and room, a tap from its editor. */
-  .clist .item{grid-template-columns:4px minmax(0,1fr)}
-  .wc-empty{margin:0;padding:var(--s1) var(--s4) 0;font-size:var(--t-subhead);color:var(--ink-2)}
-  .wc-add{padding:var(--s3) var(--s4) var(--s4)}
   .stop{
     --ny:calc(12px + .62rem);   /* the stop's centre, level with the title's first line */
     --rail:rgba(15,20,40,.13);
@@ -1164,12 +1160,6 @@
       <div class="tt-head" aria-hidden="true"><span></span><div class="tt-hs" id="tt-hs"><div class="tt-hrow" id="tt-hrow"></div></div></div>
       <div class="tt-main"><div class="tt-gut" id="tt-gut" aria-hidden="true"></div>
         <div class="tt-scroll" id="tt-scroll"><div class="tt-cols" id="tt-cols"></div></div></div>
-    </section>
-    <section class="material seccard" id="w-classes" aria-labelledby="wc-h">
-      <div class="railhead"><p class="label" id="wc-h">Classes</p><span class="count" id="wc-count"></span></div>
-      <p class="wc-empty" id="wc-empty">Add each class once, with its days, time and room. It shows on Today and Week like any block.</p>
-      <div class="clist" id="wc-list"></div>
-      <div class="btns wc-add"><button type="button" class="btn" id="wc-add" aria-haspopup="dialog">Add a class</button></div>
     </section>
     <section class="material heat-wrap" aria-labelledby="heat-h">
       <p class="label" id="heat-h">Last 8 weeks</p>
@@ -2112,7 +2102,6 @@ function renderWeek(){
   sc.scrollLeft=Math.min(ttFirst*cw,sc.scrollWidth-sc.clientWidth);
   el("tt-hs").scrollLeft=sc.scrollLeft;
   placeNow();
-  renderClasses();
   renderHeat();
 }
 // "10:30–12:30pm": a span for a narrow space, saying am or pm once when both ends share it.
@@ -2136,21 +2125,6 @@ function slotAt(d,m){
   forDay(d).forEach(function(b){var bs=toMin(b.start),be=bs+b.mins;if(be<=m)prev=Math.max(prev,be);else if(bs>m)next=Math.min(next,bs);});
   s=Math.max(s,prev);var e=Math.min(next,s+60);
   if(e-s>=5)openEditorAt({day:d,s:s,e:e});
-}
-// Week's class timetable: every class, by its first day and then its time.
-// A tap opens it in the editor; Add a class starts one on the day you're on.
-function renderClasses(){
-  var list=blocks.filter(function(b){return b.type==="class";}).sort(function(a,b){
-    return Math.min.apply(null,a.days)-Math.min.apply(null,b.days)||toMin(a.start)-toMin(b.start);});
-  var box=el("wc-list");box.innerHTML="";
-  el("wc-count").textContent=list.length?list.length+(list.length===1?" class":" classes"):"";
-  el("wc-empty").classList.toggle("hide",!!list.length);
-  list.forEach(function(b){var s=toMin(b.start),r=document.createElement("button");r.type="button";r.className="item";
-    r.style.setProperty("--h",typeOf("class").hue);r.setAttribute("aria-haspopup","dialog");r.setAttribute("data-f","wc"+b.id);
-    r.innerHTML='<span class="cat"></span><span class="body"><span class="ttl"></span><span class="meta"></span></span>';
-    r.querySelector(".ttl").textContent=b.activity;
-    r.querySelector(".meta").textContent=dayList(b.days)+" · "+span(s,s+b.mins)+" · "+kindLine(b);
-    r.addEventListener("click",function(){openEditor(b);});box.appendChild(r);});
 }
 function renderHeat(){
   var g=el("heat");g.innerHTML="";
@@ -3055,8 +3029,6 @@ el("e-sheet").addEventListener("click",function(e){if(e.target===this)closeEdito
 el("e-x").addEventListener("click",closeEditor);
 // Week's +: a new block, on the day you're looking at.
 el("e-add").addEventListener("click",function(){openEditor(null);setDays([weekDay]);checkClash();});
-// Week's Add a class: a new class, on the day you're looking at.
-el("wc-add").addEventListener("click",function(){openEditor(null,"class");setDays([weekDay]);checkClash();});
 // Everything drawn from the blocks, redrawn when the editor changes them.
 function blocksChanged(){renderToday();if(view==="week")keepFocus(renderWeek);}
 el("e-form").addEventListener("submit",function(e){e.preventDefault();
