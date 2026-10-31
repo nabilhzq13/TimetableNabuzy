@@ -1,6 +1,6 @@
 /* Break — offline cache, and the reminders Supabase pushes.
    Bump CACHE when you change any file, so phones pick the new version up. */
-var CACHE = "break-v42";
+var CACHE = "break-v43";
 var FILES = [
   "./",
   "./index.html",

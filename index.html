@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Break</title>
 <meta name="description" content="Offline daily schedule, climbing log and prayer tracker. Your data lives on this device, with an optional backup to your own Supabase.">
 <meta name="theme-color" content="#0b4f8a" id="theme-color">
@@ -125,6 +125,9 @@
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   html{font:-apple-system-body;font-family:var(--sans);background:var(--sky-base)}
   html,body{min-height:100%}
+  /* The screen never zooms, by pinch or double-tap, so it can't be left
+     zoomed in. Larger Text in the iPhone's settings makes things bigger. */
+  html{touch-action:pan-x pan-y}
   /* No scrollbars over the sky: the page and the action sheets still scroll by
      touch, wheel and keyboard. The Week day chips hide theirs the same way. */
   html,.sheet-in{scrollbar-width:none}
@@ -3769,6 +3772,10 @@ el("install-x").addEventListener("click",function(){el("install").classList.add(
 // A new size, or a new text size, moves the choices under the thumbs.
 function relayout(){syncTypeScale();Array.prototype.forEach.call(document.querySelectorAll(".seg"),placeThumb);}
 window.addEventListener("resize",relayout);window.addEventListener("pageshow",relayout);
+// No zooming. Safari can let a pinch through despite the viewport tag, but
+// not once its gesture is cancelled.
+document.addEventListener("gesturestart",function(e){e.preventDefault();});
+document.addEventListener("gesturechange",function(e){e.preventDefault();});
 document.addEventListener("visibilitychange",function(){if(document.hidden)return;relayout();paintSky();
   if(view==="today")keepFocus(renderToday);if(view==="solat")keepFocus(renderSolat);if(view==="due")keepFocus(renderDue);
   refreshTimes();if(focusBlock)requestWake();syncNow();});

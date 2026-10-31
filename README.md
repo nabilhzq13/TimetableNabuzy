@@ -175,6 +175,10 @@ Everything grows with it, and past roughly the second accessibility step the row
 restack so activity names stay on their own line instead of being squeezed. Tab bar
 labels stay put, which is what iOS itself does.
 
+The screen itself doesn't zoom: a pinch or a double-tap does nothing, so the page
+can never be left zoomed in with the tab bar out of place. That goes for photos in
+the climbing log too. Larger Text is the way to make things bigger.
+
 ## Backups
 
 Your data lives in Safari's storage for this app, so deleting the app, or
