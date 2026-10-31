@@ -75,13 +75,17 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   glides in from the side of its tab, so you keep your bearings. Each tab
   keeps its place when you come back to it; tap the tab you're already on to go
   back to the top.
-- **Week** — any day of the week with the gym's hours for that day, plus a heatmap
-  of the last eight weeks showing which days you actually kept to the plan. Tap a
-  block to open it in the editor, right there over Week, or **+** beside the
-  title to add one on the day you're looking at. Free time shows between the
-  blocks, as on Today, so you can fill any day's gaps from here. Under the day,
-  **Classes** is your class timetable: every class with its days, times, kind and
-  room, by its first day of the week. Tap one to change it, or **Add a class**.
+- **Week** — the whole week as one timetable, the way a class timetable is
+  printed: a column a day, Monday first, with today's highlighted, and the hours
+  down the side from your earliest block to your latest. Each block sits at its
+  time, as tall as it runs, in its type's colour; classes are solid, so they stand
+  out. The day names stay at the top while you scroll, and a red line marks now in
+  today's column. Tap a block to open it in the editor, right there over Week. Tap
+  empty space to add one there: it starts on the half hour you tapped and runs an
+  hour, or up to the next block. **+** beside the title adds one on today. Below
+  the table, **Classes** lists every class with its days, times, kind and room, by
+  its first day of the week; tap one to change it, or **Add a class**. Last comes a
+  heatmap of the last eight weeks showing which days you actually kept to the plan.
 - **Climb** — the gym's opening hours up top, with a live badge (open, midday
   break, or closed and when it opens next) and your own session times marked
   against each day. If you move a climbing block somewhere the gym is shut, it
@@ -144,11 +148,12 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   in one class after another. A class has a name (say, CSC584 Database Systems),
   a kind if you like (**Lecture**, **Tutorial** or **Lab**) and a room in place of
   a type, plus its days and times like any block. It makes room the same way, it
-  shows on Today and Week with its kind and room under its name, and its reminder
+  shows on Today with its kind and room under its name and on Week's table with
+  its room, and its reminder
   says where: "8am–10am · Lab · Makmal 2". Free time never offers a class, and
   Due's **Course** field suggests your class names.
 - **Free time** — any stretch of 15 minutes or more between 9:30am and midnight
-  with no block shows on Today and Week as a hollow stop on a dashed stretch of
+  with no block shows on Today as a hollow stop on a dashed stretch of
   the line, say "Free · 1.5h, 10am–11:30am". It offers up to two blocks you've
   had at that time before: the original plan for that day first (Breakfast,
   Chores, Lunch), then your other days, nearest in time first. Prayers are never

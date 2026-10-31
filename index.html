@@ -133,7 +133,7 @@
      zoomed in. Larger Text in the iPhone's settings makes things bigger. */
   html{touch-action:pan-x pan-y}
   /* No scrollbars over the sky: the page and the action sheets still scroll by
-     touch, wheel and keyboard. The Week day chips hide theirs the same way. */
+     touch, wheel and keyboard. */
   html,.sheet-in{scrollbar-width:none}
   html::-webkit-scrollbar,body::-webkit-scrollbar,.sheet-in::-webkit-scrollbar{display:none}
   body{
@@ -450,16 +450,43 @@
     color:hsl(var(--h) var(--pill-ink-s) var(--pill-ink-l))}
 
   /* ---------------- week ---------------- */
-  /* One segmented control with every day in view: seven separate chips ran
-     past the edge, and with the scrollbar hidden nothing said Sunday was there. */
-  .daysel{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:4px;border-radius:999px;margin-bottom:var(--s3)}
+  /* The week as one timetable, the way a class timetable is printed: a column
+     a day, Monday first, the hours down the side, each block as tall as it
+     runs. The day names stay in view while the hours scroll under them. */
+  .tt{padding:0 4px var(--s3) 0}
+  /* On a phone the table reaches into the margins, so six letters fit across a day. */
+  @media (max-width:480px){.tt{margin-left:-8px;margin-right:-8px}}
+  .tt-head,.tt-body{display:grid;grid-template-columns:calc(var(--t-caption2) * 2.9) repeat(7,minmax(0,1fr))}
+  .tt-head{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;margin-right:-4px;padding:var(--s3) 4px var(--s2) 0;
+    background:rgba(247,248,251,.97);border-radius:var(--radius) var(--radius) 0 0;border-bottom:1px solid var(--line)}
+  .tt-head b{justify-self:center;min-width:2.4em;padding:3px 0;border-radius:999px;text-align:center;
+    font-size:var(--t-caption);font-weight:var(--w-semibold);color:var(--ink-2)}
+  .tt-head b.today{background:var(--tint);color:#fff}
+  .tt-body{position:relative;margin-top:var(--s2)}
+  .tt-hours{position:relative}
+  .tt-hours span{position:absolute;right:4px;transform:translateY(-50%);white-space:nowrap;
+    font-size:var(--t-caption2);font-weight:var(--w-medium);color:var(--ink-2)}
+  .tt-col{position:relative;border-left:1px solid var(--line);cursor:pointer;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% var(--hr)}
+  .tt-col.today{background-color:rgba(11,102,228,.06)}
+  .tt-b{position:absolute;left:1px;right:0;z-index:1;display:block;margin:0;padding:2px 1px 2px 4px;overflow:hidden;
+    border:0;border-radius:6px;font:inherit;text-align:left;cursor:pointer;
+    background:hsl(var(--h) var(--pill-s) var(--pill-l));color:hsl(var(--h) var(--pill-ink-s) var(--pill-ink-l));
+    box-shadow:inset 3px 0 0 hsl(var(--h) var(--cat-s) var(--cat-l))}
+  .tt-b b,.tt-b i{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--n,1);overflow:hidden;
+    font-size:var(--t-caption2);line-height:1.2;letter-spacing:-.01em;-webkit-hyphens:auto;hyphens:auto;overflow-wrap:anywhere}
+  .tt-b i{font-style:normal;font-weight:var(--w-medium);opacity:.9}
+  /* Classes are what the week is built around, so they're solid, not pastel. */
+  .tt-b.cls{background:hsl(var(--h) 58% 47%);color:#fff;box-shadow:none;padding-left:3px}
+  .tt-b:active{filter:brightness(.94)}
+  /* Now, as a line across today's column, as in Calendar. */
+  .tt-now{position:absolute;left:-1px;right:0;z-index:2;height:2px;margin-top:-1px;background:#ff2d55;pointer-events:none}
+  .tt-now::before{content:"";position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:#ff2d55}
   .chip-btn{
     font:inherit;font-size:var(--t-footnote);font-weight:var(--w-semibold);min-height:44px;min-width:0;padding:0 2px;
     border-radius:999px;border:0;background:transparent;color:var(--ink);cursor:pointer;
   }
   .chip-btn[aria-pressed="true"]{background:var(--tint);color:#fff}
-  body.big-type .daysel{grid-template-columns:repeat(4,minmax(0,1fr));border-radius:var(--radius)}
-  .dayhead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);padding:var(--s4) var(--s4) var(--s2)}
   .heat-wrap{padding:var(--s4)}
   .heatgrid{display:grid;grid-template-columns:auto repeat(8,1fr);gap:5px;margin-top:var(--s3);max-width:340px}
   .heatgrid .hl{font-size:var(--t-caption2);font-weight:var(--w-medium);color:var(--ink-2);display:grid;place-items:center;padding-right:4px}
@@ -498,7 +525,6 @@
   .gym-fit.warn{color:#7c2d12}
   .gym-fit ul{margin:4px 0 0;padding-left:1.2em}
   .now-gym{margin:var(--s2) 0 0;position:relative;z-index:1}
-  .w-gym{margin:0;padding:0 var(--s4) var(--s2);font-size:var(--t-footnote);font-weight:var(--w-medium);color:var(--ink-2)}
 
   /* ---------------- climb ---------------- */
   .chart{width:100%;height:auto;display:block;margin-top:var(--s2);overflow:visible}
@@ -793,7 +819,6 @@
     box-shadow:0 6px 14px -6px rgba(11,102,228,.7);pointer-events:none;
     transition:transform var(--t-move) var(--ease-spring),width var(--t-move) var(--ease-spring),height var(--t-move) var(--ease-spring)}
   .seg.still .seg-thumb{transition:none}
-  .daysel.seg .chip-btn[aria-pressed="true"]{background:transparent}
   #d-filter{grid-template-columns:.7fr 1.45fr 1fr 1fr}
   body.big-type #d-filter{grid-template-columns:1fr 1fr;border-radius:var(--radius)}
   .seg-sheet{grid-template-columns:repeat(3,minmax(0,1fr));background:rgba(15,20,40,.06);margin:0}
@@ -1126,11 +1151,11 @@
 
   <!-- WEEK -->
   <section id="v-week" class="hide">
-    <div class="daysel seg material" id="w-days" role="group" aria-label="Day of the week"></div>
-    <section class="material seccard">
-      <div class="dayhead"><h2 id="w-title">—</h2></div>
-      <p class="w-gym" id="w-gym"></p>
-      <div id="w-list"></div>
+    <!-- The week as one timetable: a column a day, the hours down the side. -->
+    <section class="material tt" aria-labelledby="tt-h">
+      <h2 class="sr" id="tt-h">This week's timetable</h2>
+      <div class="tt-head" id="tt-head" aria-hidden="true"></div>
+      <div class="tt-body" id="tt-body"></div>
     </section>
     <section class="material seccard" id="w-classes" aria-labelledby="wc-h">
       <div class="railhead"><p class="label" id="wc-h">Classes</p><span class="count" id="wc-count"></span></div>
@@ -2027,39 +2052,62 @@ function celebrate(){
 }
 
 // ---------- week ----------
+// The week as one timetable: a column a day, from the hour of the earliest
+// block to the hour after the latest. A tap on a block opens it in the editor,
+// over Week; a tap on empty space adds one there. + adds one on today.
 var weekDay=dayIdx(new Date());
 function renderWeek(){
-  // The days are made once, so the thumb under the chosen one can slide.
-  var box=el("w-days");
-  if(!box.children.length){
-    var th=document.createElement("span");th.className="seg-thumb";th.setAttribute("aria-hidden","true");box.appendChild(th);
-    DAYS.forEach(function(n,i){var b=document.createElement("button");b.type="button";
-      b.className="chip-btn";b.textContent=n;b.setAttribute("aria-label",LONG[i]);b.setAttribute("data-f","w"+i);
-      b.addEventListener("click",function(){if(weekDay!==i){weekDay=i;renderWeek();}});box.appendChild(b);});
-  }
-  Array.prototype.forEach.call(box.querySelectorAll("button"),function(b,i){b.setAttribute("aria-pressed",i===weekDay?"true":"false");});
-  placeThumb(box);
-  var list=forDay(weekDay);
-  el("w-title").textContent=LONG[weekDay];
-  el("w-gym").textContent=GYM[weekDay].length?"Gym open "+gymDayText(weekDay):"Gym closed";
-  var wl=el("w-list");wl.innerHTML="";wl.className=reduceMotion()?"":"draw";
-  if(!list.length){wl.innerHTML='<p class="empty">Nothing on '+esc(LONG[weekDay])+'.</p>';}
-  // The same line as Today, as a plan: no ticks, free time between the blocks,
-  // and it ends at the last stop. A tap opens a block in the editor, over Week.
-  var line=list.length?withGaps(list,weekDay):[];
-  line.forEach(function(b,i){
-    if(b.gap){wl.appendChild(gapNode(b,i,i===line.length-1,null,0,i));return;}
-    var t=typeOf(b.type),s=toMin(b.start);
-    var r=document.createElement("button");r.type="button";r.className="stop"+(i?"":" first")+(i===line.length-1?" last":"");
-    r.setAttribute("aria-haspopup","dialog");r.setAttribute("data-f","k"+b.id);r.addEventListener("click",function(){openEditor(b);});
-    r.style.setProperty("--h",t.hue);r.style.setProperty("--d",i*45+"ms");r.style.setProperty("--d2",i*45+100+"ms");
-    r.innerHTML='<span class="when"></span><span class="line" aria-hidden="true"><i class="node"></i></span><span class="body"><span class="ttl"><span></span></span><span class="meta"></span></span>';
-    r.querySelector(".when").textContent=fmt(s);r.querySelector(".ttl>span").textContent=b.activity;
-    r.querySelector(".meta").textContent=kindLine(b)+" · "+fmt(s)+"–"+fmt(s+b.mins);
-    wl.appendChild(r);
+  weekDay=dayIdx(new Date());
+  var from=1440,to=0;
+  blocks.forEach(function(b){var s=toMin(b.start);from=Math.min(from,s);to=Math.max(to,s+b.mins);});
+  if(from>=to){from=480;to=1080;}
+  from=Math.floor(from/60)*60;to=Math.ceil(to/60)*60;
+  // An hour is a little over three lines of text tall, so it grows with Larger Text.
+  var rem=parseFloat(getComputedStyle(document.documentElement).fontSize)||16,hr=Math.round(rem*3.3),lh=rem*.65*1.2;
+  var head=el("tt-head"),body=el("tt-body");
+  head.innerHTML="<span></span>"+DAYS.map(function(n,i){return "<b"+(i===weekDay?' class="today"':"")+">"+n+"</b>";}).join("");
+  body.innerHTML="";body.style.height=(to-from)/60*hr+"px";body.style.setProperty("--hr",hr+"px");
+  body._r={from:from,to:to,hr:hr};
+  var hours=document.createElement("div");hours.className="tt-hours";hours.setAttribute("aria-hidden","true");
+  for(var h=from;h<to;h+=60){var l=document.createElement("span");l.style.top=(h-from)/60*hr+"px";l.textContent=fmt(h);hours.appendChild(l);}
+  body.appendChild(hours);
+  DAYS.forEach(function(n,d){
+    var col=document.createElement("div");col.className="tt-col"+(d===weekDay?" today":"");
+    col.setAttribute("role","group");col.setAttribute("aria-label",LONG[d]);
+    forDay(d).forEach(function(b){
+      var s=toMin(b.start),px=b.mins/60*hr-2,x=document.createElement("button");x.type="button";x.className="tt-b"+(b.type==="class"?" cls":"");
+      x.style.top=(s-from)/60*hr+1+"px";x.style.height=px+"px";x.style.setProperty("--h",typeOf(b.type).hue);
+      x.setAttribute("aria-haspopup","dialog");x.setAttribute("data-f","k"+b.id);
+      x.setAttribute("aria-label",LONG[d]+", "+fmt(s)+" to "+fmt(s+b.mins)+", "+b.activity+(b.type==="class"?", "+kindLine(b):""));
+      // As many lines of its name as it has room for; a class keeps one for its room.
+      var lines=Math.max(1,Math.floor((px-4)/lh)),room=b.type==="class"&&b.room&&lines>1;
+      x.innerHTML="<b></b>"+(room?"<i></i>":"");
+      x.firstChild.textContent=b.activity;x.firstChild.style.setProperty("--n",room?lines-1:lines);
+      if(room)x.lastChild.textContent=b.room;
+      x.addEventListener("click",function(){openEditor(b);});
+      col.appendChild(x);
+    });
+    if(d===weekDay){var now=document.createElement("i");now.className="tt-now";now.id="tt-now";col.appendChild(now);}
+    col.addEventListener("click",function(e){if(e.target===col)slotAt(d,from+e.offsetY/hr*60);});
+    body.appendChild(col);
   });
+  placeNow();
   renderClasses();
   renderHeat();
+}
+// Now's line on today's column, moved along by the half-minute refresh.
+function placeNow(){
+  var n=el("tt-now"),r=el("tt-body")._r,m=minsNow();if(!n||!r)return;
+  n.classList.toggle("hide",m<r.from||m>r.to);n.style.top=(m-r.from)/60*r.hr+"px";
+}
+// Empty space, tapped: the editor, set to start there on the half hour and run
+// an hour, or up to the next block if that comes sooner.
+function slotAt(d,m){
+  if(m<0||m>=1440)return;
+  var s=Math.floor(m/30)*30,prev=0,next=1440;
+  forDay(d).forEach(function(b){var bs=toMin(b.start),be=bs+b.mins;if(be<=m)prev=Math.max(prev,be);else if(bs>m)next=Math.min(next,bs);});
+  s=Math.max(s,prev);var e=Math.min(next,s+60);
+  if(e-s>=5)openEditorAt({day:d,s:s,e:e});
 }
 // Week's class timetable: every class, by its first day and then its time.
 // A tap opens it in the editor; Add a class starts one on the day you're on.
@@ -3867,7 +3915,7 @@ window.addEventListener("online",function(){refreshTimes();syncNow();});
 // The half-minute refresh waits for a row that's under a finger mid-swipe.
 // On Due it keeps the countdowns live; they roll as they change.
 setInterval(function(){if(document.hidden)return;paintSky();var still=!document.querySelector(".swiping");
-  if(view==="today"&&!focusBlock&&still)keepFocus(renderToday);if(view==="climb")renderGym();
+  if(view==="today"&&!focusBlock&&still)keepFocus(renderToday);if(view==="week")placeNow();if(view==="climb")renderGym();
   if(view==="solat")keepFocus(renderSolat);if(view==="due"&&still)keepFocus(renderDue);},30000);
 // With a mouse, cards marked tilt lean a degree or two towards the pointer.
 // Touch screens never do: there's no pointer hovering to follow.
