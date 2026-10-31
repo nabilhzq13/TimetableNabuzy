@@ -63,9 +63,11 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   three; tap one to open it, or **See all**. Then the day itself, as one
   line with a stop for each block and for any free time between them (see **Free
   time** below). It fills up to now, with a dot at the exact
-  minute. Tap a block to tick it, or swipe it right. A long swipe left opens that
-  block's editor as a sheet over Today, so you never leave it. Tick the last one
-  of the day and see what happens.
+  minute. Tap a block to tick it, or swipe it right, once it has started; one
+  that hasn't gives a little shake and says when it starts (its swipe shows that
+  in grey). Unticking always works. A long swipe left opens that block's editor
+  as a sheet over Today, so you never leave it. Tick the last one of the day and
+  see what happens.
 - **The sky** behind everything follows the real time of day — dawn, day, golden
   hour, dusk, night.
 - **The tab bar** — tap a tab, or drag along the bar. The glass lens lifts,
@@ -97,7 +99,8 @@ there** — only the app's code does. The schedule you tick off stays on the pho
 - **Solat** — the five daily prayers with your zone's official JAKIM times. Pick
   your zone once and the app downloads that year's timetable from e-Solat, then
   works offline. Tick a prayer when you've prayed it, here or from the row of five
-  on Today. If a prayer's time ends before you tick it (Subuh at syuruk, Zohor at
+  on Today. One whose time hasn't come in yet can't be ticked: a tap gives a
+  little shake and says when it starts. If a prayer's time ends before you tick it (Subuh at syuruk, Zohor at
   Asar, Asar at Maghrib, Maghrib at Isyak, Isyak at the next Subuh), it goes on
   your qadha list, oldest first and in prayer order, and stays there until you tap
   **Made up**. Forgot to tick one you did pray on time? Tap it and choose **I
@@ -159,7 +162,8 @@ or by its title, and let go to put it away, or let go early and it springs back.
 The thumb in **All / Assignments / Exams / Quizzes** and in Week's days slides to
 what you pick. When Due's list changes, rows glide to their new places and new
 ones settle in, and a countdown that changes rolls up into place. Buttons give a
-little under your finger and spring back. With a mouse, the countdown card and
+little under your finger and spring back. A block or prayer that can't be ticked
+yet shakes its head, the way iOS shakes off a wrong passcode. With a mouse, the countdown card and
 Today's now card lean a degree towards the pointer; on the iPhone they never
 tilt. With **Reduce Motion** on (Settings → Accessibility → Motion), all of it
 stays still. The tab bar's Liquid Glass lens is unchanged.

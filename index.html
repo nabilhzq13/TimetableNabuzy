@@ -300,6 +300,8 @@
     font-size:var(--t-footnote);opacity:var(--q);
   }
   .swipe>.stop{z-index:1}
+  /* A block that hasn't started can't be ticked yet: its swipe says when it starts, in grey. */
+  .swipe.later::before{background:var(--ink-2)}
   .item{
     position:relative;display:grid;grid-template-columns:4px 3.3em 1fr auto;gap:var(--s3);align-items:center;
     width:100%;min-height:58px;padding:var(--s3) var(--s4) var(--s3) 0;border:0;border-top:1px solid var(--line);
@@ -1782,13 +1784,14 @@ function nowNote(m){var p=document.createElement("p");p.className="sr";p.textCon
 
 var CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5L10 17.5L19 7.5"/></svg>',popId=null;
 function rowNode(b,k,isNow,m,i,at,n){
-  var t=typeOf(b.type),s=toMin(b.start),e=s+b.mins,isD=isDone(k,b.id),host=!!at&&at.i===i;
-  var wrap=document.createElement("div");wrap.className="swipe";
-  wrap.setAttribute("data-act",isD?"↺  Undo":"✓  Done");wrap.setAttribute("data-edit","✎  Edit");
+  var t=typeOf(b.type),s=toMin(b.start),e=s+b.mins,isD=isDone(k,b.id),host=!!at&&at.i===i,later=!isD&&s>m;
+  var wrap=document.createElement("div");wrap.className="swipe"+(later?" later":"");
+  wrap.setAttribute("data-act",isD?"↺  Undo":later?"Starts at "+fmt(s):"✓  Done");wrap.setAttribute("data-edit","✎  Edit");
   var row=document.createElement("button");row.type="button";
   row.className="stop"+(i?"":" first")+(isD?" done":"")+(isNow?" now":"")+(e<=m?" past":"")+
     (host?" host"+(at.early?" early":""):"")+(b.id===popId?" pop":"");
   row.setAttribute("aria-pressed",isD?"true":"false");row.setAttribute("data-f","t"+b.id);
+  if(later)row.setAttribute("aria-disabled","true");
   row.style.setProperty("--h",t.hue);
   row.style.setProperty("--cut",!at||at.early||i>at.i?"0%":i<at.i?"100%":"var(--at)");
   row.style.setProperty("--d",n*45+"ms");row.style.setProperty("--d2",n*45+100+"ms");
@@ -1805,7 +1808,9 @@ function rowNode(b,k,isNow,m,i,at,n){
     // In step with the clock, so the halo doesn't restart at every refresh.
     bead.style.setProperty("--ph",-(Date.now()%3000)+"ms");}
   row.title=b.activity+(b.details?" — "+b.details:"");
-  function act(){tick(k,b.id);}
+  function act(){
+    if(!isDone(k,b.id)&&new Date()<atMin(fromKey(k),s)){notYet(row,"Not yet — "+b.activity+" starts at "+fmt(s));return;}
+    tick(k,b.id);}
   row.addEventListener("click",function(){if(row._swiped)return;act();});
   attachSwipe(wrap,row,act,function(){openEditor(b);});
   wrap.appendChild(row);
@@ -1821,6 +1826,17 @@ function tick(k,id){
   keepFocus(renderToday);popId=null;
   var after=dayStats().frac;
   if(before<1&&after>=1&&k===key(new Date()))celebrate();
+}
+
+// Not yet: a block can't be ticked before it starts, nor a prayer before its
+// time comes in; unticking is always fine. A refused tap shakes the row, the
+// way iOS shakes off a wrong passcode, and says when it can be ticked.
+var notYetToast=null;
+function notYet(node,msg){
+  announce(msg);if(notYetToast)notYetToast.remove();notYetToast=toast(msg);
+  if(node&&node.animate&&!reduceMotion())node.animate([{transform:"translateX(0)"},{transform:"translateX(-8px)"},
+    {transform:"translateX(7px)"},{transform:"translateX(-5px)"},{transform:"translateX(3px)"},{transform:"translateX(0)"}],
+    {duration:420,easing:"ease-out"});
 }
 
 // Swipe right to tick; a long swipe left opens the block in the editor.
@@ -1947,6 +1963,7 @@ function toast(text,undo){
   // it; never in one that is on its way down, or it would go with it.
   (document.querySelector("dialog[open]:not(.closing)")||document.body).appendChild(t);
   var life=undo?6000:2400;setTimeout(function(){t.classList.add("gone");},life-260);setTimeout(function(){t.remove();},life);
+  return t;
 }
 function celebrate(){
   announce("Day complete. Every block is ticked.");toast("Day complete — every block ticked");
@@ -2495,10 +2512,12 @@ function dayMonth(k){var d=fromKey(k);if(isNaN(d))return "";
   return d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3)+(d.getFullYear()!==new Date().getFullYear()?" "+d.getFullYear():"");}
 function allFive(k){var o=plog[k]||{};return PRAYERS.every(function(p){return o[p.id]==="on"||isMade(o[p.id]);});}
 
-// Inside its time, or before it (jamak taqdim), a tap is a plain tick. Once
-// the time is out an untick would turn it into qadha, so it asks instead.
-function pTap(d,i){
+// Inside its time, a tap is a plain tick. Before its time comes in there is
+// nothing to tick yet, so it only says when. Once the time is out an untick
+// would turn it into qadha, so it asks instead.
+function pTap(d,i,node){
   var now=new Date(),W=windows(d),w=W&&W.w[i],k=key(d),p=PRAYERS[i],r=pRec(k,p.id);
+  if(w&&now<w[0]&&!r){notYet(node,"Not yet — "+p.name+" starts at "+clock(w[0]));return;}
   if((!w||now<w[1])&&(!r||r==="on")){
     var was=allFive(k);setRec(k,p.id,r?null:"on");
     announce(p.name+(r?" unticked":" ticked"));keepFocus(renderSolatAll);
@@ -2508,13 +2527,13 @@ function pTap(d,i){
   openSheet(d,i);
 }
 function openSheet(d,i){
-  var p=PRAYERS[i],r=pRec(key(d),p.id),W=windows(d),w=W&&W.w[i],ended=!w||new Date()>=w[1];
+  var p=PRAYERS[i],r=pRec(key(d),p.id),W=windows(d),w=W&&W.w[i],ended=!w||new Date()>=w[1],early=!!w&&new Date()<w[0];
   sheetAt={d:new Date(d),i:i};
   el("ps-date").textContent=longDate(d);el("ps-title").textContent=p.name;
   el("ps-sub").textContent=p.rk+" rakaat"+(w?" · its time "+(ended?"ended":"ends")+" at "+clock(w[1]):"")+
     (isMade(r)?" · made up "+shortDate(fromKey(r.slice(2))):r==="on"?" · ticked as prayed":r==="x"?" · marked excused":"");
   el("ps-made").classList.toggle("hide",!ended||isMade(r)||r==="on");
-  el("ps-on").classList.toggle("hide",r==="on");
+  el("ps-on").classList.toggle("hide",r==="on"||early);
   el("ps-x").classList.toggle("hide",r==="x");
   el("ps-clear").classList.toggle("hide",!r);
   el("ps-clear").textContent=!ended?"Clear":r==="on"?"Untick, it counts as qadha":isMade(r)?"Not made up yet":"Not excused";
@@ -2638,8 +2657,8 @@ function renderSolatMini(){
     var b=document.createElement("button");b.type="button";b.className="pchip "+s;b.setAttribute("data-f","p"+i);
     b.innerHTML="<b></b><span></span>";b.firstChild.textContent=p.name;b.lastChild.textContent=chipWord(s,w,now);
     b.setAttribute("aria-label",stateSay(p,s,w,now));
-    b.setAttribute("aria-pressed",s==="on"||s==="made"?"true":"false");
-    b.addEventListener("click",function(){pTap(pn.d,i);});
+    b.setAttribute("aria-pressed",s==="on"||s==="made"?"true":"false");if(s==="soon")b.setAttribute("aria-disabled","true");
+    b.addEventListener("click",function(){pTap(pn.d,i,b);});
     box.appendChild(b);
   });
   // The count includes earlier qadha; it turns red only for prayers missed lately.
@@ -2652,6 +2671,7 @@ function prayerRow(d,i,now,W){
   var row=document.createElement("button");row.type="button";
   row.className="item "+s+(ok?" done":"")+(s==="before"?" past":"");
   row.style.setProperty("--h",p.h);row.setAttribute("aria-pressed",ok?"true":"false");row.setAttribute("data-f","r"+i);
+  if(s==="soon")row.setAttribute("aria-disabled","true");
   row.innerHTML='<span class="cat"></span><span class="when"></span><span class="body"><span class="ttl"></span><span class="meta"></span></span><span class="tick" aria-hidden="true">✓</span>';
   row.querySelector(".when").textContent=w?clock(w[0]):"";
   row.querySelector(".ttl").textContent=p.name;
@@ -2662,7 +2682,7 @@ function prayerRow(d,i,now,W){
   if(tag){var t=document.createElement("span");t.className="tag "+tag[0];t.textContent=tag[1];meta.appendChild(t);
     meta.appendChild(document.createTextNode(" · "));}
   meta.appendChild(document.createTextNode((w?"until "+clock(w[1])+" · ":"")+p.rk+" rakaat"));
-  row.addEventListener("click",function(){pTap(d,i);});
+  row.addEventListener("click",function(){pTap(d,i,row);});
   return row;
 }
 function qRow(o,first){
