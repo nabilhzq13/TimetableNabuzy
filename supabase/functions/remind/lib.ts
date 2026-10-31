@@ -26,15 +26,29 @@ function toMin(s: unknown): number | null {
 // ---------- choices ----------
 // The synced "reminders" doc. Leads are minutes ahead; quiet hours run from
 // qfrom to qto in minutes of the day, across midnight when qfrom > qto.
-// subuh lets Subuh through quiet hours.
+// subuh lets Subuh through quiet hours. due and dlead: reminders for what's on
+// Due, and how long before (any of a week, three days, a day and an hour).
 export type Prefs = {
-  pray: boolean; late: boolean; blocks: boolean;
+  pray: boolean; late: boolean; blocks: boolean; due: boolean; dlead: number[];
   plead: number; blead: number; qfrom: number; qto: number; subuh: boolean;
 };
-export const DEFAULTS: Prefs = { pray: true, late: true, blocks: true, plead: 0, blead: 10, qfrom: 0, qto: 600, subuh: false };
+export const DEFAULTS: Prefs = {
+  pray: true, late: true, blocks: true, due: true, dlead: [10080, 4320, 1440, 60],
+  plead: 0, blead: 10, qfrom: 0, qto: 600, subuh: false,
+};
+// Each lead's name in a reminder's key, and how it reads. The same keys as
+// Nabuzy's, so a reminder never goes twice for the same thing.
+export const LEADS: Record<number, { key: string; when: string }> = {
+  10080: { key: "week", when: "in a week" }, 4320: { key: "3d", when: "in 3 days" },
+  1440: { key: "day", when: "tomorrow" }, 60: { key: "hour", when: "in an hour" },
+};
 export function prefsOf(v: unknown): Prefs {
-  const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>, p = { ...DEFAULTS };
-  for (const k of ["pray", "late", "blocks", "subuh"] as const) if (typeof o[k] === "boolean") p[k] = o[k] as boolean;
+  const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>, p = { ...DEFAULTS, dlead: DEFAULTS.dlead.slice() };
+  for (const k of ["pray", "late", "blocks", "due", "subuh"] as const) if (typeof o[k] === "boolean") p[k] = o[k] as boolean;
+  if (Array.isArray(o.dlead)) {
+    const l = Object.keys(LEADS).map(Number).sort((a, b) => b - a).filter((n) => (o.dlead as unknown[]).indexOf(n) >= 0);
+    if (l.length) p.dlead = l;
+  }
   for (const k of ["plead", "blead"] as const) {
     const n = o[k];
     if (Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 120) p[k] = n as number;
@@ -57,6 +71,27 @@ function placed(p: Prefs, at: number, anchor: number, pass: boolean): number | n
   let end = Math.floor(at / 1440) * 1440 + p.qto;
   if (end <= at) end += 1440;
   return end <= anchor ? end : null;
+}
+// A deadline's reminder in quiet hours comes the minute they end instead, as
+// long as that's still before the deadline itself. The deadline being in
+// quiet hours doesn't matter: a week's notice of a 9am exam still comes.
+function early(p: Prefs, at: number, due: number): number | null {
+  if (!quiet(p, at)) return at;
+  let end = Math.floor(at / 1440) * 1440 + p.qto;
+  if (end <= at) end += 1440;
+  return end < due ? end : null;
+}
+// "2026-11-06T09:00", read as Malaysian time, as a minute on the same count.
+export function localMinute(s: unknown): number | null {
+  const m = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(String(s ?? ""));
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) / 60000 : null;
+}
+const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// "Fri 7 Nov", for a minute on the Malaysian count.
+function dayText(m: number): string {
+  const d = new Date(Math.floor(m / 1440) * 86400000);
+  return `${WD[d.getUTCDay()]} ${d.getUTCDate()} ${MO[d.getUTCMonth()]}`;
 }
 
 // ---------- JAKIM's timetable ----------
@@ -92,15 +127,18 @@ export function timesFor(years: Years, day: number): number[] | null {
 
 // ---------- what's due ----------
 export type Block = { id: string; activity: string; start: string; mins: number; days: number[]; details?: string };
+// An assignment, exam or quiz from Due; done is when it was ticked off, or 0.
+export type Task = { id: string; kind?: string; title?: string; course?: string; due?: string; done?: number };
 export type Account = {
   prefs: Prefs; blocks: Block[];
   done: Record<string, string[]>;                  // ticked blocks by date
   solat: Record<string, Record<string, string>>;   // prayer records by prayer day
+  tasks?: Task[];
   times: (day: number) => number[] | null;
 };
 export type Note = {
   key: string; at: number; title: string; body: string;
-  tab: "today" | "solat"; topic: string; ttl: number;
+  tab: "today" | "solat" | "due"; topic: string; ttl: number;
 };
 const IDS = ["subuh", "zohor", "asar", "maghrib", "isyak"];
 const NAMES = ["Subuh", "Zohor", "Asar", "Maghrib", "Isyak"];
@@ -155,6 +193,27 @@ export function due(now: number, a: Account, span = 3): Note[] {
           body: `${end - now} minutes left, and it isn't ticked on Solat yet.`,
         }, placed(p, end - LATE, end, pass), end);
       }
+    }
+  }
+  // Assignments, exams and quizzes: as long before as you chose, unless it's
+  // ticked off. An assignment is due; an exam or a quiz starts. The key holds
+  // the due time, so moving it brings fresh reminders.
+  if (p.due) for (const t of a.tasks || []) {
+    const at = localMinute(t.due);
+    if (at === null || t.done) continue;
+    const test = t.kind === "exam" || t.kind === "quiz", kind = t.kind === "exam" ? "Exam" : "Quiz";
+    const what = String(t.title || (test ? kind : "Assignment")).slice(0, 80);
+    const course = t.course ? String(t.course).slice(0, 30) + " · " : "";
+    for (const lead of p.dlead) {
+      const l = LEADS[lead];
+      if (!l) continue;
+      // A week or three days out, it says which day.
+      const on = lead >= 4320 ? `${dayText(at)}, ${fmt(at)}` : `at ${fmt(at)}`;
+      take({
+        key: `d:${t.id}:${t.due}:${l.key}`, tab: "due", topic: "due",
+        title: test ? `${kind} ${l.when}: ${what}` : `${what} is due ${l.when}`,
+        body: test ? `${course}Starts ${on}.` : `${course}Due ${on}.${lead >= 1440 ? " Still to hand in." : ""}`,
+      }, early(p, at - lead, at), at);
     }
   }
   return out;

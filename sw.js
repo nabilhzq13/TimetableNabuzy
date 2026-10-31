@@ -1,6 +1,6 @@
 /* Break — offline cache, and the reminders Supabase pushes.
    Bump CACHE when you change any file, so phones pick the new version up. */
-var CACHE = "break-v38";
+var CACHE = "break-v39";
 var FILES = [
   "./",
   "./index.html",
@@ -94,12 +94,13 @@ self.addEventListener("push", function (ev) {
     body: d.body || "",
     tag: d.tag || undefined,
     icon: "icon-192.png",
-    data: { tab: d.tab === "solat" ? "solat" : "today" }
+    data: { tab: d.tab === "solat" || d.tab === "due" ? d.tab : "today" }
   }));
 });
 
-// A tapped reminder opens Break on its tab: Solat for a prayer, Today for a
-// block. If Break is already open it switches there; if not, it opens on it.
+// A tapped reminder opens Break on its tab: Solat for a prayer, Due for an
+// assignment, exam or quiz, Today for a block. If Break is already open it
+// switches there; if not, it opens on it.
 self.addEventListener("notificationclick", function (ev) {
   var tab = ev.notification.data && ev.notification.data.tab || "today",
       url = new URL("./?tab=" + tab, self.registration.scope).href;

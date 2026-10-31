@@ -106,6 +106,17 @@
     --h-social:44; --h-chores:352; --h-travel:24;
     --cat-s:62%; --cat-l:56%;
     --pill-s:64%; --pill-l:84%; --pill-ink-s:42%; --pill-ink-l:24%;
+
+    /* Motion: one set of curves and lengths for the whole app, so everything
+       moves alike. Out decelerates the way iOS lets things come to rest; the
+       spring overshoots a touch, for things that are pressed or that pop;
+       press is the quick give under a finger. Short for frequent things,
+       longer only for whole views and sheets. */
+    --ease-out:cubic-bezier(.22,1,.36,1);
+    --ease-spring:cubic-bezier(.3,1.35,.5,1);
+    --ease-in:cubic-bezier(.55,0,.75,.2);
+    --t-press:.12s; --t-quick:.22s; --t-move:.34s; --t-view:.42s;
+    --lift:0 14px 30px -14px rgba(8,10,40,.5);
   }
 
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -195,8 +206,8 @@
   h2{margin:0;font-size:var(--t-title3);font-weight:var(--w-semibold);letter-spacing:var(--tr-title);line-height:var(--lh-title)}
   .muted{color:var(--ink-2)}
   .label{margin:0;font-size:var(--t-footnote);font-weight:var(--w-semibold);color:var(--ink-2)}
-  /* Schedule's own controls, Add and Settings, sit beside its title as on iOS.
-     They wrap under it when large text leaves no room. */
+  /* A page's own controls sit beside its title as on iOS: Settings on Today,
+     Add on Week, Climb and Due. They wrap under it when large text leaves no room. */
   .hero-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--s2) var(--s3)}
   .hero-acts{display:flex;gap:var(--s2);margin-left:auto}
   .hero-btn{position:relative;width:44px;height:44px;border:0;border-radius:999px;padding:0;cursor:pointer;
@@ -221,10 +232,13 @@
   .btn:disabled{opacity:.45;cursor:not-allowed}
   .btns{display:flex;flex-wrap:wrap;gap:var(--s2)}
 
-  /* Every tappable thing answers within 120ms. */
-  .btn,.item,.chip-btn,.dayrow button,.logopen,.tabbar button,.shot .open,.hero-btn{
-    transition:transform .12s ease,background-color .12s ease,opacity .12s ease,filter .12s ease;
+  /* Every tappable thing answers within 120ms, and springs back when let go.
+     The tab bar keeps its own timing: it belongs to the glass. */
+  .btn,.item,.chip-btn,.dayrow button,.logopen,.shot .open,.hero-btn{
+    transition:transform var(--t-quick) var(--ease-spring),background-color var(--t-press) ease,opacity var(--t-press) ease,filter var(--t-press) ease;
   }
+  .tabbar button{transition:transform .12s ease,background-color .12s ease,opacity .12s ease,filter .12s ease}
+  .btn:active,.hero-btn:active,.chip-btn:active,.dayrow button:active{transition-duration:var(--t-press);transition-timing-function:var(--ease-out)}
   .btn:active{transform:scale(.96)}
   .btn.prominent:active{filter:brightness(.92)}
   .item:active,.chip-btn:active,.dayrow button:active,.logopen:active{background:var(--press)}
@@ -649,10 +663,24 @@
   .sheet{border:0;padding:0;margin:auto auto 0;width:100%;max-width:min(520px,100%);max-height:none;
     background:transparent;color:var(--ink);overflow:visible}
   .sheet::backdrop{background:rgba(10,12,30,.5)}
-  .sheet-in{background:#f7f8fb;border-radius:28px 28px 0 0;box-shadow:0 -10px 40px -10px rgba(8,10,40,.5);
-    padding:var(--s5) max(var(--s4),env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + var(--s4)) max(var(--s4),env(safe-area-inset-left,0px))}
-  .sheet[open] .sheet-in{animation:rise .32s cubic-bezier(.3,1.2,.5,1)}
-  @keyframes rise{from{transform:translateY(40%);opacity:0}}
+  .sheet-in{position:relative;background:#f7f8fb;border-radius:28px 28px 0 0;box-shadow:0 -10px 40px -10px rgba(8,10,40,.5);
+    padding:var(--s5) max(var(--s4),env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + var(--s4)) max(var(--s4),env(safe-area-inset-left,0px));
+    transition:transform var(--t-move) var(--ease-spring)}
+  /* A sheet rises from the bottom edge with a touch of spring, as on iOS, and
+     the veil behind it darkens as it comes. Closing, it sinks back down and
+     the veil lifts before the dialog goes. */
+  .sheet[open]:not(.risen) .sheet-in{animation:rise var(--t-view) var(--ease-spring)}
+  .sheet[open]::backdrop{animation:veil var(--t-move) var(--ease-out)}
+  @keyframes rise{from{transform:translateY(100%)}}
+  @keyframes veil{from{background-color:rgba(10,12,30,0)}}
+  .sheet.closing .sheet-in{animation:sink var(--t-move) var(--ease-in) forwards}
+  .sheet.closing::backdrop{animation:unveil var(--t-move) var(--ease-in) forwards}
+  @keyframes sink{to{transform:translateY(105%)}}
+  @keyframes unveil{to{background-color:rgba(10,12,30,0)}}
+  /* The grabber: drag it, or a page sheet's title, down to put the sheet away. */
+  .grab{position:absolute;z-index:4;left:50%;top:0;width:72px;height:22px;margin-left:-36px;touch-action:none;cursor:grab}
+  .grab::before{content:"";position:absolute;left:50%;top:7px;width:36px;height:5px;margin-left:-18px;border-radius:99px;background:rgba(15,20,40,.18)}
+  .sheet.dragging .sheet-in{animation:none;transition:none}
   .sheet h2{margin-top:4px;font-size:var(--t-title2)}
   .sheet .note{font-size:var(--t-footnote)}
   .sheet .btns{flex-direction:column;align-items:stretch;margin-top:var(--s4)}
@@ -663,7 +691,7 @@
      scrolls, and ordinary buttons rather than an action sheet's stack. */
   .sheet.page .sheet-in{padding-top:0;max-height:calc(100dvh - env(safe-area-inset-top,0px) - 8px)}
   .sheet-head{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
-    padding:var(--s4) 0 var(--s2);background:#f7f8fb}
+    padding:var(--s4) 0 var(--s2);background:#f7f8fb;touch-action:none}
   .sheet .sheet-head h2{margin:0}
   .sheet-x{flex:none;width:44px;height:44px;margin-right:-6px;padding:0;border:0;background:none;cursor:pointer;
     display:grid;place-items:center;color:var(--ink)}
@@ -694,6 +722,10 @@
   .rem-pick{margin-top:var(--s2)}
   .rem-sub{margin-top:var(--s3)}
   #rem-opts{margin-bottom:var(--s3)}
+  .rem-dlead{padding:2px 0 var(--s3)}
+  .rem-dlead .label{margin-bottom:6px}
+  .dayrow.leads{grid-template-columns:repeat(4,minmax(0,1fr))}
+  body.big-type .dayrow.leads{grid-template-columns:repeat(2,minmax(0,1fr))}
   /* Qadha from before tracking: a count per prayer, chipped away one at a time. */
   .qtext{padding:6px 0;min-width:0}
   .qrow .tag{white-space:nowrap;font-weight:var(--w-semibold)}
@@ -720,6 +752,124 @@
   body.big-type .o-name{grid-column:1 / -1}
   body.big-type .o-estrow{grid-template-columns:1fr 1fr}
   body.big-type .o-estrow .btn{grid-column:1 / -1}
+
+  /* ---------------- moving between tabs ---------------- */
+  /* The new page glides in from the side of the tab it came from, and the
+     title with it, so you keep your bearings. Only position and opacity
+     move, and only for a moment. */
+  .view-in{animation:view-in var(--t-view) var(--ease-out) both}
+  .title-in{animation:view-in var(--t-move) var(--ease-out) both;--dir-px:12px}
+  @keyframes view-in{from{opacity:0;transform:translate3d(calc(var(--dir,1) * var(--dir-px,28px)),0,0)}}
+  /* Cards that hold a moment's news settle in from just below. */
+  .settle{animation:settle var(--t-move) var(--ease-out) both}
+  @keyframes settle{from{opacity:0;transform:translate3d(0,10px,0) scale(.985)}}
+
+  /* ---------------- segmented controls ---------------- */
+  /* As in iOS: the choices sit on one track, and the selection is a thumb that
+     slides to whichever you tap. Week's days and Due's kinds both use it. */
+  .seg{position:relative;display:grid;gap:2px;padding:4px;border-radius:999px;margin-bottom:var(--s3)}
+  .seg>button{position:relative;z-index:1;font:inherit;font-size:var(--t-footnote);font-weight:var(--w-semibold);min-height:44px;min-width:0;
+    padding:0 6px;border:0;border-radius:999px;background:transparent;color:var(--ink);cursor:pointer;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;transition:color var(--t-quick) ease}
+  .seg>button[aria-pressed="true"]{color:#fff}
+  .seg>button:active{transform:none}
+  .seg-thumb{position:absolute;z-index:0;left:0;top:0;width:0;height:0;border-radius:999px;background:var(--tint);
+    box-shadow:0 6px 14px -6px rgba(11,102,228,.7);pointer-events:none;
+    transition:transform var(--t-move) var(--ease-spring),width var(--t-move) var(--ease-spring),height var(--t-move) var(--ease-spring)}
+  .seg.still .seg-thumb{transition:none}
+  .daysel.seg .chip-btn[aria-pressed="true"]{background:transparent}
+  #d-filter{grid-template-columns:.7fr 1.45fr 1fr 1fr}
+  body.big-type #d-filter{grid-template-columns:1fr 1fr;border-radius:var(--radius)}
+  .seg-sheet{grid-template-columns:repeat(3,minmax(0,1fr));background:rgba(15,20,40,.06);margin:0}
+  .seg-sheet .seg-thumb{background:#fff;box-shadow:0 3px 10px -3px rgba(8,10,40,.3)}
+  .seg-sheet>button[aria-pressed="true"]{color:var(--ink)}
+
+  /* ---------------- due: assignments, exams and quizzes ---------------- */
+  /* Each kind wears its own colour and shape: a page for an assignment, a cap
+     for an exam, a speech bubble for a quiz. How it stands is a word as well
+     as a colour, and only Overdue is red. */
+  .kic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;
+    background:linear-gradient(160deg,hsl(var(--kh) 78% 62%),hsl(var(--kh) 70% 48%));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 5px 12px -7px hsl(var(--kh) 70% 28%)}
+  .kic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;display:block}
+  .trow{position:relative;display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;border-top:1px solid var(--line)}
+  .trow.swipe>.task{z-index:1}
+  .tchk{position:relative;width:52px;height:100%;min-height:64px;display:grid;place-items:center;padding:0 0 0 var(--s2);border:0;background:none;cursor:pointer;z-index:2}
+  .tchk i{width:26px;height:26px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(15,20,40,.24);display:grid;place-items:center;
+    transition:transform var(--t-quick) var(--ease-spring),background-color var(--t-quick) ease,box-shadow var(--t-quick) ease}
+  .tchk svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;
+    stroke-dasharray:21;stroke-dashoffset:21;transition:stroke-dashoffset var(--t-quick) var(--ease-out)}
+  .tchk:active i{transform:scale(.86)}
+  .trow.done .tchk i{background:var(--good);box-shadow:none}
+  .trow.done .tchk svg{stroke-dashoffset:0}
+  .task{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:var(--s3);align-items:center;width:100%;min-height:64px;
+    padding:12px var(--s4) 12px 0;border:0;background:transparent;font:inherit;color:var(--ink);text-align:left;cursor:pointer;
+    touch-action:pan-y;transition:transform var(--t-quick) var(--ease-spring),background-color var(--t-press) ease}
+  .task:active{background:var(--press)}
+  .swiping .task{transition:none}
+  .task .ttl>span{background:linear-gradient(currentColor,currentColor) no-repeat 0 55%/0 1.5px;transition:background-size var(--t-quick) var(--ease-out)}
+  .trow.done .task .ttl{color:var(--ink-2)}
+  .trow.done .task .ttl>span{background-size:100% 1.5px}
+  .trow.done .kic{filter:saturate(.25);opacity:.6}
+  .tside{display:grid;justify-items:end;gap:5px;text-align:right}
+  .pill{display:inline-block;font-size:var(--t-caption);font-weight:var(--w-semibold);line-height:1.2;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .pill.up{background:rgba(15,20,40,.07);color:#384050}
+  .pill.soon{background:rgba(180,120,0,.15);color:#6b4400}
+  .pill.late{background:rgba(194,65,12,.14);color:#7c2d12}
+  .pill.done{background:rgba(21,128,61,.13);color:#14532d}
+  .cd{display:inline-block;font-size:var(--t-footnote);font-weight:var(--w-semibold);white-space:nowrap}
+  .cd.late{color:var(--flag-text)}
+  .roll{animation:roll var(--t-move) var(--ease-out)}
+  @keyframes roll{from{opacity:0;transform:translateY(55%)}}
+  /* Something just added, or just ticked, settles into its new place. */
+  .trow.fresh{animation:fresh .9s var(--ease-out)}
+  @keyframes fresh{0%{background:rgba(11,102,228,.14)}100%{background:transparent}}
+  .trow.pop .tchk i{animation:stop-pop .4s ease-out}
+  .due-group{overflow:hidden}
+  .due-group>.sechead{display:flex;justify-content:space-between;gap:var(--s2)}
+  .due-group.lateg>.sechead{color:var(--flag-text)}
+  .due-more{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:52px;padding:0 var(--s4);border:0;
+    border-top:1px solid var(--line);background:none;font:inherit;font-size:var(--t-subhead);font-weight:var(--w-semibold);color:var(--tint-text);cursor:pointer}
+  .due-more .chev{transition:transform var(--t-move) var(--ease-spring)}
+  .due-more[aria-expanded="true"] .chev{transform:rotate(90deg)}
+  .due-empty{padding:var(--s5) var(--s4);text-align:center}
+  .due-empty h2{margin:var(--s2) 0 var(--s1)}
+  .due-empty p{margin:0 auto var(--s4);max-width:30ch;font-size:var(--t-subhead);color:var(--ink-2)}
+  .due-empty .btns{justify-content:center}
+  .due-adds{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s2)}
+  .due-adds .btn{padding:0 14px}
+  .due-adds .btn i{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;color:#fff;background:hsl(var(--kh) 70% 50%)}
+  .due-adds .btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+  /* What's next: the soonest exam, quiz or deadline, counting down. The bar
+     fills over its last fortnight, so it shows how close it is at a glance. */
+  .next-card{padding:var(--s4);overflow:hidden}
+  .next-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:radial-gradient(110% 90% at 100% 0,hsl(var(--kh,214) 85% 70% / .3),transparent 60%)}
+  .next-top{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s3);align-items:start}
+  .next-card .label{color:hsl(var(--kh,214) 70% 32%)}
+  .next-what{margin:4px 0 0;font-size:var(--t-title2);font-weight:var(--w-bold);letter-spacing:var(--tr-title);line-height:var(--lh-title)}
+  .next-when{margin:4px 0 0;font-size:var(--t-subhead);font-weight:var(--w-medium);color:var(--ink-2)}
+  .next-count{display:grid;justify-items:end;line-height:1}
+  .next-count b{display:block;font-size:2.6rem;font-weight:var(--w-bold);letter-spacing:-.03em}
+  .next-count span{font-size:var(--t-footnote);font-weight:var(--w-semibold);color:var(--ink-2);margin-top:4px}
+  .next-bar{position:relative;z-index:1;height:6px;margin-top:var(--s4);border-radius:99px;background:rgba(15,20,40,.08);overflow:hidden}
+  .next-bar i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,hsl(var(--kh,214) 80% 62%),hsl(var(--kh,214) 75% 46%));
+    transition:width .9s var(--ease-out)}
+  .next-card.soon .next-bar i{background:linear-gradient(90deg,#fbbf24,#d97706)}
+  .next-card.urgent .next-count b{color:#b45309}
+  /* Today's slice of it: the next few, with how long is left. */
+  .due-mini .task{padding-left:var(--s4);min-height:60px}
+  .due-mini .railhead{padding-bottom:var(--s2)}
+  body.big-type .task{grid-template-columns:40px minmax(0,1fr);row-gap:var(--s1)}
+  body.big-type .task .tside{grid-column:2;justify-items:start;text-align:left;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+
+  /* ---------------- depth ---------------- */
+  /* Cards that open something press in a touch. With a mouse, they also lean a
+     degree or two towards the pointer; on a touch screen they never tilt. */
+  @media (hover:hover) and (pointer:fine){
+    .tilt{transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s var(--ease-out),box-shadow .5s var(--ease-out)}
+    .tilt.leaning{transition:transform .08s linear,box-shadow .2s ease;box-shadow:var(--lift),inset 0 1px 0 rgba(255,255,255,.85)}
+  }
 
   /* ---------------- floating tab bar (Liquid Glass) ---------------- */
   /* The lens's place in tabs (--i), how much it magnifies (--mag) and its
@@ -822,6 +972,8 @@
   .toast-undo span{padding:6px 14px;border-radius:999px;background:var(--tint);color:var(--tint-ink);font-size:var(--t-footnote)}
   .toast-undo:active span{filter:brightness(.92)}
   @keyframes drop{from{transform:translate(-50%,-40px);opacity:0}}
+  .toast.gone{animation:lift-out .26s var(--ease-in) forwards;pointer-events:none}
+  @keyframes lift-out{to{transform:translate(-50%,-24px);opacity:0}}
   .viewer{position:fixed;inset:0;z-index:60;background:rgba(10,10,14,.92);display:grid;place-items:center;
     padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
   .viewer img{max-width:100%;max-height:100%;border-radius:16px;display:block}
@@ -829,15 +981,8 @@
     border:0;border-radius:99px;background:rgba(255,255,255,.18);color:#fff;font-size:22px;cursor:pointer}
   .confetti{position:fixed;inset:0;z-index:55;pointer-events:none}
 
-  /* Backup: a status line in Your data, a nudge on Today once a week has passed. */
+  /* A Settings card's status line, under its title. */
   .b-status{margin:4px 0 var(--s2);font-size:var(--t-footnote);font-weight:var(--w-medium);color:var(--ink-2)}
-  .b-remind{padding:var(--s4)}
-  .br-text{margin:4px 0 var(--s3);font-size:var(--t-subhead);color:var(--ink-2)}
-  .b-more{margin-top:var(--s2)}
-  .b-more summary{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;
-    font-size:var(--t-footnote);font-weight:var(--w-semibold);color:var(--tint-text);border-radius:10px}
-  .b-more summary::-webkit-details-marker{display:none}
-  .confirm.stack p{flex-basis:100%}  /* a long question gets its own line, both answers under it */
 
   .install{display:flex;gap:var(--s3);align-items:flex-start;padding:var(--s3) var(--s4);font-size:var(--t-footnote)}
   .install button{margin:-6px -10px -6px auto;flex:0 0 auto;width:44px;height:44px;border:0;border-radius:12px;background:transparent;
@@ -853,7 +998,11 @@
   }
 
   @media (prefers-reduced-motion:reduce){
-    .blob,.focus,.toast,.sheet[open] .sheet-in{animation:none}
+    .blob,.focus,.toast,.toast.gone,.sheet[open]:not(.risen) .sheet-in{animation:none}
+    .sheet[open]::backdrop,.sheet.closing .sheet-in,.sheet.closing::backdrop,.view-in,.title-in,.settle,.roll,.trow.fresh,
+    .trow.pop .tchk i{animation:none}
+    .sheet-in,.seg-thumb,.seg>button,.tchk i,.tchk svg,.task,.task .ttl>span,.next-bar i,.due-more .chev{transition:none}
+    .tchk:active i{transform:none}
     :root{transition:none}
     .tabbar,.lens,.rings .arc,.nowring .arc,.item,.stop,.focus-rule,.about .chev,.feel-btn .face,.feel-bar i,.sw,.sw::after{transition:none}
     .bead,.draw .node,.draw .line::before,.draw .bead,.stop.pop .node,.stop.pop .node::before,.stop.pop .node svg,
@@ -875,6 +1024,7 @@
       <div class="hero-acts hide" id="hero-acts">
         <button type="button" class="hero-btn hide" id="c-add" aria-label="Log a session" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="10.8" y="4.5" width="2.4" height="15" rx="1.2"/><rect x="4.5" y="10.8" width="15" height="2.4" rx="1.2"/></svg></button>
         <button type="button" class="hero-btn" id="e-add" aria-label="Add a block" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="10.8" y="4.5" width="2.4" height="15" rx="1.2"/><rect x="4.5" y="10.8" width="15" height="2.4" rx="1.2"/></svg></button>
+        <button type="button" class="hero-btn hide" id="d-add" aria-label="Add an assignment, exam or quiz" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="10.8" y="4.5" width="2.4" height="15" rx="1.2"/><rect x="4.5" y="10.8" width="15" height="2.4" rx="1.2"/></svg></button>
         <button type="button" class="hero-btn" id="set-open" aria-label="Settings" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="3.4" stroke-dasharray="3.1 3.655" transform="rotate(-10.3 12 12)"/><path fill-rule="evenodd" d="M12 4.6a7.4 7.4 0 1 1 0 14.8a7.4 7.4 0 0 1 0-14.8Zm0 4.4a3 3 0 1 0 0 6a3 3 0 0 0 0-6Z"/></svg></button>
       </div>
     </div>
@@ -906,7 +1056,7 @@
       </div>
     </section>
 
-    <section class="material nowcard idle" id="nowcard" aria-label="Right now">
+    <section class="material nowcard idle tilt" id="nowcard" aria-label="Right now">
       <div class="now-top">
         <div>
           <p class="label" id="now-label">Now</p>
@@ -942,13 +1092,9 @@
       </div>
     </section>
 
-    <section class="material b-remind hide" id="b-remind" aria-labelledby="br-h">
-      <p class="label" id="br-h">Backup</p>
-      <p class="br-text" id="br-text"></p>
-      <div class="btns">
-        <button type="button" class="btn prominent" id="br-save">Back up now</button>
-        <button type="button" class="btn" id="br-later">Later</button>
-      </div>
+    <section class="material seccard due-mini hide" id="t-due" aria-labelledby="td-h">
+      <div class="railhead"><p class="label" id="td-h">Due soon</p><button type="button" class="sm-q" id="td-all">See all</button></div>
+      <div id="td-list"></div>
     </section>
 
     <div id="t-list"></div>
@@ -961,7 +1107,7 @@
 
   <!-- WEEK -->
   <section id="v-week" class="hide">
-    <div class="daysel material" id="w-days" role="group" aria-label="Day of the week"></div>
+    <div class="daysel seg material" id="w-days" role="group" aria-label="Day of the week"></div>
     <section class="material seccard">
       <div class="dayhead"><h2 id="w-title">—</h2></div>
       <p class="w-gym" id="w-gym"></p>
@@ -1075,9 +1221,27 @@
     </section>
   </section>
 
-  <!-- SCHEDULE: the blocks. Adding or editing one, and Settings, open as sheets. -->
-  <section id="v-edit" class="hide">
-    <section class="material seccard" id="e-list"></section>
+  <!-- DUE: assignments, exams and quizzes. Adding or editing one opens a sheet. -->
+  <section id="v-due" class="hide">
+    <div class="seg material" id="d-filter" role="group" aria-label="Show">
+      <span class="seg-thumb" aria-hidden="true"></span>
+      <button type="button" data-k="all" aria-pressed="true">All</button>
+      <button type="button" data-k="assignment" aria-pressed="false">Assignments</button>
+      <button type="button" data-k="exam" aria-pressed="false">Exams</button>
+      <button type="button" data-k="quiz" aria-pressed="false">Quizzes</button>
+    </div>
+    <section class="material next-card tilt hide" id="d-next" aria-labelledby="dn-what">
+      <div class="next-top">
+        <div>
+          <p class="label" id="dn-label">Next up</p>
+          <h2 class="next-what" id="dn-what"></h2>
+          <p class="next-when" id="dn-when"></p>
+        </div>
+        <div class="next-count" id="dn-count" aria-hidden="true"><b></b><span></span></div>
+      </div>
+      <div class="next-bar" aria-hidden="true"><i id="dn-bar"></i></div>
+    </section>
+    <div id="d-list"></div>
   </section>
 </div>
 
@@ -1087,7 +1251,7 @@
   <button type="button" data-view="week" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="4.5" height="16" rx="1.6"/><rect x="9.75" y="4" width="4.5" height="16" rx="1.6"/><rect x="16.5" y="4" width="4.5" height="16" rx="1.6"/></svg>Week</button>
   <button type="button" data-view="climb" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.9 4.6a1.1 1.1 0 0 0-1.8 0l-8.2 13A1.1 1.1 0 0 0 3.8 19h16.4a1.1 1.1 0 0 0 .9-1.7Z"/></svg>Climb</button>
   <button type="button" data-view="solat" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.4.6h1.2V3h-1.2Z"/><path d="M12 2.6c.9 1.7 2.7 2.8 4.3 4 1.6 1.2 2.7 2.8 2.7 5v.4H5v-.4c0-2.2 1.1-3.8 2.7-5 1.6-1.2 3.4-2.3 4.3-4Z"/><path d="M4 13.4h16V21h-5.5v-3.2a2.5 2.5 0 0 0-5 0V21H4Z"/></svg>Solat</button>
-  <button type="button" data-view="edit" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.6" width="18" height="2.8" rx="1.4"/><circle cx="9" cy="7" r="3.1"/><rect x="3" y="15.6" width="18" height="2.8" rx="1.4"/><circle cx="15" cy="17" r="3.1"/></svg>Schedule</button>
+  <button type="button" data-view="due" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.1 1.3 8.3 12 13.5l10.7-5.2Z"/><path d="M5.3 11.3v4.2c0 2.1 3 3.7 6.7 3.7s6.7-1.6 6.7-3.7v-4.2L12 14.6Z"/><rect x="20.4" y="8.7" width="1.7" height="6.6" rx=".85"/></svg>Due</button>
 </nav>
 
 <div class="focus" id="focus" hidden role="dialog" aria-modal="true" aria-labelledby="f-title">
@@ -1182,10 +1346,11 @@
     <form id="e-form">
       <div><label for="e-activity">Activity</label><input type="text" id="e-activity" required maxlength="70"></div>
       <div><label for="e-type">Type</label><select id="e-type"></select></div>
-      <div class="two">
+      <div><div class="two">
         <div><label for="e-start">Start</label><input type="time" id="e-start" value="09:00" step="300" required></div>
-        <div><label for="e-mins">Minutes</label><input type="number" id="e-mins" inputmode="numeric" value="60" min="5" max="720" step="5" required></div>
+        <div><label for="e-stop">Stop</label><input type="time" id="e-stop" value="10:00" step="300" required></div>
       </div>
+        <p class="note" id="e-len" aria-live="polite"></p></div>
       <div><label id="e-days-label">Days</label><div class="dayrow" id="e-days" role="group" aria-labelledby="e-days-label"></div>
         <p class="err hide" id="e-err" role="alert"></p>
         <div class="clash hide" id="e-clash">
@@ -1203,7 +1368,39 @@
   </div>
 </dialog>
 
-<!-- Settings: Sync, the backup file, Break's own files, and resetting the schedule. -->
+<!-- An assignment, exam or quiz: adding one, or changing it. -->
+<dialog class="sheet page" id="a-sheet" aria-labelledby="a-title">
+  <div class="sheet-in">
+    <div class="sheet-head">
+      <h2 id="a-title">New assignment</h2>
+      <button type="button" class="sheet-x" id="a-x" aria-label="Cancel"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4Z"/></svg></i></button>
+    </div>
+    <form id="a-form" novalidate>
+      <div class="seg seg-sheet" id="a-kind" role="group" aria-label="Kind">
+        <span class="seg-thumb" aria-hidden="true"></span>
+        <button type="button" data-k="assignment" aria-pressed="true">Assignment</button>
+        <button type="button" data-k="exam" aria-pressed="false">Exam</button>
+        <button type="button" data-k="quiz" aria-pressed="false">Quiz</button>
+      </div>
+      <div><label for="a-name">Name</label><input type="text" id="a-name" maxlength="80" autocomplete="off"></div>
+      <div><label for="a-course">Course</label><input type="text" id="a-course" maxlength="40" list="a-courses" autocomplete="off" placeholder="Optional"><datalist id="a-courses"></datalist></div>
+      <div><div class="two">
+        <div><label for="a-date" id="a-date-l">Due date</label><input type="date" id="a-date"></div>
+        <div><label for="a-time" id="a-time-l">Due at</label><input type="time" id="a-time" step="300"></div>
+      </div>
+        <p class="note" id="a-left" aria-live="polite"></p></div>
+      <div><label for="a-notes">Notes</label><textarea id="a-notes" maxlength="400" placeholder="Optional"></textarea></div>
+      <p class="err hide" id="a-err" role="alert"></p>
+      <div class="btns stack">
+        <button type="submit" class="btn prominent" id="a-save">Add assignment</button>
+        <button type="button" class="btn hide" id="a-done">Mark as handed in</button>
+        <button type="button" class="btn danger hide" id="a-delete">Delete</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<!-- Settings: Sync, Reminders, Break's own files, and resetting the schedule. -->
 <dialog class="sheet page" id="set-sheet" aria-labelledby="set-title">
   <div class="sheet-in">
     <div class="sheet-head">
@@ -1241,11 +1438,21 @@
     <section class="set-card hide" id="rem-card" aria-labelledby="rem-h">
       <h3 id="rem-h">Reminders</h3>
       <p class="b-status" id="rem-status" aria-live="polite">Off on this phone.</p>
-      <p class="note" id="rem-note" style="margin:0 0 var(--s3)">Prayer times and the start of each block, on your lock screen even while Break is closed. Your Supabase sends them, so Sync needs to be on.</p>
+      <p class="note" id="rem-note" style="margin:0 0 var(--s3)">Prayer times, the start of each block and what's coming up on Due, on your lock screen even while Break is closed. Your Supabase sends them, so Sync needs to be on.</p>
       <div id="rem-opts" class="hide">
         <label class="sw-row"><span>Prayer times<small>When each prayer's time starts, from JAKIM</small></span><input type="checkbox" class="sw" role="switch" id="rem-pray"></label>
         <label class="sw-row"><span>Before a prayer runs out<small>30 minutes before its time ends, if it isn't ticked</small></span><input type="checkbox" class="sw" role="switch" id="rem-late"></label>
         <label class="sw-row"><span>Block starts<small>Not for a block you've already ticked</small></span><input type="checkbox" class="sw" role="switch" id="rem-blocks"></label>
+        <label class="sw-row"><span>Assignments, exams and quizzes<small>Not for one you've already ticked off</small></span><input type="checkbox" class="sw" role="switch" id="rem-due"></label>
+        <div class="rem-dlead" id="rem-dlead">
+          <p class="label" id="rem-dlead-l">They come</p>
+          <div class="dayrow leads" id="rem-leads" role="group" aria-labelledby="rem-dlead-l">
+            <button type="button" data-m="10080" aria-pressed="true">1 week</button>
+            <button type="button" data-m="4320" aria-pressed="true">3 days</button>
+            <button type="button" data-m="1440" aria-pressed="true">1 day</button>
+            <button type="button" data-m="60" aria-pressed="true">1 hour</button>
+          </div>
+        </div>
         <div class="two rem-pick">
           <div><label for="rem-plead">Prayer times come</label><select id="rem-plead"><option value="0">When it starts</option><option value="5">5 min before</option><option value="10">10 min before</option><option value="15">15 min before</option></select></div>
           <div><label for="rem-blead">Blocks come</label><select id="rem-blead"><option value="0">When it starts</option><option value="5">5 min before</option><option value="10">10 min before</option><option value="15">15 min before</option><option value="30">30 min before</option></select></div>
@@ -1263,39 +1470,6 @@
         <button type="button" class="btn hide" id="rem-off">Turn off</button>
       </div>
       <p class="err hide" id="rem-err" role="alert"></p>
-    </section>
-
-    <section class="set-card" aria-labelledby="data-h">
-      <h3 id="data-h">Backup file</h3>
-      <p class="b-status" id="b-status">No backup yet</p>
-      <p class="note" style="margin:0 0 var(--s3)">One file with everything, photos included. Tap <b>Back up to iCloud</b>, choose <b>Save to Files</b>, then <b>iCloud Drive</b>. To bring it back, here or on a new phone, tap <b>Restore from file</b>.</p>
-      <div class="btns">
-        <button type="button" class="btn prominent" id="b-save">Back up to iCloud</button>
-        <button type="button" class="btn" id="b-load">Restore from file</button>
-      </div>
-      <input type="file" id="b-file" accept=".json,application/json" hidden>
-      <p class="err hide" id="b-err" role="alert"></p>
-      <div class="confirm stack hide" id="b-confirm">
-        <p id="b-summary"></p>
-        <button type="button" class="btn" id="b-no">Cancel</button>
-        <button type="button" class="btn danger" id="b-yes">Replace</button>
-      </div>
-      <details class="b-more">
-        <summary>Copy or paste a text backup instead</summary>
-        <p class="note" style="margin-top:0">Plain text for Notes or an email. It leaves out photos.</p>
-        <div class="btns" style="margin-top:var(--s2)">
-          <button type="button" class="btn" id="x-show">Show backup text</button>
-          <button type="button" class="btn" id="x-import">Paste backup text</button>
-        </div>
-        <div id="x-box" class="hide" style="margin-top:var(--s3)">
-          <textarea id="x-text" style="min-height:120px"></textarea>
-          <div class="btns" style="margin-top:var(--s2)">
-            <button type="button" class="btn" id="x-copy">Copy</button>
-            <button type="button" class="btn prominent hide" id="x-apply">Load this</button>
-          </div>
-          <p class="note" id="x-note"></p>
-        </div>
-      </details>
     </section>
 
     <section class="set-card" aria-labelledby="app-h">
@@ -1317,7 +1491,7 @@
       </div>
     </section>
 
-    <p class="note set-foot">Apart from backups you make yourself, Break sends only three things: your Sync copy while you're signed in, this phone's push address while reminders are on, and your zone code to JAKIM for prayer times.</p>
+    <p class="note set-foot">Break sends only three things: your Sync copy while you're signed in, this phone's push address while reminders are on, and your zone code to JAKIM for prayer times.</p>
   </div>
 </dialog>
 
@@ -1375,19 +1549,22 @@ var RULES=[
 ];
 
 // ---------- storage ----------
-var K={blocks:"sb.blocks",done:"sb.done",climbs:"sb.climbs",solat:"sb.solat",solatSet:"sb.solatSet",times:"sb.times",qold:"sb.qadhaOld",
-  lastBackup:"sb.lastBackup",snooze:"sb.backupSnooze",sync:"sb.sync",remind:"sb.remind",push:"sb.push"};
+var K={blocks:"sb.blocks",done:"sb.done",tasks:"sb.tasks",climbs:"sb.climbs",solat:"sb.solat",solatSet:"sb.solatSet",times:"sb.times",
+  qold:"sb.qadhaOld",sync:"sb.sync",remind:"sb.remind",push:"sb.push"};
 // What syncs, by storage key and row name. Things that belong to one phone (the
-// backup reminder, the downloaded prayer timetable, photos, its push sign-up)
-// stay on it.
-var SYNCED={"sb.blocks":"blocks","sb.done":"done","sb.climbs":"climbs","sb.solat":"solat","sb.solatSet":"solatSet","sb.qadhaOld":"qadhaOld",
-  "sb.remind":"reminders"};
+// downloaded prayer timetable, photos, its push sign-up) stay on it.
+var SYNCED={"sb.blocks":"blocks","sb.done":"done","sb.tasks":"tasks","sb.climbs":"climbs","sb.solat":"solat","sb.solatSet":"solatSet",
+  "sb.qadhaOld":"qadhaOld","sb.remind":"reminders"};
 function load(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));if(SYNCED[k])changed(SYNCED[k]);return true;}catch(e){return false;}}
 var blocks=load(K.blocks,null);
 if(!Array.isArray(blocks)||!blocks.length){blocks=DEFAULTS.slice();save(K.blocks,blocks);}
 var done=load(K.done,{})||{};
+// Assignments, exams and quizzes: {id, kind, title, course, due "YYYY-MM-DDTHH:MM", notes, done}.
+var tasks=load(K.tasks,[]);if(!Array.isArray(tasks))tasks=[];
 var climbs=load(K.climbs,[])||[];
+// What the backup file left behind, from before Sync took its place.
+try{localStorage.removeItem("sb.lastBackup");localStorage.removeItem("sb.backupSnooze");}catch(e){}
 
 // ---------- helpers ----------
 function el(id){return document.getElementById(id);}
@@ -1416,8 +1593,69 @@ function keepFocus(fn){
   var a=document.activeElement,f=a&&a.getAttribute&&a.getAttribute("data-f");fn();
   if(f&&!a.isConnected){var n=document.querySelector('[data-f="'+f+'"]');if(n)n.focus({preventScroll:true});}
 }
-function sheetOpen(d){if(d.showModal){if(!d.open)d.showModal();}else d.setAttribute("open","");}
-function sheetShut(d){if(d.close){if(d.open)d.close();}else d.removeAttribute("open");}
+// Sheets rise and sink as on iOS. One opened again while it is still on its
+// way down comes straight back up. With Reduce Motion they simply come and go.
+function isOpen(d){return d.showModal?d.open:d.hasAttribute("open");}
+function sheetOpen(d){
+  if(d._shut){clearTimeout(d._shut);d._shut=0;d.classList.remove("closing");}
+  if(isOpen(d))return;
+  d.classList.remove("risen");
+  if(d.showModal)d.showModal();else d.setAttribute("open","");
+  // Once it has risen, nothing replays the rise: not a drag, not a re-render.
+  clearTimeout(d._risen);d._risen=setTimeout(function(){d.classList.add("risen");},460);
+}
+function sheetShut(d){
+  if(!isOpen(d)||d._shut)return;
+  function go(){d._shut=0;d.classList.remove("closing","dragging","risen");
+    var si=d.querySelector(".sheet-in");if(si)si.style.transform="";
+    if(d.close)d.close();else d.removeAttribute("open");}
+  if(reduceMotion()){go();return;}
+  d.classList.add("closing");d._shut=setTimeout(go,340);
+}
+// Dragged down by its grabber, or a page sheet by its title bar, a sheet
+// follows the finger. Let go far enough down, or flicked, it closes; anything
+// less and it springs back. Upwards it only gives a little.
+function sheetDrag(d){
+  var si=d.querySelector(".sheet-in");if(!si)return;
+  var g=document.createElement("span");g.className="grab";g.setAttribute("aria-hidden","true");si.insertBefore(g,si.firstChild);
+  var st=null;
+  function down(e){
+    if(e.pointerType==="mouse"&&e.button!==0||e.target.closest("button,input,select,textarea,a"))return;
+    st={id:e.pointerId,y:e.clientY,t:e.timeStamp,dy:0,v:0,on:false,h:e.currentTarget};
+  }
+  function move(e){
+    if(!st||e.pointerId!==st.id)return;
+    var dy=e.clientY-st.y;
+    if(!st.on){if(Math.abs(dy)<6)return;st.on=true;d.classList.add("dragging");try{st.h.setPointerCapture(st.id);}catch(_){}}
+    st.v=(dy-st.dy)/Math.max(1,e.timeStamp-st.t);st.dy=dy;st.t=e.timeStamp;
+    si.style.transform="translateY("+(dy<0?dy/6:dy).toFixed(1)+"px)";
+  }
+  function up(e){
+    if(!st||e.pointerId!==st.id)return;
+    var s=st;st=null;if(!s.on)return;
+    d.classList.remove("dragging");
+    // A finger that has come to rest before letting go isn't flicking.
+    var v=e.timeStamp-s.t>90?0:s.v;
+    if(s.dy>110||v>.65)sheetShut(d);else si.style.transform="";
+  }
+  [g,d.querySelector(".sheet-head")].forEach(function(h){if(!h)return;
+    h.addEventListener("pointerdown",down);h.addEventListener("pointermove",move);
+    h.addEventListener("pointerup",up);h.addEventListener("pointercancel",up);});
+  // Escape, on a keyboard, puts it away the same way.
+  d.addEventListener("cancel",function(e){e.preventDefault();sheetShut(d);});
+}
+Array.prototype.forEach.call(document.querySelectorAll("dialog.sheet"),sheetDrag);
+// A segmented control's thumb sits under its pressed choice. It slides there,
+// except the first time, or while its page is hidden, when it simply appears.
+function placeThumb(seg){
+  var th=seg.querySelector(".seg-thumb"),b=seg.querySelector('button[aria-pressed="true"]');
+  if(!th||!b||!b.offsetWidth)return;
+  var first=!th._placed;if(first)seg.classList.add("still");
+  th.style.width=b.offsetWidth+"px";th.style.height=b.offsetHeight+"px";
+  th.style.transform="translate("+b.offsetLeft+"px,"+b.offsetTop+"px)";
+  th._placed=true;
+  if(first){void th.offsetWidth;seg.classList.remove("still");}
+}
 
 function dayStats(d){
   d=d||new Date();
@@ -1501,7 +1739,7 @@ function renderToday(intro){
   var cn=currentNext(st.list,m);
   renderNow(st,cn,m);
   renderSolatMini();
-  renderBackupNudge();
+  renderDueMini();
 
   var box=el("t-list");box.innerHTML="";
   if(!st.list.length){box.innerHTML='<section class="material"><p class="empty">Nothing scheduled for '+esc(LONG[i])+'.</p></section>';return;}
@@ -1705,8 +1943,10 @@ function toast(text,undo){
   var t=document.createElement("div");t.className="toast glass";t.setAttribute("role","status");t.textContent=text;
   if(undo){var u=document.createElement("button");u.type="button";u.className="toast-undo";u.innerHTML="<span>Undo</span>";
     u.addEventListener("click",function(){t.remove();undo();});t.appendChild(u);}
-  // Over an open sheet it has to live inside it, or the sheet's backdrop covers it.
-  (document.querySelector("dialog[open]")||document.body).appendChild(t);setTimeout(function(){t.remove();},undo?6000:2400);
+  // Over an open sheet it has to live inside it, or the sheet's backdrop covers
+  // it; never in one that is on its way down, or it would go with it.
+  (document.querySelector("dialog[open]:not(.closing)")||document.body).appendChild(t);
+  var life=undo?6000:2400;setTimeout(function(){t.classList.add("gone");},life-260);setTimeout(function(){t.remove();},life);
 }
 function celebrate(){
   announce("Day complete. Every block is ticked.");toast("Day complete — every block ticked");
@@ -1731,11 +1971,16 @@ function celebrate(){
 // ---------- week ----------
 var weekDay=dayIdx(new Date());
 function renderWeek(){
-  var box=el("w-days");box.innerHTML="";
-  DAYS.forEach(function(n,i){var b=document.createElement("button");b.type="button";
-    b.className="chip-btn";b.textContent=n;b.setAttribute("aria-label",LONG[i]);b.setAttribute("data-f","w"+i);
-    b.setAttribute("aria-pressed",i===weekDay?"true":"false");
-    b.addEventListener("click",function(){weekDay=i;keepFocus(renderWeek);});box.appendChild(b);});
+  // The days are made once, so the thumb under the chosen one can slide.
+  var box=el("w-days");
+  if(!box.children.length){
+    var th=document.createElement("span");th.className="seg-thumb";th.setAttribute("aria-hidden","true");box.appendChild(th);
+    DAYS.forEach(function(n,i){var b=document.createElement("button");b.type="button";
+      b.className="chip-btn";b.textContent=n;b.setAttribute("aria-label",LONG[i]);b.setAttribute("data-f","w"+i);
+      b.addEventListener("click",function(){if(weekDay!==i){weekDay=i;renderWeek();}});box.appendChild(b);});
+  }
+  Array.prototype.forEach.call(box.querySelectorAll("button"),function(b,i){b.setAttribute("aria-pressed",i===weekDay?"true":"false");});
+  placeThumb(box);
   var list=forDay(weekDay);
   el("w-title").textContent=LONG[weekDay];
   el("w-gym").textContent=GYM[weekDay].length?"Gym open "+gymDayText(weekDay):"Gym closed";
@@ -2573,13 +2818,27 @@ function roomLine(p){
     :p.rest.length?"comes off "+dayList(p.days):"is removed";
   return "<b>"+esc(p.b.activity)+"</b> ("+span(s,s+p.b.mins)+") "+what;
 }
-function formMins(){return Math.max(5,Math.min(720,parseInt(el("e-mins").value,10)||60));}
-// Checked live as the time, length and days change. Saving over a clash
-// makes room, so the save button says so before it is pressed.
+// How long the block runs, from its start to its stop. A stop at or before
+// the start is the next morning, so a block can run past midnight.
+function formMins(){var m=toMin(el("e-stop").value||"10:00")-toMin(el("e-start").value||"09:00");return m<=0?m+1440:m;}
+function lenOk(m){return m>=5&&m<=720;}
+function lenText(m){var h=Math.floor(m/60),mm=m%60;
+  return !h?m+" min":h+(h===1?" hour":" hours")+(mm?" "+mm+" min":"");}
+// Moving the start carries the stop with it, keeping the length, as in Calendar.
+var editLen=60;
+el("e-start").addEventListener("input",function(){
+  if(!el("e-start").value)return;el("e-stop").value=hhmm((toMin(el("e-start").value)+editLen)%1440);});
+el("e-stop").addEventListener("input",function(){editLen=formMins();});
+// Checked live as the times and days change. Saving over a clash makes room,
+// so the save button says so before it is pressed.
 var clashSig="";
 function checkClash(){
   var box=el("e-clash"),fix=el("e-clash-fix");
-  var start=el("e-start").value||"09:00",mins=formMins();
+  var start=el("e-start").value||"09:00",mins=formMins(),ok=lenOk(mins);
+  el("e-len").textContent=!ok?(mins<5?"Make it at least 5 minutes.":"A block can run for up to 12 hours."):
+    lenText(mins)+(toMin(start)+mins>1440?", ending the next morning":"");
+  el("e-len").classList.toggle("err",!ok);
+  if(!ok){box.classList.add("hide");clashSig="";el("e-save").textContent=editing?"Save changes":"Add block";return [];}
   var plan=picked.length?roomPlan(start,mins,picked,editing):[];
   el("e-save").textContent=plan.length?(editing?"Save and make room":"Add and make room"):(editing?"Save changes":"Add block");
   if(!plan.length){box.classList.add("hide");clashSig="";return plan;}
@@ -2598,14 +2857,15 @@ function checkClash(){
   clashSig=sig;
   return plan;
 }
-["e-start","e-mins"].forEach(function(id){el(id).addEventListener("input",checkClash);el(id).addEventListener("change",checkClash);});
+["e-start","e-stop"].forEach(function(id){el(id).addEventListener("input",checkClash);el(id).addEventListener("change",checkClash);});
 
 function resetEdit(){editing=null;el("e-title").textContent="Add a block";
-  el("e-activity").value="";el("e-type").value="study";el("e-start").value="09:00";el("e-mins").value="60";el("e-details").value="";
-  setDays([]);el("e-delete").classList.add("hide");showErr("");
+  el("e-activity").value="";el("e-type").value="study";el("e-start").value="09:00";el("e-stop").value="10:00";el("e-details").value="";
+  setDays([]);el("e-delete").classList.add("hide");showErr("");editLen=60;
   checkClash();}
 function startEdit(b){editing=b.id;el("e-title").textContent="Edit block";
-  el("e-activity").value=b.activity;el("e-type").value=b.type;el("e-start").value=b.start;el("e-mins").value=String(b.mins);
+  el("e-activity").value=b.activity;el("e-type").value=b.type;el("e-start").value=b.start;
+  el("e-stop").value=hhmm((toMin(b.start)+b.mins)%1440);editLen=b.mins;
   el("e-details").value=b.details||"";setDays(b.days);el("e-delete").classList.remove("hide");showErr("");checkClash();}
 // The editor is a sheet over whatever you were looking at, so a long swipe
 // left on Today edits that block without leaving Today. Closing it, however
@@ -2616,24 +2876,13 @@ function closeEditor(){sheetShut(el("e-sheet"));}
 el("e-sheet").addEventListener("close",resetEdit);
 el("e-sheet").addEventListener("click",function(e){if(e.target===this)closeEditor();});
 el("e-x").addEventListener("click",closeEditor);
-el("e-add").addEventListener("click",function(){openEditor(null);});
+// Week's +: a new block, on the day you're looking at.
+el("e-add").addEventListener("click",function(){openEditor(null);setDays([weekDay]);checkClash();});
 // Everything drawn from the blocks, redrawn when the editor changes them.
-function blocksChanged(){renderEditList();renderToday();if(view==="week")keepFocus(renderWeek);}
-function renderEditList(){var box=el("e-list");box.innerHTML="";
-  var bad=blocks.filter(function(b){return clashes(b.start,b.mins,b.days,b.id).length;}).length;
-  var h=document.createElement("p");h.className="sechead";
-  h.innerHTML=bad?'All blocks · <span class="overlap">'+bad+' overlap</span> — tap one to fix':"All blocks · tap one to edit";
-  box.appendChild(h);
-  blocks.slice().sort(function(a,b){return toMin(a.start)-toMin(b.start);}).forEach(function(b){var t=typeOf(b.type);
-    var r=document.createElement("button");r.type="button";r.className="item";r.style.setProperty("--h",t.hue);r.setAttribute("aria-haspopup","dialog");
-    r.innerHTML='<span class="cat"></span><span class="when"></span><span class="body"><span class="ttl"></span><span class="meta"></span></span><span></span>';
-    r.querySelector(".when").textContent=fmt(toMin(b.start));r.querySelector(".ttl").textContent=b.activity;
-    var c=clashes(b.start,b.mins,b.days,b.id);
-    r.querySelector(".meta").innerHTML='<span class="chip" style="--h:'+t.hue+'">'+esc(t.name)+'</span>'+esc(b.days.map(function(d){return DAYS[d];}).join(" "))+
-      (c.length?' · <span class="overlap">Overlaps '+esc(c[0].b.activity)+(c.length>1?" +"+(c.length-1):"")+'</span>':"");
-    r.addEventListener("click",function(){openEditor(b);});box.appendChild(r);});}
+function blocksChanged(){renderToday();if(view==="week")keepFocus(renderWeek);}
 el("e-form").addEventListener("submit",function(e){e.preventDefault();
   if(!picked.length){showErr("Pick at least one day for this block.");return;}
+  if(!lenOk(formMins())){el("e-stop").focus();return;}
   var d={id:editing||newId(),activity:el("e-activity").value.trim()||"Untitled",type:el("e-type").value,start:el("e-start").value||"09:00",
     mins:formMins(),details:el("e-details").value.trim(),days:picked.slice().sort(function(a,b){return a-b;})};
   var plan=roomPlan(d.start,d.mins,d.days,editing),before=blocks.slice();
@@ -2734,157 +2983,279 @@ function addIdea(g,x){
 }
 // Other…: the editor, set to the free time, so whatever you add fits it exactly.
 function openEditorAt(g){openEditor(null);
-  el("e-start").value=hhmm(g.s);el("e-mins").value=String(Math.max(5,Math.min(720,Math.floor((g.e-g.s)/5)*5)));
+  el("e-start").value=hhmm(g.s);el("e-stop").value=hhmm(Math.min(g.e,g.s+720)%1440);editLen=formMins();
   setDays([g.day]);checkClash();}
 
-// ---------- backup ----------
-// One file holding everything, photos included. It goes out through the share
-// sheet (Save to Files, then iCloud Drive) and comes back by picking it again.
-var lastBackup=load(K.lastBackup,null),pcache={},warming=null,restoreFrom=null;
-var DAY=86400000,NUDGE_DAYS=7;
-function photoIds(){var ids=[];climbs.forEach(function(c){(c.shots||[]).forEach(function(id){ids.push(id);});});return ids;}
-function dataURL(b){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};
-  r.onerror=function(){rej(r.error);};r.readAsDataURL(b);});}
-// Photos are read ahead of time. iOS only opens the share sheet while the tap
-// still counts, so the file has to be built inside the tap, with no waiting.
-function warmPhotos(){
-  if(warming)return warming;
-  var need=photoIds().filter(function(id){return !(id in pcache);});
-  if(!need.length)return Promise.resolve();
-  warming=Promise.all(need.map(function(id){
-    return pget(id).then(function(b){return b?dataURL(b):null;}).then(function(u){pcache[id]=u;},function(){pcache[id]=null;});
-  })).then(function(){warming=null;});
-  return warming;
+// ---------- due ----------
+// Assignments, exams and quizzes: things that happen once, on a date. An
+// assignment is due and gets handed in; an exam or a quiz starts, and is done
+// once you've sat it. Due has them all, soonest first, one kind at a time if
+// you like, and Today shows the next few. One without a kind is an assignment.
+var KINDS={
+  assignment:{name:"Assignment",many:"Assignments",h:214,at:"23:59",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8Z"/><path d="M14 3.5V8h4.5M9 12.5h6M9 16h4"/></svg>'},
+  exam:{name:"Exam",many:"Exams",h:266,at:"09:00",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 9.4 12 5.2l9.2 4.2L12 13.6Z"/><path d="M6.6 11.4v4.2c0 1.5 2.4 2.8 5.4 2.8s5.4-1.3 5.4-2.8v-4.2M21.2 9.4v4.8"/></svg>'},
+  quiz:{name:"Quiz",many:"Quizzes",h:24,at:"09:00",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-7.5L7 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5Z"/><path d="M10 9a2 2 0 1 1 2.9 1.8c-.6.3-.9.8-.9 1.4v.2M12 14.4v.1"/></svg>'}
+};
+// What the sheet says for each kind: an assignment is handed in, the others are done.
+var KIND_FORM={
+  assignment:{add:"New assignment",save:"Add assignment",date:"Due date",time:"Due at",done:"Mark as handed in",undo:"Not handed in yet",ph:"Lab report 2"},
+  exam:{add:"New exam",save:"Add exam",date:"Date",time:"Starts at",done:"Mark as done",undo:"Not done yet",ph:"Calculus final"},
+  quiz:{add:"New quiz",save:"Add quiz",date:"Date",time:"Starts at",done:"Mark as done",undo:"Not done yet",ph:"Chapter 3 quiz"}
+};
+function kindOf(t){return t&&KINDS[t.kind]?t.kind:"assignment";}
+function isTest(t){return kindOf(t)!=="assignment";}
+// Read by its parts, so every browser takes it as the phone's own time.
+function dueAt(t){var m=/^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(t&&t.due||"");return m?new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]):null;}
+function calDays(a,b){var x=new Date(a),y=new Date(b);x.setHours(0,0,0,0);y.setHours(0,0,0,0);return Math.round((y-x)/864e5);}
+// "5h left", "Tomorrow", "3 days", "2 days late" for an assignment; "In 5h",
+// "Tomorrow", "In 3 days" for an exam or a quiz. By the calendar rather than
+// by 24 hours, so tomorrow night never reads as two days away.
+function leftText(d,now,test){
+  var ms=d-now,n=calDays(now,d);
+  if(ms<0){if(test)return "";
+    return n<0?plural(-n,"day")+" late":-ms<36e5?Math.max(1,Math.floor(-ms/6e4))+"m late":Math.floor(-ms/36e5)+"h late";}
+  if(n===0){var u=ms<36e5?Math.max(1,Math.ceil(ms/6e4))+"m":Math.floor(ms/36e5)+"h";return test?"In "+u:u+" left";}
+  return n===1?"Tomorrow":test?"In "+n+" days":n+" days";
 }
-function backupFile(){
-  var photos={},n=0;
-  photoIds().forEach(function(id){if(pcache[id]){photos[id]=pcache[id];n++;}});
-  var json=JSON.stringify({app:"Break",v:2,saved:new Date().toISOString(),blocks:blocks,done:done,climbs:climbs,
-    solat:{log:plog,set:pset,old:qold},photos:photos});
-  var name="break-backup-"+key(new Date())+".json",file=null;
-  try{file=new File([json],name,{type:"application/json"});}catch(e){}
-  return {json:json,name:name,file:file,photos:n,size:file?file.size:json.length};
+// How it stands: Upcoming, Due soon (inside two days), Overdue or Completed.
+// An exam or a quiz gone by unticked is Past: there was nothing to hand in.
+function status(t,d,now){
+  if(t.done)return {c:"done",w:"Completed"};
+  if(!d)return {c:"up",w:"No date"};
+  var ms=d-now;
+  if(ms<0)return isTest(t)?{c:"up",w:"Past"}:{c:"late",w:"Overdue"};
+  if(ms<2*864e5)return {c:"soon",w:isTest(t)?"Soon":"Due soon"};
+  return {c:"up",w:"Upcoming"};
 }
-function saveDownload(b){
-  var u=URL.createObjectURL(new Blob([b.json],{type:"application/json"})),a=document.createElement("a");
-  a.href=u;a.download=b.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},60000);
+// "today, 9am", "Thursday, 9am", "Thu 6 Nov, 9am".
+function dueWhen(d){var n=calDays(new Date(),d);
+  return (n===0?"today":n===1?"tomorrow":n===-1?"yesterday":n>1&&n<7?LONG[dayIdx(d)]:
+    shortDate(d)+(d.getFullYear()!==new Date().getFullYear()?" "+d.getFullYear():""))+", "+clock(d);}
+function datePhrase(t,d){return (isTest(t)?KINDS[kindOf(t)].name+" ":"Due ")+dueWhen(d);}
+function byDue(a,b){var x=dueAt(a),y=dueAt(b);return (x?+x:Infinity)-(y?+y:Infinity);}
+function kicon(k){return '<span class="kic" style="--kh:'+KINDS[k].h+'">'+KINDS[k].icon+'</span>';}
+function courses(){var s={};tasks.forEach(function(t){if(t.course)s[t.course]=1;});return Object.keys(s).sort();}
+
+// dueFilter: "all" or one kind. freshId: just added or changed, so it flashes
+// as it settles. popTask: just ticked, so its check pops.
+var dueFilter="all",freshId=null,popTask=null,showDone=false,cdSeen={};
+// A countdown that reads differently from last time rolls up into place.
+function rolled(node,id,text){if(cdSeen[id]!==undefined&&cdSeen[id]!==text&&!reduceMotion())node.classList.add("roll");cdSeen[id]=text;}
+function sideNode(t,d,now){
+  var s=document.createElement("span"),st=status(t,d,now),p=document.createElement("span");s.className="tside";
+  p.className="pill "+st.c;p.textContent=st.w;s.appendChild(p);
+  var txt=d&&!t.done?leftText(d,now,isTest(t)):"";
+  if(txt){var c=document.createElement("span");c.className="cd"+(st.c==="late"?" late":"");c.textContent=txt;rolled(c,t.id,txt);s.appendChild(c);}
+  return s;
 }
-function backedUp(b){
-  lastBackup={at:Date.now(),size:b.size,photos:b.photos};save(K.lastBackup,lastBackup);
-  renderBackupStatus();renderBackupNudge();announce("Backup saved");toast("Backup saved");
+function taskBody(t,d){
+  var b=document.createElement("span");b.className="body";
+  b.innerHTML='<span class="ttl"><span></span></span><span class="meta"></span>';
+  b.querySelector(".ttl>span").textContent=t.title;
+  b.querySelector(".meta").textContent=(t.course?t.course+" · ":"")+(d?datePhrase(t,d):"No date");
+  return b;
 }
-function backupBusy(on){
-  [["b-save","Back up to iCloud"],["br-save","Back up now"]].forEach(function(x){var b=el(x[0]);b.disabled=on;b.textContent=on?"Preparing…":x[1];});
+// One row: a round check on the left, then its kind, name, course and date,
+// and how it stands with the time left. Tap it to change it, swipe right to
+// tick it off, or a long swipe left to edit.
+function taskRow(t,now){
+  var k=kindOf(t),d=dueAt(t),test=isTest(t),wrap=document.createElement("div");
+  wrap.className="trow swipe"+(t.done?" done":"")+(t.id===freshId?" fresh":"")+(t.id===popTask?" pop":"");
+  wrap.setAttribute("data-id",t.id);wrap.setAttribute("data-act",t.done?"↺  Undo":"✓  Done");wrap.setAttribute("data-edit","✎  Edit");
+  var chk=document.createElement("button");chk.type="button";chk.className="tchk";chk.setAttribute("data-f","c"+t.id);
+  chk.setAttribute("aria-pressed",t.done?"true":"false");
+  chk.setAttribute("aria-label",(test?"Done: ":"Handed in: ")+t.title);
+  chk.innerHTML="<i>"+CHECK+"</i>";
+  chk.addEventListener("click",function(){toggleTask(t.id);});
+  var row=document.createElement("button");row.type="button";row.className="task";row.setAttribute("aria-haspopup","dialog");row.setAttribute("data-f","a"+t.id);
+  row.innerHTML=kicon(k);row.appendChild(taskBody(t,d));row.appendChild(sideNode(t,d,now));
+  row.addEventListener("click",function(){if(row._swiped)return;openTask(t);});
+  attachSwipe(wrap,row,function(){toggleTask(t.id);},function(){openTask(t);});
+  wrap.appendChild(chk);wrap.appendChild(row);
+  return wrap;
 }
-function backUp(){
-  if(photoIds().some(function(id){return !(id in pcache);})){
-    backupBusy(true);warmPhotos().then(function(){backupBusy(false);shareBackup();});return;
+// Rows that were already there glide from where they were to where they are
+// now; ones that weren't settle in. Transforms only, so nothing reflows.
+function flip(box,was){
+  if(reduceMotion())return;
+  var had=Object.keys(was).length;
+  Array.prototype.forEach.call(box.querySelectorAll(".trow"),function(r){
+    var id=r.getAttribute("data-id"),dy=id in was?was[id]-r.getBoundingClientRect().top:0;
+    if(!(id in was)){if(had)r.classList.add("settle");return;}
+    if(Math.abs(dy)<1)return;
+    r.style.transition="none";r.style.transform="translateY("+dy.toFixed(1)+"px)";
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      r.style.transition="transform var(--t-move) var(--ease-out)";r.style.transform="";
+      setTimeout(function(){r.style.transition="";},400);});});
+  });
+}
+function renderDue(){
+  var box=el("d-list"),now=new Date(),was={};
+  Array.prototype.forEach.call(box.querySelectorAll(".trow"),function(r){was[r.getAttribute("data-id")]=r.getBoundingClientRect().top;});
+  box.innerHTML="";
+  Array.prototype.forEach.call(el("d-filter").querySelectorAll("button"),function(b){
+    b.setAttribute("aria-pressed",b.getAttribute("data-k")===dueFilter?"true":"false");});
+  placeThumb(el("d-filter"));
+  var mine=function(t){return dueFilter==="all"||kindOf(t)===dueFilter;},gone=function(t){var d=dueAt(t);return d&&d<now;};
+  var list=tasks.filter(mine),open=list.filter(function(t){return !t.done;}).sort(byDue),
+      fin=list.filter(function(t){return t.done;}).sort(function(a,b){return b.done-a.done;});
+  renderNext(open,now);
+  if(!tasks.length){box.appendChild(dueEmpty());return;}
+  var groups=[["Overdue",open.filter(function(t){return gone(t)&&!isTest(t);}),"lateg"],
+    ["Coming up",open.filter(function(t){return !gone(t);}),""],
+    ["Gone by",open.filter(function(t){return gone(t)&&isTest(t);}),""]],any=false;
+  groups.forEach(function(g){
+    if(!g[1].length)return;any=true;
+    var card=document.createElement("section");card.className="material seccard due-group "+g[2];
+    var h=document.createElement("p");h.className="sechead";h.innerHTML="<span></span><span></span>";
+    h.firstChild.textContent=g[0];h.lastChild.textContent=g[1].length;card.appendChild(h);
+    g[1].forEach(function(t){card.appendChild(taskRow(t,now));});box.appendChild(card);
+  });
+  if(!any){var e=document.createElement("section");e.className="material settle";e.innerHTML='<p class="empty"></p>';
+    e.firstChild.textContent=fin.length?"All done. Nothing left to hand in or sit.":
+      "No "+KINDS[dueFilter].many.toLowerCase()+" yet. Tap + to add one.";box.appendChild(e);}
+  if(fin.length){
+    var c=document.createElement("section");c.className="material seccard due-group";
+    var t=document.createElement("button");t.type="button";t.className="due-more";t.setAttribute("aria-expanded",showDone?"true":"false");
+    t.innerHTML='<span></span><span class="chev" aria-hidden="true">›</span>';t.firstChild.textContent="Completed · "+fin.length;
+    t.addEventListener("click",function(){showDone=!showDone;keepFocus(renderDue);});
+    c.appendChild(t);if(showDone)fin.forEach(function(x){c.appendChild(taskRow(x,now));});box.appendChild(c);
   }
-  shareBackup();
+  flip(box,was);freshId=null;popTask=null;
 }
-function shareBackup(){
-  var b=backupFile();
-  if(b.file&&navigator.share&&navigator.canShare&&navigator.canShare({files:[b.file]})){
-    navigator.share({files:[b.file],title:"Break backup"}).then(function(){backedUp(b);},function(e){
-      var n=e&&e.name;
-      if(n==="AbortError"||n==="InvalidStateError")return;  // closed without saving, or a sheet is already open
-      // iOS stopped counting it as a tap (the photos took a moment to load).
-      // The file is ready now, so a second tap opens the sheet straight away.
-      if(n==="NotAllowedError"){toast("Backup ready. Tap Back up again");return;}
-      saveDownload(b);backedUp(b);
-    });
-  }else{saveDownload(b);backedUp(b);}
+// Nothing on Due yet: what it's for, and a way to add each kind.
+function dueEmpty(){
+  var s=document.createElement("section");s.className="material due-empty settle";
+  s.innerHTML='<h2>Nothing due</h2><p>Add an assignment, exam or quiz. Break counts down to it and reminds you a week, three days, a day and an hour before.</p><div class="due-adds"></div>';
+  var box=s.querySelector(".due-adds");
+  Object.keys(KINDS).forEach(function(k){var b=document.createElement("button");b.type="button";b.className="btn";b.setAttribute("aria-haspopup","dialog");
+    b.innerHTML='<i style="--kh:'+KINDS[k].h+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg></i>';
+    b.appendChild(document.createTextNode(KINDS[k].name));b.addEventListener("click",function(){openTask(null,k);});box.appendChild(b);});
+  return s;
+}
+// The soonest one still to come in the next fortnight, counting down: days
+// while it's two or more away, then hours, then minutes.
+function renderNext(open,now){
+  var card=el("d-next"),t=open.filter(function(x){var d=dueAt(x);return d&&d>=now&&d-now<14*864e5;})[0];
+  card.classList.toggle("hide",!t);if(!t)return;
+  var d=dueAt(t),k=kindOf(t),ms=d-now,test=isTest(t),big,unit;
+  card.style.setProperty("--kh",KINDS[k].h);
+  card.classList.toggle("soon",ms<2*864e5);card.classList.toggle("urgent",ms<864e5);
+  el("dn-label").textContent=test?"Next "+KINDS[k].name.toLowerCase():"Next deadline";
+  el("dn-what").textContent=t.title;
+  if(ms>=2*864e5){big=calDays(now,d);unit="days";}
+  else if(ms>=36e5){big=Math.floor(ms/36e5);unit=big===1?"hour":"hours";}
+  else{big=Math.max(1,Math.ceil(ms/6e4));unit=big===1?"minute":"minutes";}
+  // The big number is drawn, so screen readers hear the time left here instead.
+  el("dn-when").innerHTML=esc((t.course?t.course+" · ":"")+(test?"Starts ":"Due ")+dueWhen(d))+'<span class="sr">. In '+big+" "+unit+".</span>";
+  var b=el("dn-count").querySelector("b");b.textContent=big;rolled(b,"next",t.id+big);
+  el("dn-count").querySelector("span").textContent=unit+(test?" to go":" left");
+  // The bar fills across its last fourteen days.
+  el("dn-bar").style.width=Math.max(4,Math.min(100,(1-ms/(14*864e5))*100)).toFixed(1)+"%";
+}
+// Today's share: the next three in the coming week, and any overdue.
+function renderDueMini(){
+  var card=el("t-due"),box=el("td-list"),now=new Date();
+  var up=tasks.filter(function(t){var d=dueAt(t);return !t.done&&d&&(d>=now||!isTest(t))&&d-now<7*864e5;}).sort(byDue).slice(0,3);
+  card.classList.toggle("hide",!up.length);box.innerHTML="";
+  up.forEach(function(t){var d=dueAt(t),r=document.createElement("button");r.type="button";r.className="task";
+    r.setAttribute("aria-haspopup","dialog");r.setAttribute("data-f","m"+t.id);
+    r.innerHTML=kicon(kindOf(t));r.appendChild(taskBody(t,d));r.appendChild(sideNode(t,d,now));
+    r.addEventListener("click",function(){openTask(t);});box.appendChild(r);});
+}
+function dueChanged(){if(view==="due")keepFocus(renderDue);renderDueMini();}
+// Ticked from the list, the check pops and the title strikes through in place
+// first, and only then does the row go to Completed.
+function toggleTask(id){
+  var t=tasks.filter(function(x){return x.id===id;})[0];if(!t)return;
+  var on=!t.done,row=on&&view==="due"&&!reduceMotion()?document.querySelector('#d-list .trow[data-id="'+id+'"]'):null;
+  tasks=tasks.map(function(x){return x.id===id?Object.assign({},x,{done:on?Date.now():0}):x;});save(K.tasks,tasks);
+  announce((on?(isTest(t)?"Done: ":"Handed in: "):"Back on the list: ")+t.title);
+  if(row){row.classList.add("done","pop");setTimeout(dueChanged,520);}else{popTask=on?id:null;dueChanged();}
+  if(on)toast(isTest(t)?"Done":"Handed in",function(){
+    tasks=tasks.map(function(x){return x.id===id?Object.assign({},x,{done:0}):x;});save(K.tasks,tasks);freshId=id;dueChanged();announce("Undone");});
 }
 
-function plural(n,w){return n+" "+w+(n===1?"":"s");}
-function listText(a){return a.length<2?a.join(""):a.slice(0,-1).join(", ")+" and "+a[a.length-1];}
-function sizeText(n){return n>=1048576?Math.round(n/104857.6)/10+" MB":Math.max(1,Math.round(n/1024))+" KB";}
+// The sheet. editingTask: the one being changed, or null for a new one.
+// timeSet: once you pick a time, switching the kind leaves it alone.
+var editingTask=null,aKind="assignment",timeSet=false;
+function editedTask(){return editingTask?tasks.filter(function(x){return x.id===editingTask;})[0]||null:null;}
+function aErr(m){var n=el("a-err");n.textContent=m;n.classList.toggle("hide",!m);}
+function setKind(k){
+  aKind=k;var f=KIND_FORM[k],t=editedTask();
+  Array.prototype.forEach.call(el("a-kind").querySelectorAll("button"),function(b){b.setAttribute("aria-pressed",b.getAttribute("data-k")===k?"true":"false");});
+  placeThumb(el("a-kind"));
+  el("a-title").textContent=t?KINDS[k].name:f.add;el("a-save").textContent=t?"Save changes":f.save;
+  el("a-date-l").textContent=f.date;el("a-time-l").textContent=f.time;el("a-name").placeholder=f.ph;
+  el("a-done").textContent=t&&t.done?f.undo:f.done;
+  if(!timeSet)el("a-time").value=KINDS[k].at;
+  aLeft();
+}
+// Under the date, how far away that is, so a slip of the date picker shows.
+function aLeft(){
+  var d=dueAt({due:el("a-date").value+"T"+(el("a-time").value||"09:00")}),n=el("a-left"),now=new Date();
+  if(!d){n.textContent="";return;}
+  var c=calDays(now,d);
+  n.textContent=d<now?"That's already gone by.":"That's "+(c===0?"today":c===1?"tomorrow":"in "+plural(c,"day"))+".";
+}
+function openTask(t,kind){
+  editingTask=t?t.id:null;timeSet=!!t;
+  var k=t?kindOf(t):KINDS[kind]?kind:"assignment",d=t&&dueAt(t);
+  if(!d){d=new Date();d.setDate(d.getDate()+7);var at=KINDS[k].at.split(":");d.setHours(+at[0],+at[1],0,0);}
+  el("a-name").value=t?t.title:"";el("a-course").value=t&&t.course||"";el("a-notes").value=t&&t.notes||"";
+  el("a-date").value=key(d);el("a-time").value=hhmm(d.getHours()*60+d.getMinutes());
+  el("a-done").classList.toggle("hide",!t);el("a-delete").classList.toggle("hide",!t);aErr("");
+  var dl=el("a-courses");dl.innerHTML="";courses().forEach(function(c){var o=document.createElement("option");o.value=c;dl.appendChild(o);});
+  var s=el("a-sheet");sheetOpen(s);s.querySelector(".sheet-in").scrollTop=0;
+  setKind(k);
+  if(t)announce("Editing "+t.title);
+}
+function closeTask(){sheetShut(el("a-sheet"));}
+el("a-sheet").addEventListener("close",function(){editingTask=null;});
+el("a-sheet").addEventListener("click",function(e){if(e.target===this)closeTask();});
+el("a-x").addEventListener("click",closeTask);
+Array.prototype.forEach.call(el("a-kind").querySelectorAll("button"),function(b){b.addEventListener("click",function(){setKind(b.getAttribute("data-k"));});});
+el("a-time").addEventListener("input",function(){timeSet=true;aLeft();});
+el("a-date").addEventListener("input",aLeft);el("a-date").addEventListener("change",aLeft);
+el("a-form").addEventListener("submit",function(e){e.preventDefault();
+  var title=el("a-name").value.trim(),date=el("a-date").value,time=el("a-time").value||KINDS[aKind].at;
+  if(!title){aErr("Give it a name.");el("a-name").focus();return;}
+  if(!/^\d{4}-\d\d-\d\d$/.test(date)){aErr(aKind==="assignment"?"Pick the due date.":"Pick the date.");el("a-date").focus();return;}
+  var was=editedTask();
+  if(editingTask&&!was){closeTask();return;}   // deleted on another phone in the meantime
+  var rec={id:was?was.id:newId(),kind:aKind,title:title.slice(0,80),course:el("a-course").value.trim().slice(0,40),
+    due:date+"T"+time.slice(0,5),notes:el("a-notes").value.trim().slice(0,400),done:was?was.done||0:0};
+  closeTask();
+  if(!was){tasks=tasks.concat([rec]);save(K.tasks,tasks);freshId=rec.id;dueChanged();
+    var p=datePhrase(rec,dueAt(rec));toast("Added · "+p.charAt(0).toLowerCase()+p.slice(1));announce(rec.title+" added, "+p);return;}
+  tasks=tasks.map(function(x){return x.id===rec.id?rec:x;});save(K.tasks,tasks);freshId=rec.id;dueChanged();announce("Saved");
+  toast("Saved",function(){tasks=tasks.map(function(x){return x.id===was.id?was:x;});save(K.tasks,tasks);freshId=was.id;dueChanged();announce("Changes undone");});
+});
+el("a-done").addEventListener("click",function(){var id=editingTask;closeTask();if(id)toggleTask(id);});
+// Delete goes straight through, with an Undo rather than an "Are you sure?".
+el("a-delete").addEventListener("click",function(){
+  var t=editedTask();closeTask();if(!t)return;
+  tasks=tasks.filter(function(x){return x.id!==t.id;});save(K.tasks,tasks);dueChanged();announce(t.title+" deleted");
+  toast("Deleted",function(){if(!tasks.some(function(x){return x.id===t.id;})){tasks=tasks.concat([t]);save(K.tasks,tasks);}
+    freshId=t.id;dueChanged();announce(t.title+" is back");});
+});
+Array.prototype.forEach.call(el("d-filter").querySelectorAll("button"),function(b){b.addEventListener("click",function(){
+  var k=b.getAttribute("data-k");if(k!==dueFilter){dueFilter=k;renderDue();}});});
+el("d-add").addEventListener("click",function(){openTask(null,dueFilter!=="all"?dueFilter:"assignment");});
+el("td-all").addEventListener("click",function(){hop(ORDER.indexOf("due"));show("due",true);});
+
+// ---------- shared words ----------
+// The photos the climbing log points at, for Sync to keep in step.
+function photoIds(){var ids=[];climbs.forEach(function(c){(c.shots||[]).forEach(function(id){ids.push(id);});});return ids;}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
 function whenText(d){
   var t=new Date(),k=key(d),y=new Date(t.getFullYear(),t.getMonth(),t.getDate()-1);
   return (k===key(t)?"today":k===key(y)?"yesterday":shortDate(d)+(d.getFullYear()!==t.getFullYear()?" "+d.getFullYear():""))+" at "+clock(d);
 }
-function isBackup(o){return !!o&&typeof o==="object"&&Array.isArray(o.blocks);}
-function savedAt(o){var d=o&&o.saved?new Date(o.saved):null;return d&&!isNaN(d)?d:null;}
-function restoreSummary(o){
-  var c=(o.climbs||[]).length,p=o.photos?Object.keys(o.photos).length:0,d=savedAt(o);
-  var bits=[plural(o.blocks.length,"block"),plural(c,"climbing session")+(p?" with "+plural(p,"photo"):"")];
-  if(o.solat&&o.solat.set&&o.solat.set.since)bits.push("prayers since "+shortDate(fromKey(o.solat.set.since)));
-  return "Replace everything on this phone with the backup"+(d?" from "+whenText(d):"")+"? It has "+listText(bits)+".";
-}
-function fromDataURL(u){
-  var m=/^data:([^;,]*)(;base64)?,(.*)$/.exec(String(u||""));if(!m||!m[2])return null;
-  try{var bin=atob(m[3]),a=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);
-    return new Blob([a],{type:m[1]||"image/jpeg"});}catch(e){return null;}
-}
-// A backup replaces everything. Photos only when it carries them, so an old
-// text backup (which never had photos) leaves the photos on the phone alone.
-function applyBackup(o){
-  blocks=o.blocks;done=o.done||{};climbs=o.climbs||[];save(K.blocks,blocks);save(K.done,done);save(K.climbs,climbs);
-  if(o.solat){plog=o.solat.log||{};pset=o.solat.set||null;qold=o.solat.old||null;
-    save(K.solat,plog);save(K.solatSet,pset);save(K.qold,qold);timesTry=0;refreshTimes();}
-  var p=o.photos&&typeof o.photos==="object"?o.photos:null,photosIn=Promise.resolve(true);
-  if(p)photosIn=ptx("readwrite",function(s){s.clear();Object.keys(p).forEach(function(id){var b=fromDataURL(p[id]);if(b)s.put(b,id);});return null;})
-    .then(function(){Object.keys(urls).forEach(pdrop);pcache={};Object.keys(p).forEach(function(id){pcache[id]=p[id];});return true;},
-      function(){return false;});
-  return photosIn.then(function(ok){resetEdit();renderToday();renderEditList();if(view==="solat")renderSolat();return ok;});
-}
-
-function renderBackupStatus(){
-  el("b-status").textContent=lastBackup?"Last backup "+whenText(new Date(lastBackup.at))+
-    (lastBackup.size?" · "+sizeText(lastBackup.size):"")+(lastBackup.photos?" · "+plural(lastBackup.photos,"photo"):""):"No backup yet";
-}
-// A week without a backup and Today asks for one, but not while Sync is on
-// and working: that copy keeps itself.
-function renderBackupNudge(){
-  var now=Date.now(),days=lastBackup?Math.floor((now-lastBackup.at)/DAY):0;
-  var synced=!!(sm&&sm.s&&sm.last&&now-sm.last<NUDGE_DAYS*DAY);
-  var show=!synced&&(!lastBackup||days>=NUDGE_DAYS)&&now>=(load(K.snooze,0)||0);
-  el("b-remind").classList.toggle("hide",!show);if(!show)return;
-  el("br-text").textContent=lastBackup?"Your last backup was "+plural(days,"day")+" ago. Save a fresh copy to iCloud.":
-    "Nothing is backed up yet. Save a copy to iCloud so a lost or reset phone doesn't take it all with it.";
-  warmPhotos();
-}
-el("b-save").addEventListener("click",backUp);
-el("br-save").addEventListener("click",backUp);
-el("br-later").addEventListener("click",function(){save(K.snooze,Date.now()+3*DAY);renderBackupNudge();});
-el("b-load").addEventListener("click",function(){el("b-err").classList.add("hide");el("b-file").click();});
-el("b-file").addEventListener("change",function(){
-  var f=this.files&&this.files[0];this.value="";if(!f)return;
-  (f.text?f.text():new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=function(){rej(r.error);};r.readAsText(f);}))
-  .then(function(t){var o=JSON.parse(t);if(!isBackup(o))throw new Error("not a backup");askRestore(o,f.size,el("b-err"));})
-  .catch(function(){var e=el("b-err");e.textContent="That file isn't a Break backup.";e.classList.remove("hide");});
-});
-// A backup replaces everything, so it always asks first, just under whatever
-// brought it in: a file, or pasted text.
-function askRestore(o,size,after){
-  restoreFrom={o:o,size:size};el("b-summary").textContent=restoreSummary(o);
-  var c=el("b-confirm");if(c.previousElementSibling!==after)after.insertAdjacentElement("afterend",c);
-  c.classList.remove("hide");el("b-no").focus();
-}
-el("b-no").addEventListener("click",function(){restoreFrom=null;el("b-confirm").classList.add("hide");});
-el("b-yes").addEventListener("click",function(){
-  var r=restoreFrom;if(!r)return;restoreFrom=null;el("b-confirm").classList.add("hide");
-  applyBackup(r.o).then(function(ok){
-    var d=savedAt(r.o);
-    // The phone now matches that backup, so the reminder counts from when it was made.
-    if(d){lastBackup={at:+d,size:r.size,photos:r.o.photos?Object.keys(r.o.photos).length:0};save(K.lastBackup,lastBackup);}
-    renderBackupStatus();renderBackupNudge();
-    toast(ok?"Restored"+(d?" from "+whenText(d):""):"Restored, but the photos couldn't be saved");
-  });
-});
-
-// The plain-text backup, for pasting into Notes. Photos would make it enormous.
-function bundle(){return JSON.stringify({v:1,blocks:blocks,done:done,climbs:climbs,solat:{log:plog,set:pset,old:qold}});}
-el("x-show").addEventListener("click",function(){el("x-box").classList.remove("hide");el("x-apply").classList.add("hide");
-  el("x-text").value=bundle();el("x-note").textContent="Copy this somewhere safe — Notes, or an email to yourself.";});
-el("x-import").addEventListener("click",function(){el("x-box").classList.remove("hide");el("x-apply").classList.remove("hide");
-  el("x-text").value="";el("x-note").textContent="Paste a backup here, then tap Load this.";});
-el("x-copy").addEventListener("click",function(){var t=el("x-text");t.select();t.setSelectionRange(0,999999);
-  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t.value).then(function(){el("x-note").textContent="Copied.";},
-    function(){el("x-note").textContent="Selected — use Copy from the menu.";});else el("x-note").textContent="Selected — use Copy from the menu.";});
-el("x-apply").addEventListener("click",function(){var o=null,t=el("x-text").value;try{o=JSON.parse(t);}catch(e){}
-  if(!isBackup(o)){el("x-note").textContent="That doesn't look like a backup from this app.";return;}
-  el("x-note").textContent="";askRestore(o,t.length,el("x-note"));});
+// Reset schedule, in Settings: the original plan back, once you have said so.
 el("x-reset").addEventListener("click",function(){el("x-confirm").classList.remove("hide");el("x-confirm-no").focus();});
 el("x-confirm-no").addEventListener("click",function(){el("x-confirm").classList.add("hide");});
 el("x-confirm-yes").addEventListener("click",function(){blocks=DEFAULTS.slice();save(K.blocks,blocks);el("x-confirm").classList.add("hide");
@@ -2910,7 +3281,8 @@ function saveSync(){try{localStorage.setItem(K.sync,JSON.stringify(sm));}catch(e
 // that copy came from a phone whose clock runs ahead of this one.
 function changed(n){if(!sm||!sm.at)return;sm.at[n]=Math.max(Date.now(),(sm.at[n]||0)+1);saveSync();
   if(sm.s){clearTimeout(pushTimer);pushTimer=setTimeout(syncNow,1500);}}
-function piece(n){return n==="blocks"?blocks:n==="done"?done:n==="climbs"?climbs:n==="solat"?plog:n==="solatSet"?pset:n==="reminders"?rprefs:qold;}
+function piece(n){return n==="blocks"?blocks:n==="done"?done:n==="tasks"?tasks:n==="climbs"?climbs:n==="solat"?plog:n==="solatSet"?pset:
+  n==="reminders"?rprefs:qold;}
 // Nothing worth keeping: an empty log, no settings, or the schedule Break starts with.
 function blank(n,v){
   if(v==null)return true;
@@ -2922,6 +3294,7 @@ function blank(n,v){
 function adopt(n,v){
   if(n==="blocks"){if(!Array.isArray(v)||!v.length)return false;blocks=v;}
   else if(n==="done")done=v&&typeof v==="object"?v:{};
+  else if(n==="tasks")tasks=Array.isArray(v)?v:[];
   else if(n==="climbs")climbs=Array.isArray(v)?v:[];
   else if(n==="solat")plog=v&&typeof v==="object"?v:{};
   else if(n==="solatSet")pset=v||null;
@@ -2959,7 +3332,7 @@ function syncNow(){
   syncing=true;syncAgain=false;renderSync();
   fresh().then(pull).then(push).then(syncPhotos).then(function(){sm.last=Date.now();sm.err="";},
     function(e){sm.err=e&&e.status?e.message:"offline";})
-  .then(function(){syncing=false;photoLeft=0;saveSync();renderSync();renderBackupNudge();if(syncAgain&&sm.s)syncNow();});
+  .then(function(){syncing=false;photoLeft=0;saveSync();renderSync();if(syncAgain&&sm.s)syncNow();});
 }
 function pull(){
   return sbFetch("/rest/v1/docs?select=key,value,updated_at",undefined,true).then(function(rows){
@@ -2977,7 +3350,7 @@ function pull(){
     // Whatever the cloud doesn't have yet goes up.
     Object.keys(PIECES).forEach(function(n){if(!there[n]){sm.up[n]=0;if(!sm.at[n])sm.at[n]=Date.now();}});
     sm.user=sm.s.user;saveSync();
-    if(Object.keys(got).length){renderToday();renderEditList();if(view==="week")renderWeek();if(view==="climb")renderClimb();
+    if(Object.keys(got).length){renderToday();if(view==="week")renderWeek();if(view==="climb")renderClimb();if(view==="due")renderDue();
       renderSolatAll();if(got.solatSet)refreshTimes();if(got.reminders)renderRemind();}
   });
 }
@@ -3068,7 +3441,7 @@ function fromRedirect(){
   function dec(s){s=decodeURIComponent(s.replace(/\+/g," "));try{if(/%[0-9a-f]{2}/i.test(s))s=decodeURIComponent(s);}catch(e){}return s;}
   var q={};h.split("&").forEach(function(kv){var i=kv.indexOf("=");if(i>0)q[dec(kv.slice(0,i))]=dec(kv.slice(i+1));});
   history.replaceState(null,"",location.pathname+location.search);
-  show("edit");openSettings();
+  show("today");openSettings();
   if(q.error||!q.access_token){syncMsg("sync-err","GitHub sign-in didn't finish: "+(q.error_description||q.error||"no sign-in came back"));return;}
   var p={};try{p=JSON.parse(atob(q.access_token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));}catch(e){}
   keep({access_token:q.access_token,refresh_token:q.refresh_token,expires_in:+q.expires_in||3600,expires_at:+q.expires_at||0,
@@ -3086,9 +3459,9 @@ el("sync-off").addEventListener("click",function(){
   if(tok)stop.then(function(){fetch(SB_URL+"/auth/v1/logout",{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+tok}}).catch(function(){});});});
 
 // ---------- settings ----------
-// Sync, the backup file, Break's own files and resetting the schedule, in a
-// sheet behind the gear on Schedule.
-function openSettings(){renderSync();renderRemind();remStatus();renderBackupStatus();renderAppInfo();warmPhotos();
+// Sync, Reminders, Break's own files and resetting the schedule, in a sheet
+// behind the gear on Today.
+function openSettings(){renderSync();renderRemind();remStatus();renderAppInfo();
   var d=el("set-sheet");sheetOpen(d);d.querySelector(".sheet-in").scrollTop=0;}
 el("set-open").addEventListener("click",openSettings);
 el("set-x").addEventListener("click",function(){sheetShut(el("set-sheet"));});
@@ -3122,8 +3495,8 @@ el("app-clear").addEventListener("click",function(){
 });
 
 // ---------- reminders ----------
-// Prayer times and block starts as notifications, sent by Break's Supabase
-// while Break itself is closed. iOS gives push only to a home-screen web app,
+// Prayer times, block starts and what's on Due as notifications, sent by
+// Break's Supabase while Break itself is closed. iOS gives push only to a home-screen web app,
 // and only asks for permission from a tap, so the card shows only there and
 // its button asks before it does anything else. This phone's push address goes
 // to Supabase through put_push_sub; the choices sync like the rest of Break, as
@@ -3132,12 +3505,17 @@ el("app-clear").addEventListener("click",function(){
 // times for your zone. VAPID is the public half of the key that signs them.
 // The private half is a secret in the Supabase project, never here.
 var VAPID="BDbgGnNlv6P9DmYmiShMn_8Q7aPANCO8lp4XFjClg_0Nsd8LZBgltBYhV6EfMveTmKxl6Ii1k5zC5Z3ItyFk6HM";
-var RDEF={pray:true,late:true,blocks:true,plead:0,blead:10,qfrom:0,qto:600,subuh:false};
+// due and dlead: reminders for what's on Due, and how long before (minutes:
+// a week, three days, a day, an hour). The same names and keys as Nabuzy's.
+var RDEF={pray:true,late:true,blocks:true,due:true,dlead:[10080,4320,1440,60],plead:0,blead:10,qfrom:0,qto:600,subuh:false};
+var LEADS=[10080,4320,1440,60];
 // rprefs: the synced choices, null until first set. rpush: this phone's
 // sign-up, {ep: its push address, at: when Supabase last took it, ok: when a
 // reminder last got through, err: why the last one didn't}.
 var rprefs=load(K.remind,null),rpush=load(K.push,null),rbusy=false;
-function rp(){var o={};Object.keys(RDEF).forEach(function(k){o[k]=rprefs&&typeof rprefs[k]===typeof RDEF[k]?rprefs[k]:RDEF[k];});return o;}
+function rp(){var o={};Object.keys(RDEF).forEach(function(k){o[k]=rprefs&&typeof rprefs[k]===typeof RDEF[k]?rprefs[k]:RDEF[k];});
+  var l=Array.isArray(o.dlead)?LEADS.filter(function(n){return o.dlead.indexOf(n)>=0;}):[];o.dlead=l.length?l:RDEF.dlead.slice();
+  return o;}
 function homeApp(){return navigator.standalone===true||!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);}
 function canPush(){return "serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;}
 function hhmm(m){return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");}
@@ -3167,7 +3545,9 @@ function renderRemind(){
   el("rem-on").classList.toggle("hide",on);el("rem-test").classList.toggle("hide",!on);el("rem-off").classList.toggle("hide",!on);
   el("rem-on").disabled=rbusy||!canPush()||!sm.s||perm==="denied";
   el("rem-test").disabled=rbusy||!sm.s;el("rem-off").disabled=rbusy;
-  ["pray","late","blocks","subuh"].forEach(function(k){el("rem-"+k).checked=p[k];});
+  ["pray","late","blocks","due","subuh"].forEach(function(k){el("rem-"+k).checked=p[k];});
+  Array.prototype.forEach.call(el("rem-leads").children,function(b){b.setAttribute("aria-pressed",p.dlead.indexOf(+b.getAttribute("data-m"))>=0?"true":"false");});
+  el("rem-dlead").classList.toggle("hide",!p.due);
   el("rem-plead").value=String(p.plead);el("rem-blead").value=String(p.blead);
   el("rem-qfrom").value=hhmm(p.qfrom);el("rem-qto").value=hhmm(p.qto);
 }
@@ -3214,6 +3594,12 @@ el("rem-off").addEventListener("click",function(){
 });
 function setPref(k,v){rprefs=rp();rprefs[k]=v;save(K.remind,rprefs);}
 ["pray","late","blocks","subuh"].forEach(function(k){el("rem-"+k).addEventListener("change",function(){setPref(k,this.checked);});});
+el("rem-due").addEventListener("change",function(){setPref("due",this.checked);renderRemind();});
+// Any mix of the four, but never none: switch the whole kind off for that.
+Array.prototype.forEach.call(el("rem-leads").children,function(b){b.addEventListener("click",function(){
+  var m=+b.getAttribute("data-m"),l=rp().dlead,at=l.indexOf(m);
+  if(at>=0){if(l.length===1){toast("Keep at least one");return;}l.splice(at,1);}else l.push(m);
+  setPref("dlead",LEADS.filter(function(n){return l.indexOf(n)>=0;}));renderRemind();});});
 ["plead","blead"].forEach(function(k){el("rem-"+k).addEventListener("change",function(){setPref(k,+this.value);});});
 ["qfrom","qto"].forEach(function(k){el("rem-"+k).addEventListener("change",function(){
   if(/^\d\d:\d\d/.test(this.value))setPref(k,toMin(this.value));else renderRemind();});});
@@ -3243,21 +3629,33 @@ function checkPush(force){
 }
 
 // ---------- navigation ----------
-var VIEWS={today:"Today",week:"Week",climb:"Climbing",solat:"Solat",edit:"Schedule"},ORDER=["today","week","climb","solat","edit"],view="today",scrolls={};
+var VIEWS={today:"Today",week:"Week",climb:"Climbing",solat:"Solat",due:"Due"},ORDER=["today","week","climb","solat","due"],view="today",scrolls={};
 var bar=document.querySelector(".tabbar"),tabs=bar.querySelectorAll("button");
+// Each page's own control beside its title: Settings on Today, and + on Week
+// (a block), Climb (a session) and Due (an assignment, exam or quiz).
+var ACTS={today:"set-open",week:"e-add",climb:"c-add",due:"d-add"};
+function heroActs(name){Object.keys(ACTS).forEach(function(v){el(ACTS[v]).classList.toggle("hide",v!==name);});
+  el("hero-acts").classList.toggle("hide",!ACTS[name]);}
+// The page you arrive on glides in from the side its tab is on, and the
+// title with it, so you keep your bearings. Never for Reduce Motion.
+function glide(sec,dir){
+  if(reduceMotion())return;
+  [[sec,"view-in"],[el("view-title"),"title-in"]].forEach(function(p){var n=p[0];
+    n.classList.remove("view-in","title-in");void n.offsetWidth;n.style.setProperty("--dir",dir);n.classList.add(p[1]);
+    n.addEventListener("animationend",function end(e){if(e.target!==n)return;n.classList.remove(p[1]);n.removeEventListener("animationend",end);});});
+}
 // Each tab keeps its place when you come back to it, as on iOS, and tapping the
 // tab you're already on goes back to the top.
 function show(name,fromBar){
-  var again=name===view;scrolls[view]=window.scrollY;view=name;
+  var again=name===view,from=ORDER.indexOf(view);scrolls[view]=window.scrollY;view=name;
   ORDER.forEach(function(v){el("v-"+v).classList.toggle("hide",v!==name);});
   for(var i=0;i<tabs.length;i++)tabs[i].setAttribute("aria-pressed",tabs[i].getAttribute("data-view")===name?"true":"false");
   bar.style.setProperty("--i",ORDER.indexOf(name));
   el("view-title").textContent=VIEWS[name];
-  // Climb's + logs a session; Schedule's adds a block, beside its Settings gear.
-  el("hero-acts").classList.toggle("hide",name!=="edit"&&name!=="climb");el("c-add").classList.toggle("hide",name!=="climb");
-  el("e-add").classList.toggle("hide",name!=="edit");el("set-open").classList.toggle("hide",name!=="edit");
+  heroActs(name);
+  if(!again)glide(el("v-"+name),ORDER.indexOf(name)>from?1:-1);
   if(name==="today")renderToday(!again);if(name==="week")renderWeek();if(name==="climb")renderClimb();
-  if(name==="edit")renderEditList();
+  if(name==="due")renderDue();
   if(name==="solat"){renderSolat();refreshTimes();}
   if(fromBar&&again)window.scrollTo({top:0,behavior:reduceMotion()?"auto":"smooth"});
   else window.scrollTo(0,fromBar&&scrolls[name]||0);
@@ -3333,7 +3731,7 @@ resetEdit();el("c-date").value=key(new Date());syncTypeScale();
 (function(){var rs=document.documentElement.style;rs.transition="none";paintSky();
   requestAnimationFrame(function(){requestAnimationFrame(function(){rs.transition="";});});})();
 pdb().then(function(){el("c-photo-field").classList.remove("hide");el("c-photo-note").textContent=PHOTO_NOTE;},function(){});
-renderToday(true);renderBackupStatus();setTimeout(warmPhotos,1500);
+renderToday(true);heroActs(view);
 fromRedirect();renderSync();syncNow();checkPush(false);
 // A tapped reminder opens Break on its tab, Solat for a prayer and Today for a
 // block: in the address if Break wasn't running, as a message if it was.
@@ -3346,14 +3744,33 @@ var standalone=navigator.standalone===true||(window.matchMedia&&matchMedia("(dis
 if(!standalone&&!load("sb.installDismissed",false))el("install").classList.remove("hide");
 el("install-x").addEventListener("click",function(){el("install").classList.add("hide");save("sb.installDismissed",true);});
 
-window.addEventListener("resize",syncTypeScale);window.addEventListener("pageshow",syncTypeScale);
-document.addEventListener("visibilitychange",function(){if(document.hidden)return;syncTypeScale();paintSky();
-  if(view==="today")keepFocus(renderToday);if(view==="solat")keepFocus(renderSolat);refreshTimes();if(focusBlock)requestWake();syncNow();});
+// A new size, or a new text size, moves the choices under the thumbs.
+function relayout(){syncTypeScale();Array.prototype.forEach.call(document.querySelectorAll(".seg"),placeThumb);}
+window.addEventListener("resize",relayout);window.addEventListener("pageshow",relayout);
+document.addEventListener("visibilitychange",function(){if(document.hidden)return;relayout();paintSky();
+  if(view==="today")keepFocus(renderToday);if(view==="solat")keepFocus(renderSolat);if(view==="due")keepFocus(renderDue);
+  refreshTimes();if(focusBlock)requestWake();syncNow();});
 window.addEventListener("online",function(){refreshTimes();syncNow();});
 // The half-minute refresh waits for a row that's under a finger mid-swipe.
-setInterval(function(){if(document.hidden)return;paintSky();
-  if(view==="today"&&!focusBlock&&!document.querySelector(".swiping"))keepFocus(renderToday);if(view==="climb")renderGym();
-  if(view==="solat")keepFocus(renderSolat);},30000);
+// On Due it keeps the countdowns live; they roll as they change.
+setInterval(function(){if(document.hidden)return;paintSky();var still=!document.querySelector(".swiping");
+  if(view==="today"&&!focusBlock&&still)keepFocus(renderToday);if(view==="climb")renderGym();
+  if(view==="solat")keepFocus(renderSolat);if(view==="due"&&still)keepFocus(renderDue);},30000);
+// With a mouse, cards marked tilt lean a degree or two towards the pointer.
+// Touch screens never do: there's no pointer hovering to follow.
+if(window.matchMedia&&matchMedia("(hover:hover) and (pointer:fine)").matches)(function(){
+  var cur=null,raf=0,px=0,py=0;
+  function rest(){if(!cur)return;cur.classList.remove("leaning");cur.style.setProperty("--rx","0deg");cur.style.setProperty("--ry","0deg");cur=null;}
+  document.addEventListener("pointermove",function(e){
+    var c=e.target.closest?e.target.closest(".tilt"):null;
+    if(c!==cur)rest();
+    if(!c||reduceMotion())return;cur=c;px=e.clientX;py=e.clientY;
+    if(!raf)raf=requestAnimationFrame(function(){raf=0;if(!cur)return;
+      var r=cur.getBoundingClientRect(),x=(px-r.left)/r.width-.5,y=(py-r.top)/r.height-.5;cur.classList.add("leaning");
+      cur.style.setProperty("--ry",(x*4).toFixed(2)+"deg");cur.style.setProperty("--rx",(-y*4).toFixed(2)+"deg");});
+  },{passive:true});
+  document.addEventListener("pointerleave",rest);
+})();
 // While Break is open, check for changes made on another phone every few minutes.
 setInterval(function(){if(!document.hidden)syncNow();},300000);
 refreshTimes();

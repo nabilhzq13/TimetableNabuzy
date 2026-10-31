@@ -1,7 +1,8 @@
 // remind: sends Break's reminders. pg_cron calls it every minute (see
 // ../../reminders.sql). It reads each phone that has reminders on, that
-// account's synced timetable, ticks and choices, and JAKIM's times for the zone
-// in solatSet, then sends whatever has come due, each reminder once.
+// account's synced timetable, ticks, assignments, exams and quizzes and
+// choices, and JAKIM's times for the zone in solatSet, then sends whatever has
+// come due, each reminder once.
 // Break calls it too, with {test: true} and the user's own sign-in, to send a
 // test to that one phone.
 import { b64u, dateKey, due, encrypt, keysMatch, minuteOf, parseTakwim, prefsOf, PUSH_HOST, timesFor, unb64u, vapidJwt, vapidKey } from "./lib.ts";
@@ -168,7 +169,7 @@ async function tick() {
   if (!subs.length) return { ok: true };
   const users = [...new Set(subs.map((s) => s.user_id))];
   const of = new Map<string, Record<string, Doc>>();
-  for (const d of await db(`docs?select=user_id,key,value&key=in.(blocks,done,solat,solatSet,reminders)&user_id=in.(${users.join(",")})`)) {
+  for (const d of await db(`docs?select=user_id,key,value&key=in.(blocks,done,tasks,solat,solatSet,reminders)&user_id=in.(${users.join(",")})`)) {
     const o = of.get(d.user_id) || {};
     o[d.key] = d.value && d.value.v;
     of.set(d.user_id, o);
@@ -184,7 +185,7 @@ async function tick() {
     const d = of.get(u) || {}, years = tt.get(zoneOf(u)) || {};
     for (const note of due(now, {
       prefs: prefsOf(d.reminders), blocks: Array.isArray(d.blocks) ? d.blocks : [],
-      done: obj(d.done), solat: obj(d.solat), times: (day) => timesFor(years, day),
+      done: obj(d.done), solat: obj(d.solat), tasks: Array.isArray(d.tasks) ? d.tasks : [], times: (day) => timesFor(years, day),
     })) list.push({ user: u, note });
   }
   if (!list.length) return { ok: true };

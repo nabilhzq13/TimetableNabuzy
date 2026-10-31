@@ -1,14 +1,14 @@
 # Break — putting it on your iPhone
 
-An offline schedule, climbing log and prayer tracker. Once it's on your home screen
+An offline schedule, climbing log, prayer tracker and list of what's due. Once it's on your home screen
 it opens like any app, works with no signal, and keeps every tick, block and session
 **on the phone itself**. If you sign in to **Sync** (in Settings, the gear on
-Schedule), it also keeps a copy in your own Supabase, photos included, which only your account can read, so
+Today), it also keeps a copy in your own Supabase, photos included, which only your account can read, so
 a lost phone gets it all back. Until you sign in, nothing is uploaded and there
 is no account. The other thing it fetches is your zone's prayer
 timetable from JAKIM's e-Solat, once a year, and that request carries only the
-zone code. With Sync on, it can also send you **reminders** for prayer times and
-blocks, even while it's closed (see **Reminders**).
+zone code. With Sync on, it can also send you **reminders** for prayer times,
+blocks, assignments, exams and quizzes, even while it's closed (see **Reminders**).
 
 ## Files
 
@@ -58,7 +58,9 @@ there** — only the app's code does. The schedule you tick off stays on the pho
 - **Today** — three rings up top: today's blocks, this week's training minutes,
   and climbing sessions against your four a week. Below them, the block you're in
   with a live ring counting down. **Start focus** turns the screen into a big
-  countdown that keeps the phone awake on the desk. Then the day itself, as one
+  countdown that keeps the phone awake on the desk. If anything on **Due** is
+  coming up in the next week, or is overdue, a **Due soon** card shows the next
+  three; tap one to open it, or **See all**. Then the day itself, as one
   line with a stop for each block and for any free time between them (see **Free
   time** below). It fills up to now, with a dot at the exact
   minute. Tap a block to tick it, or swipe it right. A long swipe left opens that
@@ -67,13 +69,15 @@ there** — only the app's code does. The schedule you tick off stays on the pho
 - **The sky** behind everything follows the real time of day — dawn, day, golden
   hour, dusk, night.
 - **The tab bar** — tap a tab, or drag along the bar. The glass lens lifts,
-  magnifies the tabs under it, and drops onto the one you let go on. Each tab
+  magnifies the tabs under it, and drops onto the one you let go on. The page
+  glides in from the side of its tab, so you keep your bearings. Each tab
   keeps its place when you come back to it; tap the tab you're already on to go
   back to the top.
 - **Week** — any day of the week with the gym's hours for that day, plus a heatmap
   of the last eight weeks showing which days you actually kept to the plan. Tap a
-  block to open it in the editor, right there over Week. Free time shows between
-  the blocks, as on Today, so you can fill any day's gaps from here.
+  block to open it in the editor, right there over Week, or **+** beside the
+  title to add one on the day you're looking at. Free time shows between the
+  blocks, as on Today, so you can fill any day's gaps from here.
 - **Climb** — the gym's opening hours up top, with a live badge (open, midday
   break, or closed and when it opens next) and your own session times marked
   against each day. If you move a climbing block somewhere the gym is shut, it
@@ -105,15 +109,31 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   **How qadha works** sums up the rulings (Shafi'i school, from the Federal
   Territory Mufti's office) with links to each source. Until JAKIM publishes a
   new year's timetable, the app uses the same dates from last year and says so.
-- **Schedule** — every block, in time order. Tap one to edit it, or **+** beside
-  the title to add one; the editor opens as a sheet, and **×** closes it. Two
+- **Due** — assignments, exams and quizzes. **+** beside the title adds one: pick
+  the kind, give it a name, a course if you like, and the date and time (an
+  assignment's time starts at 11:59pm, an exam's or a quiz's at 9am). The list
+  runs soonest first, under **Overdue**, **Coming up** and, for an exam or a quiz
+  whose time has passed unticked, **Gone by**. Each says how it stands (Upcoming,
+  Due soon inside two days, Overdue in red, or Completed) and how long is left,
+  and the countdowns tick down while you watch. Above them, the next one in the
+  coming fortnight counts down in large type, with a bar that fills as it gets
+  close. Tap the round check to tick one off (handed in, or sat), or swipe it
+  right; its check pops and its title strikes through before it moves to
+  **Completed**, with an **Undo**. Tap a row to change it; **Delete** has an Undo
+  too. **All**, **Assignments**, **Exams** and **Quizzes** along the top show one
+  kind at a time. They sync like everything else, and Reminders can tell you about
+  each a week, three days, a day and an hour before.
+- **The block editor** — opens as a sheet over whichever page you're on: a long
+  swipe left on Today, a tap on Week, **+** on Week, or **Other…** in free time.
+  Give it a **Start** and a **Stop**; it shows the length as you go, and a stop
+  earlier than the start runs past midnight ("ending the next morning"). Moving
+  the start carries the stop with it, keeping the length, as in Calendar. Two
   blocks can't share the same time on the same day (one ending exactly when the
   next starts is fine). If a block overlaps others, the form lists each one and
   what will happen to it. **Add and make room** then shortens those blocks or
   takes them off the days you share, and the message that follows has an
   **Undo**. **Start at …** moves your block to the next free time instead, when
-  there is one. **Delete block** has an Undo too. Blocks that already overlap are
-  flagged in the list; tap one to fix it.
+  there is one. **Delete block** has an Undo too.
 - **Free time** — any stretch of 15 minutes or more between 9:30am and midnight
   with no block shows on Today and Week as a hollow stop on a dashed stretch of
   the line, say "Free · 1.5h, 10am–11:30am". It offers up to two blocks you've
@@ -125,11 +145,24 @@ there** — only the app's code does. The schedule you tick off stays on the pho
   usual time, with an **Undo**. Whatever it leaves free stays offered. **Other…**
   opens the editor already set to that day, start time and length. Nothing
   changes until you tap.
-- **Settings** — the gear beside Schedule's title. Sync, **Reminders** (in the
-  home-screen app), the backup file, **Clear cache**, and **Reset schedule**,
+- **Settings** — the gear beside Today's title. Sync, **Reminders** (in the
+  home-screen app), **Clear cache**, and **Reset schedule**,
   which puts the original plan back without touching your ticks or climbing
   log. When Sync needs you (signed out, or failing for a reason other than no
   signal), the gear shows a red dot.
+
+## How it moves
+
+Motion follows iOS and always means something. Sheets rise from the bottom with a
+little spring and sink away when closed; drag one down by the grabber at its top,
+or by its title, and let go to put it away, or let go early and it springs back.
+The thumb in **All / Assignments / Exams / Quizzes** and in Week's days slides to
+what you pick. When Due's list changes, rows glide to their new places and new
+ones settle in, and a countdown that changes rolls up into place. Buttons give a
+little under your finger and spring back. With a mouse, the countdown card and
+Today's now card lean a degree towards the pointer; on the iPhone they never
+tilt. With **Reduce Motion** on (Settings → Accessibility → Motion), all of it
+stays still. The tab bar's Liquid Glass lens is unchanged.
 
 ## Text size
 
@@ -140,36 +173,20 @@ labels stay put, which is what iOS itself does.
 
 ## Backups
 
-Your data lives in Safari's storage for this app. Deleting the app, or clearing
-Safari's website data, erases it, so keep a copy in iCloud:
-
-1. On **Schedule**, tap the gear for **Settings**, and under **Backup file** tap
-   **Back up to iCloud**.
-2. In the share sheet, choose **Save to Files**, then **iCloud Drive** (a folder
-   called Break keeps them together), and **Save**.
-
-The file, `break-backup-<date>.json`, holds everything: the schedule, ticks,
-climbing log with its photos, prayer ticks and qadha, earlier qadha included. The
-prayer timetable isn't in it; it downloads again by itself.
-
-To bring it back, on this phone or a new one, tap **Restore from file** and pick
-the file. The app says what's in it and asks before it replaces anything.
-
-When your last backup is more than a week old, Today shows a reminder with **Back
-up now**. **Later** hides it for three days. It stays away while Sync is on and
-working, since that copy keeps itself.
-
-There's still a plain-text backup under **Copy or paste a text backup instead**,
-for pasting into Notes. It leaves out photos, which would make it enormous.
-Loading one asks first, just as a file does.
+Your data lives in Safari's storage for this app, so deleting the app, or
+clearing Safari's website data, erases it from the phone. **Sync** is the backup:
+signed in, everything goes to your Supabase a moment after it changes, photos
+included, and a new or reset phone gets it all back by signing in. The backup
+file (Back up to iCloud, Restore from file and the text backup) was taken out on
+31 October 2026, because Sync does the same job by itself.
 
 ## Sync
 
-Break can also keep a copy of your schedule, ticks, climbing log, photos and
-prayers in the free Supabase project called **Break**, in Singapore. The phone
-stays the main copy and works with no signal. Changes go up a moment after you
-make them whenever there's a connection, and the newest change wins. This is the
-backup that runs by itself; the iCloud file above is a copy you make by hand.
+Break can also keep a copy of your schedule, ticks, climbing log, photos,
+prayers, and assignments, exams and quizzes in the free Supabase project called
+**Break**, in Singapore. The phone stays the main copy and works with no signal.
+Changes go up a moment after you make them whenever there's a connection, and the
+newest change wins. This is the backup, and it runs by itself.
 
 Photos go to the project's private **photos** bucket (under **Storage** in the
 dashboard), one file per photo in a folder for your account. New photos go up
@@ -177,7 +194,7 @@ the next time Break syncs, a new phone downloads them, and deleting a session
 removes its photos there too. At about 200 KB a photo, the free plan's 1 GB
 holds roughly 5,000.
 
-**Signing in.** On **Schedule**, tap the gear for **Settings**, and under **Sync**
+**Signing in.** On **Today**, tap the gear for **Settings**, and under **Sync**
 tap **Continue with GitHub**. You
 sign in to GitHub and approve **Break** once, and it comes straight back to the
 app, signed in. That works inside the home-screen app; Google isn't offered
@@ -224,7 +241,7 @@ repository after 60 days without a commit, and emails you first; any push, or
 
 ## Reminders
 
-Break can put three kinds of reminder on your lock screen, even while it's
+Break can put four kinds of reminder on your lock screen, even while it's
 closed:
 
 - **Prayer times** — when each prayer's time starts, from JAKIM's timetable for
@@ -234,22 +251,27 @@ closed:
 - **Block starts** — before each block on your schedule, 10 minutes ahead unless
   you change it. A block you've already ticked gets none. Tapping one opens
   Today.
+- **Assignments, exams and quizzes** — a week, three days, a day and an hour
+  before each one on **Due** (pick any mix of the four), and none once you've
+  ticked it off: "Lab report 2 is due tomorrow", "Exam in 3 days: Calculus
+  final". Moving one's date or time brings fresh reminders. Tapping one opens Due.
 
 **Turning them on.** They only work in the home-screen app, on iOS 16.4 or
 later, and with Sync signed in, because your Supabase is what sends them. On
-**Schedule**, tap the gear for **Settings**, then under **Reminders** tap **Turn
+**Today**, tap the gear for **Settings**, then under **Reminders** tap **Turn
 on reminders** and **Allow**. **Send a test** checks that one reaches this
 phone. Prayer times come when they start and blocks 10 minutes early; both can be
 changed there, along with which kinds you get. The choices sync, so every phone
 signed in to your account uses the same ones.
 
-**Quiet hours** run from 12am to 10am: the phone leaves the bed at midnight, and
-there's no phone for the first 30 minutes after you wake at 9:30. Nothing comes
-in quiet hours, so the 9:30 Wake up block gets no reminder. Something that
-starts after they end still gets its reminder, the minute they end, so Friday's
-10am climb pings at 10:00 instead of 9:50. Subuh (about 5:50am) stays quiet
-unless you switch on **Let Subuh through**. Setting both times the same means no
-quiet hours.
+**Quiet hours** run from 12am to 9:30am, as you've set them: the phone leaves
+the bed at midnight. Nothing comes in quiet hours. Something that starts after
+they end still gets its reminder, the minute they end. A deadline's reminder that
+falls in them comes when they end, if that's still before the deadline, so a
+week's notice of a 9am exam arrives at 9:30. The hour-before one for that exam,
+at 8am, would only come after it starts, so it doesn't come. Subuh (about 5:50am)
+stays quiet unless you switch on **Let Subuh through**. Setting both times the
+same means no quiet hours.
 
 **Turn off** stops them on that phone. **Sign out** does too, since they come
 from your synced copy. After **Clear cache** the phone signs itself up again on
@@ -259,8 +281,8 @@ turn them back on in the Settings app, under **Notifications → Break**.
 
 **How it works.** Every minute, a `pg_cron` job called `break-reminders` asks
 the project's `remind` Edge Function to send whatever is due. It reads each
-phone with reminders on (`push_subs`), your synced schedule, ticks, choices and
-zone (`docs`), and JAKIM's timetable, which it downloads from e-Solat once a year
+phone with reminders on (`push_subs`), your synced schedule, ticks,
+assignments, exams and quizzes, choices and zone (`docs`), and JAKIM's timetable, which it downloads from e-Solat once a year
 per zone and keeps in `prayer_times`. Each reminder goes once (`push_sent`
 remembers what went out for three days). They go out as standard Web Push,
 through Apple's push service, signed with a VAPID key pair. The public half is in
@@ -290,7 +312,7 @@ bump of `sw.js`, and **Turn off** then **Turn on reminders** on each phone.
 
 Break keeps a copy of its own files (the page, the font, the icons) so it opens
 with no signal. If it ever looks out of date or acts up, open **Settings** (the
-gear on Schedule) and tap **Clear cache** under **App**. It throws that copy away,
+gear on Today) and tap **Clear cache** under **App**. It throws that copy away,
 downloads the files again and reopens. Your schedule, ticks, climbing log,
 photos, prayers and sign-in are kept somewhere else on the phone, so they stay
 exactly as they are. It needs signal, and with none it leaves the cache alone and

@@ -1,6 +1,7 @@
 -- Break's reminders, on the Supabase side. Applied to the Break project on
 -- 26 October 2026 as the migrations break_reminders,
--- break_reminders_extensions and break_reminders_cron; kept here as the record.
+-- break_reminders_extensions and break_reminders_cron, and on 31 October 2026
+-- break_tasks_doc; kept here as the record.
 -- The sending itself is the remind Edge Function, in functions/remind.
 
 -- ---------- break_reminders ----------
@@ -133,3 +134,11 @@ select cron.schedule(
   delete from cron.job_run_details where end_time < now() - interval '3 days';
   $$
 );
+
+-- ---------- break_tasks_doc (31 October 2026) ----------
+
+-- Assignments, exams and quizzes sync as one more docs row, "tasks", and the
+-- remind function sends their reminders a week, 3 days, a day and an hour before.
+alter table public.docs drop constraint docs_key_check;
+alter table public.docs add constraint docs_key_check
+  check (key = any (array['blocks', 'done', 'tasks', 'climbs', 'solat', 'solatSet', 'qadhaOld', 'reminders']));
