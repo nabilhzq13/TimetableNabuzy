@@ -125,6 +125,10 @@
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   html{font:-apple-system-body;font-family:var(--sans);background:var(--sky-base)}
   html,body{min-height:100%}
+  /* On the home screen, iOS measures 100% without the status bar the page runs
+     under, so a page shorter than the screen ended that much early: the sky
+     stopped short and the tab bar rode up with a band beneath it (empty Due). */
+  html{min-height:calc(100% + env(safe-area-inset-top,0px))}
   /* The screen never zooms, by pinch or double-tap, so it can't be left
      zoomed in. Larger Text in the iPhone's settings makes things bigger. */
   html{touch-action:pan-x pan-y}
